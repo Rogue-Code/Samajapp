@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Search, Bell, Home, Users, Briefcase, Calendar, User,
-  Heart, MessageCircle, Share2, HandCoins, Building2, LifeBuoy, ChevronRight,
+  Heart, MessageCircle, Share2, HandCoins, Building2, LifeBuoy, Bookmark, MoreHorizontal,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 
@@ -11,62 +11,101 @@ export const Route = createFileRoute("/home")({
   head: () => ({ meta: [{ title: "Home — Samaj Connect" }] }),
 });
 
-const ads = [
+type Post = {
+  id: number;
+  author: string;
+  role: string;
+  time: string;
+  avatarGrad: string;
+  avatarInitial: string;
+  tag?: string;
+  title: string;
+  body: string;
+  emoji: string;
+  bg: string;
+  likes: number;
+  comments: number;
+};
+
+const feed: Post[] = [
   {
-    tag: "Sponsored",
-    title: "Patel Jewellers — Diwali Collection",
-    sub: "Up to 25% off on gold making charges",
+    id: 1,
+    author: "Patel Jewellers",
+    role: "Sponsored",
+    time: "Promoted",
+    avatarGrad: "from-accent-saffron to-destructive",
+    avatarInitial: "P",
+    tag: "Advertisement",
+    title: "Diwali Collection 2025",
+    body: "Up to 25% off on gold making charges. Visit our showroom this festive season.",
     emoji: "💎",
-    bg: "from-accent-saffron to-destructive",
-    cta: "Shop Now",
+    bg: "from-accent-saffron via-destructive to-primary",
+    likes: 482,
+    comments: 36,
   },
   {
-    tag: "Promotion",
-    title: "Samaj Wedding Hall Bookings Open",
-    sub: "Reserve dates for 2026 season",
-    emoji: "🎊",
-    bg: "from-primary to-accent-saffron",
-    cta: "Book Now",
+    id: 2,
+    author: "Mahesh Bhai",
+    role: "President · Samaj",
+    time: "3h ago",
+    avatarGrad: "from-success to-primary",
+    avatarInitial: "M",
+    title: "Annual Gathering — Thank You!",
+    body: "Heartfelt thanks to all 500+ families who attended our annual gathering. Together we build a stronger samaj. 🙏",
+    emoji: "🎉",
+    bg: "from-primary via-accent-saffron to-warning",
+    likes: 234,
+    comments: 42,
   },
   {
-    tag: "Featured",
-    title: "Shah Travels — Char Dham Yatra",
-    sub: "Special community discount · 12 days",
+    id: 3,
+    author: "Shah Travels",
+    role: "Sponsored",
+    time: "Promoted",
+    avatarGrad: "from-primary to-success",
+    avatarInitial: "S",
+    tag: "Advertisement",
+    title: "Char Dham Yatra — 12 Days",
+    body: "Special community discount. All inclusive package with experienced guides and comfortable stay.",
     emoji: "🛕",
-    bg: "from-success to-primary",
-    cta: "Enquire",
+    bg: "from-success via-primary to-accent-saffron",
+    likes: 198,
+    comments: 21,
+  },
+  {
+    id: 4,
+    author: "Samaj Wedding Hall",
+    role: "Community Notice",
+    time: "1d ago",
+    avatarGrad: "from-warning to-accent-saffron",
+    avatarInitial: "W",
+    title: "Bookings open for 2026 season",
+    body: "Reserve your preferred dates early. Members get priority booking and 15% discount.",
+    emoji: "🎊",
+    bg: "from-warning via-accent-saffron to-destructive",
+    likes: 92,
+    comments: 14,
   },
 ];
 
-const communityPost = {
-  author: "Mahesh Bhai",
-  role: "President",
-  time: "3h ago",
-  text: "Heartfelt thanks to all 500+ families who attended our annual gathering. Together we build a stronger samaj. 🙏",
-};
+const quickTiles = [
+  { id: "fundraiser", icon: HandCoins, label: "Fundraiser", grad: "from-destructive/15 to-accent-saffron/10", iconBg: "bg-destructive/10 text-destructive" },
+  { id: "events", icon: Calendar, label: "Upcoming Events", grad: "from-primary/15 to-success/10", iconBg: "bg-primary/10 text-primary" },
+  { id: "facilities", icon: Building2, label: "Facilities", grad: "from-warning/15 to-accent-saffron/10", iconBg: "bg-warning/15 text-warning" },
+  { id: "support", icon: LifeBuoy, label: "Support", grad: "from-success/15 to-primary/10", iconBg: "bg-success/15 text-success" },
+];
 
 function HomePage() {
-  const navigate = useNavigate();
   const [tab, setTab] = useState("home");
-  const [slide, setSlide] = useState(0);
+  const [liked, setLiked] = useState<Record<number, boolean>>({});
+  const [saved, setSaved] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
-    const t = setInterval(() => setSlide((s) => (s + 1) % ads.length), 3500);
-    return () => clearInterval(t);
-  }, []);
-
-  const quickTiles = [
-    { id: "fundraiser", icon: HandCoins, label: "Fundraiser", sub: "Donate & support", grad: "from-destructive/15 to-accent-saffron/15", icon_bg: "bg-destructive/10 text-destructive" },
-    { id: "events", icon: Calendar, label: "Upcoming Events", sub: "Festivals & meets", grad: "from-primary/15 to-success/10", icon_bg: "bg-primary/10 text-primary" },
-    { id: "facilities", icon: Building2, label: "Facilities", sub: "Halls & services", grad: "from-warning/15 to-accent-saffron/15", icon_bg: "bg-warning/15 text-warning" },
-    { id: "support", icon: LifeBuoy, label: "Support", sub: "Help & contact", grad: "from-success/15 to-primary/10", icon_bg: "bg-success/15 text-success" },
-  ];
-
+  // Heights: header ~150px, tiles ~140px, bottom nav ~76px
   return (
     <PhoneFrame>
-      <div className="flex flex-col min-h-screen md:min-h-[860px] bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/50">
+      <div className="relative flex flex-col min-h-screen md:min-h-[860px] bg-background">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
@@ -95,102 +134,100 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="flex-1 pb-28">
-          {/* Advertisement Posts */}
-          <div className="px-5 mt-5 fade-up">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-foreground">Featured Posts</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-1 rounded-full">Ads</span>
-            </div>
-            <div className="relative h-44 rounded-3xl overflow-hidden shadow-card">
-              {ads.map((h, i) => (
-                <div
-                  key={i}
-                  className={`absolute inset-0 bg-gradient-to-br ${h.bg} p-5 flex flex-col justify-end transition-opacity duration-500 ${slide === i ? "opacity-100" : "opacity-0"}`}
-                >
-                  <div className="absolute top-4 right-4 text-6xl opacity-30">{h.emoji}</div>
-                  <span className="self-start text-[10px] font-bold uppercase tracking-wider bg-white/25 text-white px-2 py-1 rounded-full backdrop-blur">
-                    {h.tag}
-                  </span>
-                  <h3 className="text-xl font-bold text-white mt-2 leading-tight">{h.title}</h3>
-                  <p className="text-sm text-white/85">{h.sub}</p>
-                  <button className="mt-3 self-start px-4 h-9 rounded-xl bg-white text-foreground text-xs font-semibold shadow-card">
-                    {h.cta}
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-1.5 mt-3">
-              {ads.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSlide(i)}
-                  className={`h-1.5 rounded-full transition-all ${slide === i ? "w-6 bg-primary" : "w-1.5 bg-border"}`}
-                />
-              ))}
-            </div>
-          </div>
+        {/* Scrollable Instagram-style feed (only this scrolls) */}
+        <div className="flex-1 overflow-y-auto pb-[220px]" style={{ scrollbarWidth: "none" }}>
+          <div className="flex flex-col">
+            {feed.map((post) => {
+              const isLiked = !!liked[post.id];
+              const isSaved = !!saved[post.id];
+              return (
+                <article key={post.id} className="border-b border-border/60 pb-3 pt-4 animate-fade-in">
+                  {/* Author row */}
+                  <header className="flex items-center gap-3 px-5">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${post.avatarGrad} flex items-center justify-center text-white font-bold text-sm shadow-soft`}>
+                      {post.avatarInitial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-foreground truncate">{post.author}</span>
+                        {post.tag && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-accent-saffron bg-accent-saffron/10 px-1.5 py-0.5 rounded">
+                            Ad
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">{post.role} · {post.time}</div>
+                    </div>
+                    <button className="text-muted-foreground p-1"><MoreHorizontal className="w-5 h-5" /></button>
+                  </header>
 
-          {/* Community Post */}
-          <div className="px-5 mt-6">
-            <div className="bg-card border border-border rounded-2xl p-4 shadow-soft">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-success to-primary flex items-center justify-center text-white font-bold text-sm">
-                  M
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-foreground">{communityPost.author}</div>
-                  <div className="text-[11px] text-muted-foreground">{communityPost.role} · {communityPost.time}</div>
-                </div>
-              </div>
-              <p className="text-sm text-foreground mt-3 leading-relaxed">{communityPost.text}</p>
-              <div className="mt-3 h-32 rounded-xl bg-gradient-to-br from-accent-saffron/30 to-primary/20 flex items-center justify-center text-4xl">
-                🎉
-              </div>
-              <div className="flex items-center gap-5 mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
-                <button className="flex items-center gap-1.5 hover:text-destructive transition">
-                  <Heart className="w-4 h-4" /> 234
-                </button>
-                <button className="flex items-center gap-1.5 hover:text-primary transition">
-                  <MessageCircle className="w-4 h-4" /> 42
-                </button>
-                <button className="flex items-center gap-1.5 hover:text-primary transition ml-auto">
-                  <Share2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+                  {/* Media */}
+                  <div className={`mt-3 mx-5 h-72 rounded-2xl bg-gradient-to-br ${post.bg} relative overflow-hidden flex items-end p-4 shadow-card`}>
+                    <div className="absolute inset-0 flex items-center justify-center text-[140px] opacity-25 select-none">{post.emoji}</div>
+                    <div className="relative">
+                      <h3 className="text-white text-lg font-bold leading-tight drop-shadow">{post.title}</h3>
+                    </div>
+                  </div>
 
-          {/* 4-square quick access */}
-          <div className="px-5 mt-7">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-foreground">Quick Access</h2>
-              <button className="text-xs font-semibold text-primary flex items-center gap-0.5">
-                See all <ChevronRight className="w-3.5 h-3.5" />
+                  {/* Actions */}
+                  <div className="flex items-center gap-4 px-5 pt-3">
+                    <button
+                      onClick={() => setLiked((s) => ({ ...s, [post.id]: !s[post.id] }))}
+                      className="transition active:scale-90"
+                      aria-label="Like"
+                    >
+                      <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-foreground"}`} strokeWidth={2} />
+                    </button>
+                    <button aria-label="Comment"><MessageCircle className="w-6 h-6 text-foreground" strokeWidth={2} /></button>
+                    <button aria-label="Share"><Share2 className="w-6 h-6 text-foreground" strokeWidth={2} /></button>
+                    <button
+                      onClick={() => setSaved((s) => ({ ...s, [post.id]: !s[post.id] }))}
+                      className="ml-auto transition active:scale-90"
+                      aria-label="Save"
+                    >
+                      <Bookmark className={`w-6 h-6 ${isSaved ? "fill-foreground text-foreground" : "text-foreground"}`} strokeWidth={2} />
+                    </button>
+                  </div>
+
+                  {/* Meta */}
+                  <div className="px-5 mt-2">
+                    <div className="text-sm font-semibold text-foreground">
+                      {(post.likes + (isLiked ? 1 : 0)).toLocaleString()} likes
+                    </div>
+                    <p className="text-sm text-foreground mt-1 leading-relaxed">
+                      <span className="font-semibold mr-1.5">{post.author}</span>
+                      {post.body}
+                    </p>
+                    <button className="text-xs text-muted-foreground mt-1.5">View all {post.comments} comments</button>
+                  </div>
+                </article>
+              );
+            })}
+            <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
+          </div>
+        </div>
+
+        {/* Static 4-tile grid (above bottom nav) */}
+        <div className="absolute bottom-[76px] left-0 right-0 z-10 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3">
+          <div className="grid grid-cols-4 gap-2.5">
+            {quickTiles.map((t) => (
+              <button
+                key={t.id}
+                className={`relative rounded-2xl bg-gradient-to-br ${t.grad} border border-border/70 p-2.5 flex flex-col items-center gap-1.5 active:scale-95 transition shadow-soft`}
+              >
+                <div className={`w-10 h-10 rounded-xl ${t.iconBg} flex items-center justify-center`}>
+                  <t.icon className="w-5 h-5" strokeWidth={2.2} />
+                </div>
+                <span className="text-[10.5px] font-semibold text-foreground text-center leading-tight">
+                  {t.label}
+                </span>
               </button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {quickTiles.map((t) => (
-                <button
-                  key={t.id}
-                  className={`relative aspect-square rounded-2xl bg-gradient-to-br ${t.grad} border border-border p-4 flex flex-col justify-between text-left shadow-soft hover:shadow-card transition active:scale-[0.98]`}
-                >
-                  <div className={`w-12 h-12 rounded-2xl ${t.icon_bg} flex items-center justify-center`}>
-                    <t.icon className="w-6 h-6" strokeWidth={2.2} />
-                  </div>
-                  <div>
-                    <div className="font-bold text-foreground leading-tight">{t.label}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground absolute top-4 right-4" />
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Bottom nav */}
-        <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
           <div className="flex items-center justify-around">
             {[
               { id: "home", icon: Home, label: "Home" },
