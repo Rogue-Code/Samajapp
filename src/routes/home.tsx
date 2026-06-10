@@ -36,7 +36,7 @@ function HomePage() {
 
   return (
     <PhoneFrame>
-      <div className="relative flex flex-col min-h-screen md:min-h-[860px] bg-background">
+      <div className="relative flex flex-col h-full min-h-screen md:min-h-0 md:h-[860px] bg-background">
         {/* Sticky header with search */}
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3">
