@@ -168,7 +168,10 @@ function HomePage() {
               return (
                 <button
                   key={n.id}
-                  onClick={() => setTab(n.id)}
+                  onClick={() => {
+                    setTab(n.id);
+                    if (n.id === "facilities") navigate({ to: "/facilities" });
+                  }}
                   className="flex flex-col items-center gap-1 py-1 px-4 relative"
                 >
                   {active && <span className="absolute -top-2 w-8 h-1 rounded-full bg-primary" />}
