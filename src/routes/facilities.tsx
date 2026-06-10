@@ -194,7 +194,7 @@ export function BottomNav({ active }: { active: "home" | "facilities" | "fundrai
     { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
     { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
     { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/home" as const },
-    { id: "profile", icon: User, label: "Profile", to: "/home" as const },
+    { id: "profile", icon: User, label: "Profile", to: "/account" as const },
   ];
   return (
     <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
