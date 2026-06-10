@@ -14,6 +14,7 @@ import { Route as OtpRouteImport } from './routes/otp'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FacilitiesIdRouteImport } from './routes/facilities.$id'
 
@@ -42,6 +43,11 @@ const FacilitiesRoute = FacilitiesRouteImport.update({
   path: '/facilities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ const FacilitiesIdRoute = FacilitiesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/facilities'
     | '/family'
     | '/home'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/facilities'
     | '/family'
     | '/home'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/facilities'
     | '/family'
     | '/home'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   FacilitiesRoute: typeof FacilitiesRouteWithChildren
   FamilyRoute: typeof FamilyRoute
   HomeRoute: typeof HomeRoute
@@ -157,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FacilitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -188,6 +208,7 @@ const FacilitiesRouteWithChildren = FacilitiesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   FacilitiesRoute: FacilitiesRouteWithChildren,
   FamilyRoute: FamilyRoute,
   HomeRoute: HomeRoute,
