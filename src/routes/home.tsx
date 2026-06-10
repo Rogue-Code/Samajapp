@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Search, Bell, Home, Users, Briefcase, Calendar, User,
-  Heart, MessageCircle, Share2, HandCoins, Building2, LifeBuoy, Bookmark, MoreHorizontal,
+  Search, Bell, Home as HomeIcon, Building, HandHeart, User,
+  Calendar, MapPin, ChevronRight, Phone, ExternalLink, ArrowRight,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 
@@ -11,103 +11,36 @@ export const Route = createFileRoute("/home")({
   head: () => ({ meta: [{ title: "Home — Samaj Connect" }] }),
 });
 
-type Post = {
-  id: number;
-  author: string;
-  role: string;
-  time: string;
-  avatarGrad: string;
-  avatarInitial: string;
-  tag?: string;
-  title: string;
-  body: string;
-  emoji: string;
-  bg: string;
-  likes: number;
-  comments: number;
-};
-
-const feed: Post[] = [
-  {
-    id: 1,
-    author: "Patel Jewellers",
-    role: "Sponsored",
-    time: "Promoted",
-    avatarGrad: "from-accent-saffron to-destructive",
-    avatarInitial: "P",
-    tag: "Advertisement",
-    title: "Diwali Collection 2025",
-    body: "Up to 25% off on gold making charges. Visit our showroom this festive season.",
-    emoji: "💎",
-    bg: "from-accent-saffron via-destructive to-primary",
-    likes: 482,
-    comments: 36,
-  },
-  {
-    id: 2,
-    author: "Mahesh Bhai",
-    role: "President · Samaj",
-    time: "3h ago",
-    avatarGrad: "from-success to-primary",
-    avatarInitial: "M",
-    title: "Annual Gathering — Thank You!",
-    body: "Heartfelt thanks to all 500+ families who attended our annual gathering. Together we build a stronger samaj. 🙏",
-    emoji: "🎉",
-    bg: "from-primary via-accent-saffron to-warning",
-    likes: 234,
-    comments: 42,
-  },
-  {
-    id: 3,
-    author: "Shah Travels",
-    role: "Sponsored",
-    time: "Promoted",
-    avatarGrad: "from-primary to-success",
-    avatarInitial: "S",
-    tag: "Advertisement",
-    title: "Char Dham Yatra — 12 Days",
-    body: "Special community discount. All inclusive package with experienced guides and comfortable stay.",
-    emoji: "🛕",
-    bg: "from-success via-primary to-accent-saffron",
-    likes: 198,
-    comments: 21,
-  },
-  {
-    id: 4,
-    author: "Samaj Wedding Hall",
-    role: "Community Notice",
-    time: "1d ago",
-    avatarGrad: "from-warning to-accent-saffron",
-    avatarInitial: "W",
-    title: "Bookings open for 2026 season",
-    body: "Reserve your preferred dates early. Members get priority booking and 15% discount.",
-    emoji: "🎊",
-    bg: "from-warning via-accent-saffron to-destructive",
-    likes: 92,
-    comments: 14,
-  },
+const events = [
+  { id: 1, title: "Annual Samaj Gathering", date: "Sat, 15 Nov", location: "Community Hall, Ahmedabad", emoji: "🎊", bg: "from-primary via-accent-saffron to-warning" },
+  { id: 2, title: "Youth Sports Tournament", date: "Sun, 23 Nov", location: "Samaj Ground, Surat", emoji: "🏏", bg: "from-success via-primary to-accent-saffron" },
+  { id: 3, title: "Blood Donation Camp", date: "Mon, 1 Dec", location: "Samaj Hospital", emoji: "🩸", bg: "from-destructive via-accent-saffron to-warning" },
+  { id: 4, title: "Community Meeting", date: "Fri, 12 Dec", location: "Samaj Office", emoji: "🤝", bg: "from-warning via-accent-saffron to-destructive" },
 ];
 
-const quickTiles = [
-  { id: "fundraiser", icon: HandCoins, label: "Fundraiser", grad: "from-destructive/15 to-accent-saffron/10", iconBg: "bg-destructive/10 text-destructive" },
-  { id: "events", icon: Calendar, label: "Upcoming Events", grad: "from-primary/15 to-success/10", iconBg: "bg-primary/10 text-primary" },
-  { id: "facilities", icon: Building2, label: "Facilities", grad: "from-warning/15 to-accent-saffron/10", iconBg: "bg-warning/15 text-warning" },
-  { id: "support", icon: LifeBuoy, label: "Support", grad: "from-success/15 to-primary/10", iconBg: "bg-success/15 text-success" },
+const sponsored = [
+  { id: 1, name: "Patel Jewellers", desc: "Diwali collection — up to 25% off on gold making charges this festive season.", emoji: "💎", initial: "P", bg: "from-accent-saffron to-destructive", logoBg: "from-accent-saffron to-destructive" },
+  { id: 2, name: "Shah Travels", desc: "Char Dham Yatra — 12 day all-inclusive package with community discount.", emoji: "🛕", initial: "S", bg: "from-primary to-success", logoBg: "from-primary to-success" },
+  { id: 3, name: "Mehta Caterers", desc: "Authentic Gujarati thali for weddings, functions and events. Trusted since 1985.", emoji: "🍛", initial: "M", bg: "from-warning to-accent-saffron", logoBg: "from-warning to-accent-saffron" },
+];
+
+const news = [
+  { id: 1, title: "Scholarship Program 2026 Announced", desc: "Committee announces ₹25 lakh scholarship fund for meritorious students of the community.", date: "2 hours ago", emoji: "🎓", bg: "from-primary to-success" },
+  { id: 2, title: "Samaj Felicitates 10th Board Toppers", desc: "32 students felicitated at a special ceremony held at the community hall last Sunday.", date: "Yesterday", emoji: "🏆", bg: "from-warning to-accent-saffron" },
+  { id: 3, title: "New Community Hall Opens in Vadodara", desc: "State-of-the-art facility with 1,200 person capacity now open for bookings.", date: "3 days ago", emoji: "🏛️", bg: "from-success to-primary" },
 ];
 
 function HomePage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("home");
-  const [liked, setLiked] = useState<Record<number, boolean>>({});
-  const [saved, setSaved] = useState<Record<number, boolean>>({});
 
-  // Heights: header ~150px, tiles ~140px, bottom nav ~76px
   return (
     <PhoneFrame>
       <div className="relative flex flex-col min-h-screen md:min-h-[860px] bg-background">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-xl border-b border-border/50">
+        {/* Sticky header with search */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-3">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground">Good Morning 👋</div>
                 <div className="font-semibold text-foreground truncate">Ramesh Patel</div>
@@ -124,116 +57,111 @@ function HomePage() {
                 R
               </button>
             </div>
-            <div className="mt-3 flex items-center gap-2 h-11 px-4 bg-muted rounded-2xl">
-              <Search className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
+              <Search className="w-5 h-5 text-muted-foreground shrink-0" />
               <input
-                placeholder="Search people, events, news..."
+                placeholder="Search people, families, businesses, events..."
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
             </div>
           </div>
         </div>
 
-        {/* Scrollable Instagram-style feed (only this scrolls) */}
-        <div className="flex-1 overflow-y-auto pb-[220px]" style={{ scrollbarWidth: "none" }}>
-          <div className="flex flex-col">
-            {feed.map((post) => {
-              const isLiked = !!liked[post.id];
-              const isSaved = !!saved[post.id];
-              return (
-                <article key={post.id} className="border-b border-border/60 pb-3 pt-4 animate-fade-in">
-                  {/* Author row */}
-                  <header className="flex items-center gap-3 px-5">
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${post.avatarGrad} flex items-center justify-center text-white font-bold text-sm shadow-soft`}>
-                      {post.avatarInitial}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-semibold text-foreground truncate">{post.author}</span>
-                        {post.tag && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-accent-saffron bg-accent-saffron/10 px-1.5 py-0.5 rounded">
-                            Ad
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground truncate">{post.role} · {post.time}</div>
-                    </div>
-                    <button className="text-muted-foreground p-1"><MoreHorizontal className="w-5 h-5" /></button>
-                  </header>
-
-                  {/* Media */}
-                  <div className={`mt-3 mx-5 h-72 rounded-2xl bg-gradient-to-br ${post.bg} relative overflow-hidden flex items-end p-4 shadow-card`}>
-                    <div className="absolute inset-0 flex items-center justify-center text-[140px] opacity-25 select-none">{post.emoji}</div>
-                    <div className="relative">
-                      <h3 className="text-white text-lg font-bold leading-tight drop-shadow">{post.title}</h3>
-                    </div>
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
+          {/* Upcoming Events */}
+          <section className="pt-5">
+            <SectionHeader title="Upcoming Events" />
+            <div className="flex gap-3 overflow-x-auto px-5 pb-2 pt-3 snap-x snap-mandatory" style={{ scrollbarWidth: "none" }}>
+              {events.map((e) => (
+                <article key={e.id} className="snap-start shrink-0 w-[260px] rounded-2xl bg-card border border-border shadow-card overflow-hidden">
+                  <div className={`h-28 bg-gradient-to-br ${e.bg} relative flex items-center justify-center`}>
+                    <span className="text-5xl opacity-90">{e.emoji}</span>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-4 px-5 pt-3">
-                    <button
-                      onClick={() => setLiked((s) => ({ ...s, [post.id]: !s[post.id] }))}
-                      className="transition active:scale-90"
-                      aria-label="Like"
-                    >
-                      <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-foreground"}`} strokeWidth={2} />
-                    </button>
-                    <button aria-label="Comment"><MessageCircle className="w-6 h-6 text-foreground" strokeWidth={2} /></button>
-                    <button aria-label="Share"><Share2 className="w-6 h-6 text-foreground" strokeWidth={2} /></button>
-                    <button
-                      onClick={() => setSaved((s) => ({ ...s, [post.id]: !s[post.id] }))}
-                      className="ml-auto transition active:scale-90"
-                      aria-label="Save"
-                    >
-                      <Bookmark className={`w-6 h-6 ${isSaved ? "fill-foreground text-foreground" : "text-foreground"}`} strokeWidth={2} />
-                    </button>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="px-5 mt-2">
-                    <div className="text-sm font-semibold text-foreground">
-                      {(post.likes + (isLiked ? 1 : 0)).toLocaleString()} likes
+                  <div className="p-3">
+                    <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{e.title}</h3>
+                    <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Calendar className="w-3 h-3" /> {e.date}
                     </div>
-                    <p className="text-sm text-foreground mt-1 leading-relaxed">
-                      <span className="font-semibold mr-1.5">{post.author}</span>
-                      {post.body}
-                    </p>
-                    <button className="text-xs text-muted-foreground mt-1.5">View all {post.comments} comments</button>
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <MapPin className="w-3 h-3" /> <span className="truncate">{e.location}</span>
+                    </div>
+                    <button className="mt-2.5 w-full h-9 rounded-xl bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.98] transition">
+                      Register
+                    </button>
                   </div>
                 </article>
-              );
-            })}
+              ))}
+            </div>
+          </section>
+
+          {/* Sponsored */}
+          <section className="pt-5">
+            <SectionHeader title="Sponsored" />
+            <div className="px-5 pt-3 space-y-3">
+              {sponsored.map((s) => (
+                <article key={s.id} className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
+                  <div className="flex items-center gap-3 px-3.5 py-2.5 border-b border-border/60">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.logoBg} flex items-center justify-center text-white font-bold shadow-soft`}>
+                      {s.initial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{s.name}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-accent-saffron">Sponsored</div>
+                    </div>
+                  </div>
+                  <div className={`h-36 bg-gradient-to-br ${s.bg} flex items-center justify-center`}>
+                    <span className="text-6xl opacity-90">{s.emoji}</span>
+                  </div>
+                  <div className="p-3.5">
+                    <p className="text-sm text-foreground leading-relaxed">{s.desc}</p>
+                    <div className="mt-3 flex gap-2">
+                      <button className="flex-1 h-10 rounded-xl bg-muted text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition">
+                        <Phone className="w-3.5 h-3.5" /> Contact
+                      </button>
+                      <button className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition">
+                        <ExternalLink className="w-3.5 h-3.5" /> Visit Business
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {/* Latest News */}
+          <section className="pt-6">
+            <SectionHeader title="Latest News" />
+            <div className="px-5 pt-3 space-y-3">
+              {news.map((n) => (
+                <article key={n.id} className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex">
+                  <div className={`w-24 shrink-0 bg-gradient-to-br ${n.bg} flex items-center justify-center`}>
+                    <span className="text-4xl opacity-90">{n.emoji}</span>
+                  </div>
+                  <div className="flex-1 min-w-0 p-3">
+                    <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">{n.title}</h3>
+                    <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{n.desc}</p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground">{n.date}</span>
+                      <button className="text-[11px] font-semibold text-primary flex items-center gap-0.5">
+                        Read More <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
             <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
-          </div>
+          </section>
         </div>
 
-        {/* Static 4-tile grid (above bottom nav) */}
-        <div className="absolute bottom-[76px] left-0 right-0 z-10 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3">
-          <div className="grid grid-cols-4 gap-2.5">
-            {quickTiles.map((t) => (
-              <button
-                key={t.id}
-                className={`relative rounded-2xl bg-gradient-to-br ${t.grad} border border-border/70 p-2.5 flex flex-col items-center gap-1.5 active:scale-95 transition shadow-soft`}
-              >
-                <div className={`w-10 h-10 rounded-xl ${t.iconBg} flex items-center justify-center`}>
-                  <t.icon className="w-5 h-5" strokeWidth={2.2} />
-                </div>
-                <span className="text-[10.5px] font-semibold text-foreground text-center leading-tight">
-                  {t.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom nav */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
+        {/* Fixed Bottom Navigation */}
+        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
           <div className="flex items-center justify-around">
             {[
-              { id: "home", icon: Home, label: "Home" },
-              { id: "committee", icon: Users, label: "Committee" },
-              { id: "jobs", icon: Briefcase, label: "Jobs" },
-              { id: "events", icon: Calendar, label: "Events" },
+              { id: "home", icon: HomeIcon, label: "Home" },
+              { id: "facilities", icon: Building, label: "Facilities" },
+              { id: "fundraiser", icon: HandHeart, label: "Fundraiser" },
               { id: "profile", icon: User, label: "Profile" },
             ].map((n) => {
               const active = tab === n.id;
@@ -241,14 +169,14 @@ function HomePage() {
                 <button
                   key={n.id}
                   onClick={() => setTab(n.id)}
-                  className="flex flex-col items-center gap-1 py-1 px-3 relative"
+                  className="flex flex-col items-center gap-1 py-1 px-4 relative"
                 >
                   {active && <span className="absolute -top-2 w-8 h-1 rounded-full bg-primary" />}
                   <n.icon
                     className={`w-5 h-5 transition ${active ? "text-primary" : "text-muted-foreground"}`}
                     strokeWidth={active ? 2.5 : 2}
                   />
-                  <span className={`text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-[10.5px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
                     {n.label}
                   </span>
                 </button>
@@ -258,5 +186,16 @@ function HomePage() {
         </div>
       </div>
     </PhoneFrame>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="px-5 flex items-center justify-between">
+      <h2 className="text-base font-bold text-foreground">{title}</h2>
+      <button className="text-xs font-semibold text-primary flex items-center gap-0.5">
+        View All <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
