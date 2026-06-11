@@ -131,7 +131,7 @@ function HomePage() {
 
           {/* Latest News */}
           <section className="pt-6">
-            <SectionHeader title="Latest News" />
+            <SectionHeader title="Latest News" onViewAll={() => navigate({ to: "/news" })} />
             <div className="px-5 pt-3 space-y-3">
               {news.map((n) => (
                 <article key={n.id} className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex">
@@ -193,11 +193,11 @@ function HomePage() {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ title, onViewAll }: { title: string; onViewAll?: () => void }) {
   return (
     <div className="px-5 flex items-center justify-between">
       <h2 className="text-base font-bold text-foreground">{title}</h2>
-      <button className="text-xs font-semibold text-primary flex items-center gap-0.5">
+      <button onClick={onViewAll} className="text-xs font-semibold text-primary flex items-center gap-0.5">
         View All <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </div>
