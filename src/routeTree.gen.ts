@@ -13,6 +13,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OtpRouteImport } from './routes/otp'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as FundraiserRouteImport } from './routes/fundraiser'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
 import { Route as AccountRouteImport } from './routes/account'
@@ -37,6 +38,11 @@ const NewsRoute = NewsRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FundraiserRoute = FundraiserRouteImport.update({
+  id: '/fundraiser',
+  path: '/fundraiser',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FamilyRoute = FamilyRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   FacilitiesRoute: typeof FacilitiesRouteWithChildren
   FamilyRoute: typeof FamilyRoute
+  FundraiserRoute: typeof FundraiserRoute
   HomeRoute: typeof HomeRoute
   NewsRoute: typeof NewsRoute
   OtpRoute: typeof OtpRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fundraiser': {
+      id: '/fundraiser'
+      path: '/fundraiser'
+      fullPath: '/fundraiser'
+      preLoaderRoute: typeof FundraiserRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/family': {
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   FacilitiesRoute: FacilitiesRouteWithChildren,
   FamilyRoute: FamilyRoute,
+  FundraiserRoute: FundraiserRoute,
   HomeRoute: HomeRoute,
   NewsRoute: NewsRoute,
   OtpRoute: OtpRoute,
@@ -239,3 +260,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
