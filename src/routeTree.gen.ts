@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OtpRouteImport } from './routes/otp'
+import { Route as NewsRouteImport } from './routes/news'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
@@ -26,6 +27,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const OtpRoute = OtpRouteImport.update({
   id: '/otp',
   path: '/otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
+  '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/facilities/$id': typeof FacilitiesIdRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
+  '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/facilities/$id': typeof FacilitiesIdRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
   '/home': typeof HomeRoute
+  '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/facilities/$id': typeof FacilitiesIdRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/family'
     | '/home'
+    | '/news'
     | '/otp'
     | '/profile'
     | '/facilities/$id'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/family'
     | '/home'
+    | '/news'
     | '/otp'
     | '/profile'
     | '/facilities/$id'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/family'
     | '/home'
+    | '/news'
     | '/otp'
     | '/profile'
     | '/facilities/$id'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   FacilitiesRoute: typeof FacilitiesRouteWithChildren
   FamilyRoute: typeof FamilyRoute
   HomeRoute: typeof HomeRoute
+  NewsRoute: typeof NewsRoute
   OtpRoute: typeof OtpRoute
   ProfileRoute: typeof ProfileRoute
 }
@@ -147,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/otp'
       fullPath: '/otp'
       preLoaderRoute: typeof OtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -212,6 +232,7 @@ const rootRouteChildren: RootRouteChildren = {
   FacilitiesRoute: FacilitiesRouteWithChildren,
   FamilyRoute: FamilyRoute,
   HomeRoute: HomeRoute,
+  NewsRoute: NewsRoute,
   OtpRoute: OtpRoute,
   ProfileRoute: ProfileRoute,
 }
