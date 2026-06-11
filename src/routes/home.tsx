@@ -171,6 +171,7 @@ function HomePage() {
                   onClick={() => {
                     setTab(n.id);
                     if (n.id === "facilities") navigate({ to: "/facilities" });
+                    if (n.id === "fundraiser") navigate({ to: "/fundraiser" });
                     if (n.id === "profile") navigate({ to: "/account" });
                   }}
                   className="flex flex-col items-center gap-1 py-1 px-4 relative"
