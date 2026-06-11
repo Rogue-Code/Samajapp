@@ -13,6 +13,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OtpRouteImport } from './routes/otp'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as NewsRouteImport } from './routes/news'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
 import { Route as AccountRouteImport } from './routes/account'
@@ -37,6 +38,11 @@ const NewsRoute = NewsRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FamilyRoute = FamilyRouteImport.update({
