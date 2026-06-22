@@ -33,6 +33,17 @@ const news = [
 function HomePage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("home");
+  const [adIndex, setAdIndex] = useState(0);
+
+  const nextAd = useCallback(() => setAdIndex((i) => (i + 1) % sponsored.length), []);
+  const prevAd = useCallback(() => setAdIndex((i) => (i - 1 + sponsored.length) % sponsored.length), []);
+
+  useEffect(() => {
+    const t = setInterval(nextAd, 10000);
+    return () => clearInterval(t);
+  }, [nextAd, adIndex]);
+
+  const ad = sponsored[adIndex];
 
   return (
     <PhoneFrame>
