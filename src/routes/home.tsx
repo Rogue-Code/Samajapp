@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search, Bell, Home as HomeIcon, Building, HandHeart, User,
-  Calendar, MapPin, ChevronRight, Phone, ExternalLink, ArrowRight,
+  Calendar, MapPin, ChevronRight, ArrowRight, ChevronLeft,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 
