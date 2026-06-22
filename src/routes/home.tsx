@@ -106,37 +106,57 @@ function HomePage() {
             </div>
           </section>
 
-          {/* Sponsored */}
-          <section className="pt-5">
+          {/* Sponsored Banner Carousel */}
+          <section className="pt-6">
             <SectionHeader title="Sponsored" />
-            <div className="px-5 pt-3 space-y-3">
-              {sponsored.map((s) => (
-                <article key={s.id} className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
-                  <div className="flex items-center gap-3 px-3.5 py-2.5 border-b border-border/60">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.logoBg} flex items-center justify-center text-white font-bold shadow-soft`}>
-                      {s.initial}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground truncate">{s.name}</div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-accent-saffron">Sponsored</div>
-                    </div>
+            <div className="px-5 pt-3">
+              <article
+                onClick={() => navigate({ to: "/facilities/$id", params: { id: String(ad.id) } })}
+                className="relative rounded-3xl overflow-hidden shadow-card border border-border bg-card cursor-pointer active:scale-[0.99] transition"
+              >
+                <div className={`relative h-[240px] bg-gradient-to-br ${ad.bg} flex items-center justify-center`}>
+                  <span className="text-8xl opacity-90 drop-shadow-lg">{ad.emoji}</span>
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider">
+                    Sponsored
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); prevAd(); }}
+                    aria-label="Previous"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-foreground" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); nextAd(); }}
+                    aria-label="Next"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
+                  >
+                    <ChevronRight className="w-5 h-5 text-foreground" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 p-3.5">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-foreground truncate">{ad.name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{ad.desc}</div>
                   </div>
-                  <div className={`h-36 bg-gradient-to-br ${s.bg} flex items-center justify-center`}>
-                    <span className="text-6xl opacity-90">{s.emoji}</span>
-                  </div>
-                  <div className="p-3.5">
-                    <p className="text-sm text-foreground leading-relaxed">{s.desc}</p>
-                    <div className="mt-3 flex gap-2">
-                      <button className="flex-1 h-10 rounded-xl bg-muted text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition">
-                        <Phone className="w-3.5 h-3.5" /> Contact
-                      </button>
-                      <button className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition">
-                        <ExternalLink className="w-3.5 h-3.5" /> Visit Business
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate({ to: "/facilities/$id", params: { id: String(ad.id) } }); }}
+                    className="shrink-0 h-9 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.98] transition"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </article>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                {sponsored.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setAdIndex(i)}
+                    aria-label={`Go to slide ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${i === adIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
+                  />
+                ))}
+              </div>
             </div>
           </section>
 
