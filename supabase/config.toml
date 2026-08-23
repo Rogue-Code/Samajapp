@@ -2,7 +2,14 @@ project_id = "meafejswzmogeqocgici"
 
 [auth]
 site_url = "http://localhost:8080"
-additional_redirect_urls = ["http://localhost:8080"]
+# Password-reset links must land somewhere the client can actually open:
+# the dev server, the LAN address used when testing from a phone browser,
+# and the origin a Capacitor Android build serves itself from.
+additional_redirect_urls = [
+  "http://localhost:8080",
+  "http://192.168.1.15:8080",
+  "https://localhost",
+]
 
 [auth.email]
 enable_signup = true
