@@ -5,6 +5,7 @@ import {
   Calendar, MapPin, ChevronRight, ArrowRight, ChevronLeft,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/home")({
   component: HomePage,
