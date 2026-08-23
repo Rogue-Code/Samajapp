@@ -402,6 +402,10 @@ export type Database = {
     }
     Functions: {
       current_role_is: { Args: { required: string[] }; Returns: boolean }
+      set_member_role: {
+        Args: { new_role: string; target_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

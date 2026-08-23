@@ -147,7 +147,7 @@ function FamilyPage() {
 
   return (
     <PhoneFrame>
-      <div className="flex flex-col min-h-screen md:min-h-[860px]">
+      <div className="relative flex flex-col h-full min-h-screen md:min-h-0 md:h-[860px]">
         <div className="px-6 pt-8 pb-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 border-b border-border/50">
           <div className="flex items-center justify-between">
             <button
@@ -163,7 +163,7 @@ function FamilyPage() {
           </div>
         </div>
 
-        <div className="flex-1 px-6 py-6 pb-32 fade-up">
+        <div className="flex-1 overflow-y-auto px-6 py-6 pb-32 fade-up" style={{ scrollbarWidth: "none" }}>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Family Members</h1>
           <p className="text-sm text-muted-foreground mt-1">Verify and manage your family connections.</p>
 
@@ -314,7 +314,7 @@ function AddMemberSheet({
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-end">
+    <div className="fixed md:absolute inset-0 z-40 flex items-end">
       <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className="relative w-full bg-card rounded-t-3xl border-t border-border p-6 pb-8 fade-up">
         <div className="flex items-center justify-between mb-5">

@@ -7,6 +7,7 @@ import {
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { BottomNav } from "@/routes/facilities";
@@ -31,16 +32,28 @@ const emptyForm = {
 function AccountPage() {
   const navigate = useNavigate();
   const { checking, session } = useRequireAuth();
+  const { canPublish, role } = useProfileRole(session);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyForm);
+  const [family, setFamily] = useState<{ total: number; verified: number }>({ total: 0, verified: 0 });
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
     (async () => {
+      const { data: members } = await supabase
+        .from("family_members")
+        .select("status")
+        .eq("owner_id", session.user.id);
+      if (!cancelled && members) {
+        setFamily({
+          total: members.length,
+          verified: members.filter((m) => m.status === "verified").length,
+        });
+      }
       const { data } = await supabase
         .from("profiles")
         .select("full_name, mobile, village, city, state, occupation, dob, marital_status, is_family_admin")
@@ -194,25 +207,50 @@ function AccountPage() {
 
           {/* Family Information */}
           <SectionCard title="Family Information">
-            <Row icon={<User className="w-4 h-4" />} label="Family Head" value="Suresh Patel" />
-            <Row icon={<Users className="w-4 h-4" />} label="Family Members" value="5 members" />
+            <Row
+              icon={<Users className="w-4 h-4" />}
+              label="Family Members"
+              value={family.total === 0 ? "None added yet" : `${family.total} member${family.total === 1 ? "" : "s"}`}
+            />
             <Row
               icon={<BadgeCheck className="w-4 h-4" />}
-              label="Verification Status"
+              label="Verified"
               value={
-                <span className="inline-flex items-center gap-1 text-success font-semibold">
-                  <BadgeCheck className="w-3.5 h-3.5" /> Verified
-                </span>
+                family.total === 0 ? (
+                  "—"
+                ) : (
+                  <span className={family.verified === family.total ? "text-success font-semibold" : "font-semibold"}>
+                    {family.verified} of {family.total}
+                  </span>
+                )
               }
             />
             <button
               onClick={() => navigate({ to: "/family" })}
               className="mt-2 w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
             >
-              <Users className="w-4 h-4" /> View Family Members
+              <Users className="w-4 h-4" /> Manage Family Members
               <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
             </button>
           </SectionCard>
+
+          {/* Admin */}
+          {canPublish && (
+            <SectionCard title="Community Management">
+              <Row
+                icon={<ShieldCheck className="w-4 h-4" />}
+                label="Your role"
+                value={<span className="capitalize font-semibold text-primary">{role}</span>}
+              />
+              <button
+                onClick={() => navigate({ to: "/admin" })}
+                className="mt-2 w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+              >
+                <ShieldCheck className="w-4 h-4" /> Open Admin Console
+                <ChevronRight className="w-4 h-4 ml-auto" />
+              </button>
+            </SectionCard>
+          )}
 
           {/* Update */}
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
