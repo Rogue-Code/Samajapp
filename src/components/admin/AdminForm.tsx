@@ -1,7 +1,7 @@
 import { X, Loader2 } from "lucide-react";
 
 export function AdminField({
-  label, value, onChange, placeholder, type = "text", textarea = false,
+  label, value, onChange, placeholder, type = "text", textarea = false, hint, required = false,
 }: {
   label: string;
   value: string;
@@ -9,12 +9,23 @@ export function AdminField({
   placeholder?: string;
   type?: string;
   textarea?: boolean;
+  /** Explains what belongs in the field and where members will see it. */
+  hint?: string;
+  required?: boolean;
 }) {
   const className =
     "w-full bg-background border border-border rounded-xl px-3 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all";
   return (
     <div>
-      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-0.5">{label}</label>
+      <label className="text-xs font-semibold text-muted-foreground mb-1 block px-0.5">
+        {label}
+        {required ? (
+          <span className="text-destructive"> *</span>
+        ) : (
+          <span className="font-normal opacity-70"> · optional</span>
+        )}
+      </label>
+      {hint && <p className="text-[11px] text-muted-foreground/80 mb-1.5 px-0.5 leading-snug">{hint}</p>}
       {textarea ? (
         <textarea
           value={value}
@@ -37,23 +48,27 @@ export function AdminField({
 }
 
 export function AdminSelect({
-  label, value, onChange, options,
+  label, value, onChange, options, hint, optionLabel,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: readonly string[];
+  hint?: string;
+  /** Display text for an option, e.g. to render "" as "None". */
+  optionLabel?: (value: string) => string;
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-0.5">{label}</label>
+      <label className="text-xs font-semibold text-muted-foreground mb-1 block px-0.5">{label}</label>
+      {hint && <p className="text-[11px] text-muted-foreground/80 mb-1.5 px-0.5 leading-snug">{hint}</p>}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-background border border-border rounded-xl px-3 h-11 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
       >
         {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
+          <option key={o} value={o}>{optionLabel ? optionLabel(o) : o}</option>
         ))}
       </select>
     </div>

@@ -22,7 +22,10 @@ type Tab = "facilities" | "events" | "sponsors" | "members";
 
 type FacilityRow = {
   id: string; name: string; category: string; city: string; state: string;
-  address: string; description: string | null; phone: string | null; verified: boolean;
+  address: string; description: string | null; long_description: string | null;
+  phone: string | null; email: string | null; website: string | null;
+  head: string | null; established: number | null; capacity: string | null;
+  timings: string | null; verified: boolean;
 };
 type EventRow = {
   id: string; title: string; starts_at: string; location: string | null; emoji: string;
@@ -73,7 +76,7 @@ function AdminPage() {
   const load = useCallback(async () => {
     if (!session) return;
     const [f, e, s, m] = await Promise.all([
-      supabase.from("facilities").select("id, name, category, city, state, address, description, phone, verified").order("name"),
+      supabase.from("facilities").select("*").order("name"),
       supabase.from("events").select("id, title, starts_at, location, emoji").order("starts_at"),
       supabase.from("sponsors").select("id, name, description, emoji, facility_id, link_url, active, sort_order").order("sort_order"),
       supabase.from("profiles").select("id, full_name, village, role").order("full_name"),
@@ -114,7 +117,14 @@ function AdminPage() {
       state: editFacility.state ?? "",
       address: editFacility.address,
       description: editFacility.description || null,
+      long_description: editFacility.long_description || null,
       phone: editFacility.phone || null,
+      email: editFacility.email || null,
+      website: editFacility.website || null,
+      head: editFacility.head || null,
+      established: editFacility.established ? Number(editFacility.established) : null,
+      capacity: editFacility.capacity || null,
+      timings: editFacility.timings || null,
       verified: editFacility.verified ?? false,
     };
     const ok = await run(() => supabase.from("facilities").upsert(payload));
@@ -252,7 +262,12 @@ function AdminPage() {
                   onDelete={() => void run(() => supabase.from("facilities").delete().eq("id", f.id))}
                 />
               ))}
-              {facilities.length === 0 && <EmptyNote text="No facilities listed yet." />}
+              {facilities.length === 0 && (
+                <EmptyNote
+                  title="No facilities listed yet"
+                  text="Add the community's schools, hospitals, hostels, banks and halls here. Each one gets its own page with contact details and directions."
+                />
+              )}
             </>
           )}
 
@@ -268,7 +283,12 @@ function AdminPage() {
                   onDelete={() => void run(() => supabase.from("events").delete().eq("id", e.id))}
                 />
               ))}
-              {events.length === 0 && <EmptyNote text="No events scheduled." />}
+              {events.length === 0 && (
+                <EmptyNote
+                  title="No events scheduled"
+                  text="Add gatherings, camps and meetings. They show on the Home dashboard with a Register button until the date passes."
+                />
+              )}
             </>
           )}
 
@@ -285,7 +305,12 @@ function AdminPage() {
                   onDelete={() => void run(() => supabase.from("sponsors").delete().eq("id", s.id))}
                 />
               ))}
-              {sponsors.length === 0 && <EmptyNote text="No sponsors configured." />}
+              {sponsors.length === 0 && (
+                <EmptyNote
+                  title="No sponsors configured"
+                  text="Add local businesses or partners to feature in the Home banner. The section stays hidden while this is empty."
+                />
+              )}
             </>
           )}
 
@@ -345,21 +370,126 @@ function AdminPage() {
             saving={saving}
             canSave={!!editFacility.name && !!editFacility.address}
           >
-            <AdminField label="Name" value={editFacility.name ?? ""} onChange={(v) => setEditFacility({ ...editFacility, name: v })} placeholder="Samaj Community Hall" />
-            <AdminSelect label="Category" value={editFacility.category ?? FACILITY_CATEGORIES[0]} onChange={(v) => setEditFacility({ ...editFacility, category: v })} options={FACILITY_CATEGORIES} />
-            <AdminField label="City" value={editFacility.city ?? ""} onChange={(v) => setEditFacility({ ...editFacility, city: v })} placeholder="Anand" />
-            <AdminField label="State" value={editFacility.state ?? ""} onChange={(v) => setEditFacility({ ...editFacility, state: v })} placeholder="Gujarat" />
-            <AdminField label="Address" value={editFacility.address ?? ""} onChange={(v) => setEditFacility({ ...editFacility, address: v })} textarea placeholder="Full postal address" />
-            <AdminField label="Description" value={editFacility.description ?? ""} onChange={(v) => setEditFacility({ ...editFacility, description: v })} textarea placeholder="Short summary shown in the list" />
-            <AdminField label="Phone" value={editFacility.phone ?? ""} onChange={(v) => setEditFacility({ ...editFacility, phone: v })} placeholder="+91 ..." />
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted">
+            <FormNote text="Fields marked * are required. Everything else can be filled in later — empty fields are simply hidden from members rather than shown blank." />
+
+            <AdminField
+              required
+              label="Name"
+              value={editFacility.name ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, name: v })}
+              placeholder="e.g. Samaj Community Hall"
+              hint="Official name of the facility, as members would recognise it."
+            />
+            <AdminSelect
+              label="Category"
+              value={editFacility.category ?? FACILITY_CATEGORIES[0]}
+              onChange={(v) => setEditFacility({ ...editFacility, category: v })}
+              options={FACILITY_CATEGORIES}
+              hint="Decides the icon and colour, and lets members filter the directory."
+            />
+            <AdminField
+              required
+              label="City"
+              value={editFacility.city ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, city: v })}
+              placeholder="e.g. Anand"
+              hint="Shown on the listing card and used by the city filter."
+            />
+            <AdminField
+              required
+              label="State"
+              value={editFacility.state ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, state: v })}
+              placeholder="e.g. Gujarat"
+            />
+            <AdminField
+              required
+              label="Address"
+              value={editFacility.address ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, address: v })}
+              textarea
+              placeholder="e.g. Station Road, Near Town Hall, Anand, Gujarat 388001"
+              hint="Full postal address. This is what the Directions button sends to Google Maps, so keep it accurate."
+            />
+            <AdminField
+              label="Short description"
+              value={editFacility.description ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, description: v })}
+              textarea
+              placeholder="e.g. Providing quality English medium education since 1995."
+              hint="One line shown under the name in the directory list. Aim for under 100 characters."
+            />
+            <AdminField
+              label="Full description"
+              value={editFacility.long_description ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, long_description: v })}
+              textarea
+              placeholder="Services offered, who it serves, any member benefits..."
+              hint="The longer 'About' section on the facility's own page."
+            />
+            <AdminField
+              label="Phone"
+              value={editFacility.phone ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, phone: v })}
+              placeholder="e.g. +91 2692 245 678"
+              hint="Powers the Call button. Leave blank if there is no public number."
+            />
+            <AdminField
+              label="Email"
+              type="email"
+              value={editFacility.email ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, email: v })}
+              placeholder="e.g. info@example.org"
+            />
+            <AdminField
+              label="Website"
+              value={editFacility.website ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, website: v })}
+              placeholder="e.g. example.org"
+              hint="Domain only, without https://"
+            />
+            <AdminField
+              label="Head / in charge"
+              value={editFacility.head ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, head: v })}
+              placeholder="e.g. Dr. Rakesh Patel (Principal)"
+              hint="Name and role of the person responsible. Also searchable."
+            />
+            <AdminField
+              label="Established"
+              type="number"
+              value={editFacility.established ? String(editFacility.established) : ""}
+              onChange={(v) => setEditFacility({ ...editFacility, established: v ? Number(v) : null })}
+              placeholder="e.g. 1995"
+              hint="Year only."
+            />
+            <AdminField
+              label="Capacity"
+              value={editFacility.capacity ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, capacity: v })}
+              placeholder="e.g. 150 beds / 2,400 students / 18 branches"
+              hint="Free text — use whatever unit suits this kind of facility."
+            />
+            <AdminField
+              label="Timings"
+              value={editFacility.timings ?? ""}
+              onChange={(v) => setEditFacility({ ...editFacility, timings: v })}
+              placeholder="e.g. Mon–Sat, 10 AM – 5 PM"
+            />
+            <label className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted">
               <input
                 type="checkbox"
                 checked={editFacility.verified ?? false}
                 onChange={(e) => setEditFacility({ ...editFacility, verified: e.target.checked })}
-                className="w-4 h-4 accent-primary"
+                className="w-4 h-4 accent-primary mt-0.5"
               />
-              <span className="text-sm font-medium text-foreground">Verified by the community</span>
+              <span className="text-sm font-medium text-foreground">
+                Verified by the community
+                <span className="block text-[11px] font-normal text-muted-foreground mt-0.5">
+                  Only tick this once someone has confirmed the details are correct — members
+                  rely on this badge.
+                </span>
+              </span>
             </label>
           </AdminSheet>
         )}
@@ -372,15 +502,37 @@ function AdminPage() {
             saving={saving}
             canSave={!!editEvent.title && !!editEvent.starts_at}
           >
-            <AdminField label="Title" value={editEvent.title ?? ""} onChange={(v) => setEditEvent({ ...editEvent, title: v })} placeholder="Annual Samaj Gathering" />
+            <FormNote text="Events appear on the Home dashboard, where members can tap Register to RSVP. Only future events are shown." />
+
             <AdminField
+              required
+              label="Title"
+              value={editEvent.title ?? ""}
+              onChange={(v) => setEditEvent({ ...editEvent, title: v })}
+              placeholder="e.g. Annual Samaj Gathering"
+            />
+            <AdminField
+              required
               label="Date & time"
               type="datetime-local"
               value={editEvent.starts_at ? toLocalInput(editEvent.starts_at) : ""}
               onChange={(v) => setEditEvent({ ...editEvent, starts_at: v })}
+              hint="When the event starts. Once this passes, it drops off the Home dashboard automatically."
             />
-            <AdminField label="Location" value={editEvent.location ?? ""} onChange={(v) => setEditEvent({ ...editEvent, location: v })} placeholder="Community Hall, Ahmedabad" />
-            <AdminField label="Emoji" value={editEvent.emoji ?? ""} onChange={(v) => setEditEvent({ ...editEvent, emoji: v })} placeholder="🎊" />
+            <AdminField
+              label="Location"
+              value={editEvent.location ?? ""}
+              onChange={(v) => setEditEvent({ ...editEvent, location: v })}
+              placeholder="e.g. Community Hall, Ahmedabad"
+              hint="Venue name and city, shown under the date."
+            />
+            <AdminField
+              label="Emoji"
+              value={editEvent.emoji ?? ""}
+              onChange={(v) => setEditEvent({ ...editEvent, emoji: v })}
+              placeholder="🎊"
+              hint="A single emoji used as the event's artwork. Defaults to 📅."
+            />
           </AdminSheet>
         )}
 
@@ -392,25 +544,70 @@ function AdminPage() {
             saving={saving}
             canSave={!!editSponsor.name}
           >
-            <AdminField label="Name" value={editSponsor.name ?? ""} onChange={(v) => setEditSponsor({ ...editSponsor, name: v })} placeholder="Patel Jewellers" />
-            <AdminField label="Description" value={editSponsor.description ?? ""} onChange={(v) => setEditSponsor({ ...editSponsor, description: v })} textarea placeholder="Short line shown under the banner" />
-            <AdminField label="Emoji" value={editSponsor.emoji ?? ""} onChange={(v) => setEditSponsor({ ...editSponsor, emoji: v })} placeholder="💎" />
+            <FormNote text="Sponsors rotate in the banner carousel on the Home dashboard. Members see a 'Sponsored' label on each one." />
+
+            <AdminField
+              required
+              label="Name"
+              value={editSponsor.name ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, name: v })}
+              placeholder="e.g. Patel Jewellers"
+              hint="Business or organisation being promoted."
+            />
+            <AdminField
+              label="Description"
+              value={editSponsor.description ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, description: v })}
+              textarea
+              placeholder="e.g. Diwali collection — 25% off making charges."
+              hint="One line under the banner. Keep it short; it truncates."
+            />
+            <AdminField
+              label="Emoji"
+              value={editSponsor.emoji ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, emoji: v })}
+              placeholder="💎"
+              hint="A single emoji used as the banner artwork. Defaults to 🏢."
+            />
             <AdminSelect
-              label="Links to facility (optional)"
+              label="Link to a facility"
               value={editSponsor.facility_id ?? ""}
               onChange={(v) => setEditSponsor({ ...editSponsor, facility_id: v || null })}
               options={["", ...facilities.map((f) => f.id)]}
+              optionLabel={(v) => facilities.find((f) => f.id === v)?.name ?? "None"}
+              hint={
+                facilities.length === 0
+                  ? "No facilities exist yet — add one first, or use an external link below."
+                  : "Sends members to that facility's page when they tap the banner."
+              }
             />
-            <AdminField label="External link (optional)" value={editSponsor.link_url ?? ""} onChange={(v) => setEditSponsor({ ...editSponsor, link_url: v })} placeholder="https://..." />
-            <AdminField label="Sort order" type="number" value={String(editSponsor.sort_order ?? 0)} onChange={(v) => setEditSponsor({ ...editSponsor, sort_order: Number(v) })} />
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted">
+            <AdminField
+              label="External link"
+              value={editSponsor.link_url ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, link_url: v })}
+              placeholder="https://example.com"
+              hint="Used only when no facility is linked above. Opens in a new tab."
+            />
+            <AdminField
+              label="Sort order"
+              type="number"
+              value={String(editSponsor.sort_order ?? 0)}
+              onChange={(v) => setEditSponsor({ ...editSponsor, sort_order: Number(v) })}
+              hint="Lower numbers appear first in the carousel."
+            />
+            <label className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted">
               <input
                 type="checkbox"
                 checked={editSponsor.active ?? true}
                 onChange={(e) => setEditSponsor({ ...editSponsor, active: e.target.checked })}
-                className="w-4 h-4 accent-primary"
+                className="w-4 h-4 accent-primary mt-0.5"
               />
-              <span className="text-sm font-medium text-foreground">Show on Home</span>
+              <span className="text-sm font-medium text-foreground">
+                Show on Home
+                <span className="block text-[11px] font-normal text-muted-foreground mt-0.5">
+                  Untick to hide without deleting — useful when a sponsorship period ends.
+                </span>
+              </span>
             </label>
           </AdminSheet>
         )}
@@ -430,8 +627,21 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
-function EmptyNote({ text }: { text: string }) {
-  return <p className="text-center text-sm text-muted-foreground py-8">{text}</p>;
+function FormNote({ text }: { text: string }) {
+  return (
+    <p className="text-[11.5px] text-muted-foreground bg-muted/60 rounded-xl px-3 py-2.5 leading-relaxed">
+      {text}
+    </p>
+  );
+}
+
+function EmptyNote({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="text-center py-10 px-6 rounded-2xl border-2 border-dashed border-border">
+      <p className="font-semibold text-foreground text-sm">{title}</p>
+      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{text}</p>
+    </div>
+  );
 }
 
 function RowCard({
