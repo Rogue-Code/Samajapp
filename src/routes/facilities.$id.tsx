@@ -4,6 +4,8 @@ import {
   Navigation, Calendar, Users, Clock, UserCircle2, ExternalLink,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { getFacility } from "@/lib/facilities-data";
 
 export const Route = createFileRoute("/facilities/$id")({
@@ -30,8 +32,10 @@ function NotFound() {
 function FacilityDetailPage() {
   const { id } = useParams({ from: "/facilities/$id" });
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const f = getFacility(id);
 
+  if (checking) return <LoadingScreen />;
   if (!f) return <NotFound />;
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;

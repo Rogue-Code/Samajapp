@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Camera, User, MapPin, Briefcase, Heart, Calendar, Check } from "lucide-react";
+import { ArrowLeft, Camera, User, MapPin, Briefcase, Heart, Calendar, Check, Loader2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -30,14 +34,43 @@ function Field({
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const { checking, session } = useRequireAuth();
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
   const [occupation, setOccupation] = useState("");
   const [marital, setMarital] = useState("Single");
   const [dob, setDob] = useState("");
   const [admin, setAdmin] = useState<"yes" | "no" | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const canSubmit = name && village && occupation && dob && admin;
+
+  const handleSave = async () => {
+    if (!canSubmit || saving || !session) return;
+    setError("");
+    setSaving(true);
+    const { error: saveError } = await supabase
+      .from("profiles")
+      .update({
+        full_name: name,
+        village,
+        occupation,
+        dob,
+        marital_status: marital,
+        is_family_admin: admin === "yes",
+        profile_completed: true,
+      })
+      .eq("id", session.user.id);
+    setSaving(false);
+    if (saveError) {
+      setError(friendlyAuthError(saveError.message));
+      return;
+    }
+    navigate({ to: "/home" });
+  };
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>
@@ -121,12 +154,19 @@ function ProfilePage() {
         </div>
 
         <div className="sticky bottom-0 px-6 py-4 bg-background/90 backdrop-blur-xl border-t border-border/50">
+          {error && <p className="text-sm text-destructive mb-3">{error}</p>}
           <button
-            onClick={() => canSubmit && navigate({ to: "/family" })}
-            disabled={!canSubmit}
-            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98]"
+            onClick={() => void handleSave()}
+            disabled={!canSubmit || saving}
+            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            Save & Continue
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+              </>
+            ) : (
+              "Save & Continue"
+            )}
           </button>
         </div>
       </div>

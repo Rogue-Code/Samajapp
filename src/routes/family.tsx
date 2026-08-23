@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Plus, CheckCircle2, Clock, AlertCircle, ChevronDown, UserPlus } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export const Route = createFileRoute("/family")({
   component: FamilyPage,
@@ -27,7 +29,10 @@ const statusMap = {
 
 function FamilyPage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [expanded, setExpanded] = useState<number | null>(1);
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>

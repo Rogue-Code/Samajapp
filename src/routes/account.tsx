@@ -5,6 +5,8 @@ import {
   Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, Mail as MailIcon,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { BottomNav } from "@/routes/facilities";
 
 export const Route = createFileRoute("/account")({
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
     name: "Ramesh Patel",
@@ -35,6 +38,8 @@ function AccountPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   };
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>

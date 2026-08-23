@@ -6,6 +6,8 @@ import {
   Plus, X, QrCode, Smartphone, ChevronRight, Sparkles, Building2,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export const Route = createFileRoute("/fundraiser")({
   component: FundraiserPage,
@@ -81,6 +83,7 @@ function shortINR(n: number) {
 
 function FundraiserPage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [amount, setAmount] = useState<number | "">("");
   const [showPay, setShowPay] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -103,6 +106,8 @@ function FundraiserPage() {
     const text = `${BANK.accountName}\n${BANK.bankName}\nA/C: ${BANK.accountNumber}\nIFSC: ${BANK.ifsc}\nBranch: ${BANK.branch}`;
     copy("bank", text);
   };
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>

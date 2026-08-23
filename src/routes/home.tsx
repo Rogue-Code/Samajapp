@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export const Route = createFileRoute("/home")({
   component: HomePage,
@@ -33,6 +35,7 @@ const news = [
 
 function HomePage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [tab, setTab] = useState("home");
   const [adIndex, setAdIndex] = useState(0);
 
@@ -45,6 +48,8 @@ function HomePage() {
   }, [nextAd, adIndex]);
 
   const ad = sponsored[adIndex];
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>

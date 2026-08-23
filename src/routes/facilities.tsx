@@ -5,6 +5,8 @@ import {
   ChevronDown, BadgeCheck, SlidersHorizontal, Home as HomeIcon, Building, HandHeart, User,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { facilities, states, categories, cities } from "@/lib/facilities-data";
 
 export const Route = createFileRoute("/facilities")({
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/facilities")({
 
 function FacilitiesPage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [q, setQ] = useState("");
   const [state, setState] = useState("All States");
   const [category, setCategory] = useState<string>("All Categories");
@@ -39,6 +42,8 @@ function FacilitiesPage() {
       return true;
     });
   }, [q, state, category, city, verifiedOnly]);
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>

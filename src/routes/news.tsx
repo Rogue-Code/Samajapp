@@ -7,6 +7,8 @@ import {
   AlertTriangle, BookOpen, Flower2, Newspaper,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export const Route = createFileRoute("/news")({
   component: NewsPage,
@@ -89,6 +91,7 @@ const FILTERS = ["All", "Announcement", "Event", "Education", "Scholarship", "Ac
 
 function NewsPage() {
   const navigate = useNavigate();
+  const { checking } = useRequireAuth();
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
@@ -149,6 +152,8 @@ function NewsPage() {
     ]);
     setShowCreate(false);
   };
+
+  if (checking) return <LoadingScreen />;
 
   return (
     <PhoneFrame>
