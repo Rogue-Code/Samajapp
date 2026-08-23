@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft, Camera, BadgeCheck, User, Phone, Mail, MapPin, Building2,
   Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, Mail as MailIcon,
@@ -7,6 +7,8 @@ import {
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { BottomNav } from "@/routes/facilities";
 
 export const Route = createFileRoute("/account")({
@@ -14,32 +16,88 @@ export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "My Profile — Sangath" }] }),
 });
 
+const emptyForm = {
+  name: "",
+  mobile: "",
+  village: "",
+  city: "",
+  state: "",
+  occupation: "",
+  dob: "",
+  marital: "Single",
+  admin: "no" as "yes" | "no",
+};
+
 function AccountPage() {
   const navigate = useNavigate();
-  const { checking } = useRequireAuth();
+  const { checking, session } = useRequireAuth();
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [form, setForm] = useState({
-    name: "Ramesh Patel",
-    mobile: "9876543210",
-    email: "ramesh.patel@email.com",
-    village: "Anand",
-    city: "Anand",
-    state: "Gujarat",
-    occupation: "Business Owner",
-    dob: "12 / 03 / 1978",
-    marital: "Married",
-    admin: "yes" as "yes" | "no",
-  });
+  const [error, setError] = useState("");
+  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, mobile, village, city, state, occupation, dob, marital_status, is_family_admin")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setForm({
+          name: data.full_name ?? "",
+          mobile: data.mobile ?? "",
+          village: data.village ?? "",
+          city: data.city ?? "",
+          state: data.state ?? "",
+          occupation: data.occupation ?? "",
+          dob: data.dob ?? "",
+          marital: data.marital_status ?? "Single",
+          admin: data.is_family_admin ? "yes" : "no",
+        });
+      }
+      setLoadingProfile(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!session || saving) return;
+    setError("");
+    setSaving(true);
+    const { error: saveError } = await supabase
+      .from("profiles")
+      .update({
+        full_name: form.name,
+        mobile: form.mobile,
+        village: form.village,
+        city: form.city,
+        state: form.state,
+        occupation: form.occupation,
+        dob: form.dob,
+        marital_status: form.marital,
+        is_family_admin: form.admin === "yes",
+      })
+      .eq("id", session.user.id);
+    setSaving(false);
+    if (saveError) {
+      setError(friendlyAuthError(saveError.message));
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   };
 
-  if (checking) return <LoadingScreen />;
+  if (checking || loadingProfile) return <LoadingScreen />;
 
   return (
     <PhoneFrame>
@@ -88,7 +146,7 @@ function AccountPage() {
           <SectionCard title="Personal Information">
             <Field icon={User} label="Full Name" value={form.name} onChange={(v) => set("name", v)} />
             <Field icon={Phone} label="Mobile Number" value={form.mobile} onChange={(v) => set("mobile", v)} type="tel" />
-            <Field icon={Mail} label="Email Address" value={form.email} onChange={(v) => set("email", v)} type="email" />
+            <Field icon={Mail} label="Email Address" value={session?.user.email ?? ""} onChange={() => {}} type="email" disabled />
             <Field icon={MapPin} label="Village" value={form.village} onChange={(v) => set("village", v)} />
             <Field icon={Building2} label="City" value={form.city} onChange={(v) => set("city", v)} />
             <Field icon={MapPin} label="State" value={form.state} onChange={(v) => set("state", v)} />
@@ -157,11 +215,19 @@ function AccountPage() {
           </SectionCard>
 
           {/* Update */}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
           <button
-            onClick={handleSave}
-            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition flex items-center justify-center gap-2"
+            onClick={() => void handleSave()}
+            disabled={saving}
+            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            {saved ? (<><Check className="w-5 h-5" strokeWidth={3} /> Profile Updated</>) : "Update Profile"}
+            {saved ? (
+              <><Check className="w-5 h-5" strokeWidth={3} /> Profile Updated</>
+            ) : saving ? (
+              "Saving..."
+            ) : (
+              "Update Profile"
+            )}
           </button>
 
           {/* Support */}
@@ -192,8 +258,8 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 function Field({
-  icon: Icon, label, value, onChange, type = "text",
-}: { icon: any; label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  icon: Icon, label, value, onChange, type = "text", disabled = false,
+}: { icon: any; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean }) {
   return (
     <div>
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">{label}</label>
@@ -203,7 +269,8 @@ function Field({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-foreground text-sm min-w-0"
+          disabled={disabled}
+          className="flex-1 bg-transparent outline-none text-foreground text-sm min-w-0 disabled:text-muted-foreground"
         />
       </div>
     </div>
