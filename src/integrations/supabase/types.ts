@@ -135,6 +135,47 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          author_id: string
+          category: string
+          content: string
+          created_at: string
+          id: string
+          pinned: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           city: string | null
@@ -147,6 +188,7 @@ export type Database = {
           mobile: string | null
           occupation: string | null
           profile_completed: boolean
+          role: string
           state: string | null
           updated_at: string
           village: string | null
@@ -162,6 +204,7 @@ export type Database = {
           mobile?: string | null
           occupation?: string | null
           profile_completed?: boolean
+          role?: string
           state?: string | null
           updated_at?: string
           village?: string | null
@@ -177,6 +220,7 @@ export type Database = {
           mobile?: string | null
           occupation?: string | null
           profile_completed?: boolean
+          role?: string
           state?: string | null
           updated_at?: string
           village?: string | null
@@ -209,12 +253,38 @@ export type Database = {
           },
         ]
       }
+      saved_posts: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_role_is: { Args: { required: string[] }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

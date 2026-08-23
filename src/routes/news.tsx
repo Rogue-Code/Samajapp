@@ -1,18 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search, Bell, Home as HomeIcon, Building, HandHeart, User,
-  Plus, Pin, Share2, Bookmark, MoreVertical, X, Image as ImageIcon,
+  Plus, Pin, Share2, Bookmark, MoreVertical, X,
   ChevronLeft, Filter, Megaphone, Calendar, GraduationCap, Award,
-  AlertTriangle, BookOpen, Flower2, Newspaper,
+  AlertTriangle, BookOpen, Flower2, Newspaper, Loader2,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useProfileRole } from "@/hooks/use-profile-role";
+import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/news")({
   component: NewsPage,
-  head: () => ({ meta: [{ title: "Community News — Sangath" }] }),
+  head: () => ({ meta: [{ title: "Community News \u2014 Sangath" }] }),
 });
 
 type Category =
@@ -20,61 +23,15 @@ type Category =
   | "Achievement" | "Obituary" | "Emergency Notice" | "General Update";
 
 type Post = {
-  id: number;
+  id: string;
+  author_id: string;
   title: string;
   content: string;
-  author: string;
-  role: string;
-  initial: string;
-  avatarBg: string;
-  timestamp: string;
-  category: Category;
-  pinned?: boolean;
-  imageEmoji?: string;
-  imageBg?: string;
+  category: string;
+  pinned: boolean;
+  created_at: string;
+  author: { full_name: string | null; role: string } | null;
 };
-
-const initialPosts: Post[] = [
-  {
-    id: 1, title: "AGM Notice — Annual General Meeting 2026",
-    content: "All members are cordially invited to the Annual General Meeting on 20th July 2026 at 10:00 AM, Community Hall, Ahmedabad. Agenda includes financial review, committee elections, and the 2026–27 development roadmap.",
-    author: "Rajesh Patel", role: "President", initial: "R", avatarBg: "from-primary to-accent-saffron",
-    timestamp: "2 hours ago", category: "Announcement", pinned: true,
-    imageEmoji: "📢", imageBg: "from-primary via-accent-saffron to-warning",
-  },
-  {
-    id: 2, title: "Scholarship Applications Open — Deadline 30 June",
-    content: "₹25 lakh scholarship fund for meritorious students of the community. Open to all students entering Class 11, undergraduate, and post-graduate programs. Apply through your local committee head.",
-    author: "Sunita Shah", role: "Secretary", initial: "S", avatarBg: "from-success to-primary",
-    timestamp: "Yesterday", category: "Scholarship", pinned: true,
-  },
-  {
-    id: 3, title: "Youth Sports Tournament Registration Open",
-    content: "Inter-village cricket and kabaddi tournament begins 23rd November at Samaj Ground, Surat. Register your team before 15th November.",
-    author: "Kiran Mehta", role: "Committee Member", initial: "K", avatarBg: "from-warning to-accent-saffron",
-    timestamp: "2 days ago", category: "Event",
-    imageEmoji: "🏏", imageBg: "from-success via-primary to-accent-saffron",
-  },
-  {
-    id: 4, title: "32 Students Felicitated for 10th Board Results",
-    content: "A special ceremony was held at the community hall last Sunday to felicitate 32 students who scored above 90% in the 10th board examinations. Congratulations to all the achievers and their families.",
-    author: "Anita Desai", role: "Education Head", initial: "A", avatarBg: "from-accent-saffron to-destructive",
-    timestamp: "5 days ago", category: "Achievement",
-    imageEmoji: "🏆", imageBg: "from-warning to-accent-saffron",
-  },
-  {
-    id: 5, title: "Free Coaching Classes for Class 9 & 10 Students",
-    content: "Weekend coaching for Mathematics and Science starting 1st December. Conducted by qualified teachers from the community. Limited seats — register early.",
-    author: "Hemant Joshi", role: "Education Committee", initial: "H", avatarBg: "from-primary to-success",
-    timestamp: "12 Jun 2026", category: "Education",
-  },
-  {
-    id: 6, title: "Sad Demise of Shri Manilal Patel",
-    content: "With deep sorrow we inform the community of the passing of Shri Manilal Patel (age 82) on 8th June. Prayer meeting at family residence, Vadodara, on 11th June at 4:00 PM.",
-    author: "Samaj Office", role: "Administrator", initial: "O", avatarBg: "from-muted-foreground to-foreground",
-    timestamp: "10 Jun 2026", category: "Obituary",
-  },
-];
 
 const CATEGORY_META: Record<Category, { icon: typeof Megaphone; color: string }> = {
   "Announcement": { icon: Megaphone, color: "from-primary to-accent-saffron" },
@@ -87,19 +44,73 @@ const CATEGORY_META: Record<Category, { icon: typeof Megaphone; color: string }>
   "General Update": { icon: Newspaper, color: "from-secondary-foreground to-muted-foreground" },
 };
 
+const FALLBACK_META = { icon: Newspaper, color: "from-secondary-foreground to-muted-foreground" };
+
+function categoryMeta(category: string) {
+  return CATEGORY_META[category as Category] ?? FALLBACK_META;
+}
+
 const FILTERS = ["All", "Announcement", "Event", "Education", "Scholarship", "Achievement"] as const;
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrator",
+  committee: "Committee Member",
+  member: "Member",
+};
+
+/** "2 hours ago" style stamp; falls back to a date once it is over a week old. */
+function relativeTime(iso: string) {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function initialOf(name: string | null) {
+  return (name?.trim()?.[0] ?? "?").toUpperCase();
+}
 
 function NewsPage() {
   const navigate = useNavigate();
-  const { checking } = useRequireAuth();
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const { checking, session } = useRequireAuth();
+  const { canPublish, isAdmin } = useProfileRole(session);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
-  const [saved, setSaved] = useState<Set<number>>(new Set());
   const [showCreate, setShowCreate] = useState(false);
 
-  // Demo: treat current user as authorized
-  const isAuthorized = true;
+  const load = useCallback(async () => {
+    if (!session) return;
+    const [feed, bookmarks] = await Promise.all([
+      supabase
+        .from("posts")
+        .select("id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, role)")
+        .order("pinned", { ascending: false })
+        .order("created_at", { ascending: false }),
+      supabase.from("saved_posts").select("post_id").eq("user_id", session.user.id),
+    ]);
+    if (feed.error) setError(friendlyAuthError(feed.error.message));
+    else {
+      setPosts((feed.data ?? []) as Post[]);
+      setError("");
+    }
+    if (bookmarks.data) setSaved(new Set(bookmarks.data.map((b) => b.post_id)));
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -109,51 +120,87 @@ function NewsPage() {
         !q ||
         p.title.toLowerCase().includes(q) ||
         p.content.toLowerCase().includes(q) ||
-        p.author.toLowerCase().includes(q),
-      )
-      .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.id - a.id);
+        (p.author?.full_name ?? "").toLowerCase().includes(q),
+      );
   }, [posts, query, filter]);
 
-  const toggleSave = (id: number) =>
+  const toggleSave = async (id: string) => {
+    if (!session) return;
+    const wasSaved = saved.has(id);
     setSaved((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (wasSaved) next.delete(id);
+      else next.add(id);
       return next;
     });
+    const { error: saveError } = wasSaved
+      ? await supabase.from("saved_posts").delete().eq("user_id", session.user.id).eq("post_id", id)
+      : await supabase.from("saved_posts").insert({ user_id: session.user.id, post_id: id });
+    if (saveError) {
+      setSaved((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    }
+  };
 
-  const togglePin = (id: number) =>
-    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
+  const togglePin = async (id: string, pinned: boolean) => {
+    const { error: pinError } = await supabase.from("posts").update({ pinned: !pinned }).eq("id", id);
+    if (pinError) {
+      setError(friendlyAuthError(pinError.message));
+      return;
+    }
+    await load();
+  };
 
-  const deletePost = (id: number) =>
-    setPosts((prev) => prev.filter((p) => p.id !== id));
+  const deletePost = async (id: string) => {
+    const { error: deleteError } = await supabase.from("posts").delete().eq("id", id);
+    if (deleteError) {
+      setError(friendlyAuthError(deleteError.message));
+      return;
+    }
+    await load();
+  };
+
+  const addPost = async (input: { title: string; content: string; category: Category; pinned: boolean }) => {
+    if (!session) return;
+    const { error: insertError } = await supabase.from("posts").insert({
+      author_id: session.user.id,
+      title: input.title,
+      content: input.content,
+      category: input.category,
+      pinned: input.pinned,
+    });
+    if (insertError) {
+      setError(friendlyAuthError(insertError.message));
+      return;
+    }
+    setShowCreate(false);
+    await load();
+  };
 
   const sharePost = async (p: Post) => {
     const text = `${p.title}\n\n${p.content}`;
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share({ title: p.title, text }); return; } catch {}
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: p.title, text });
+        return;
+      } catch {
+        // Share sheet dismissed - fall through to the clipboard copy.
+      }
     }
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      try { await navigator.clipboard.writeText(text); } catch {}
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Clipboard blocked; nothing else to try.
+      }
     }
   };
 
-  const addPost = (p: Omit<Post, "id" | "author" | "role" | "initial" | "avatarBg" | "timestamp">) => {
-    setPosts((prev) => [
-      {
-        ...p,
-        id: Math.max(0, ...prev.map((x) => x.id)) + 1,
-        author: "Ramesh Patel",
-        role: "Committee Member",
-        initial: "R",
-        avatarBg: "from-primary to-accent-saffron",
-        timestamp: "Just now",
-      },
-      ...prev,
-    ]);
-    setShowCreate(false);
-  };
-
-  if (checking) return <LoadingScreen />;
+  if (checking || loading) return <LoadingScreen />;
 
   return (
     <PhoneFrame>
@@ -175,7 +222,6 @@ function NewsPage() {
               </div>
               <button className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Bell className="w-5 h-5 text-foreground" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive ring-2 ring-background" />
               </button>
             </div>
 
@@ -219,9 +265,18 @@ function NewsPage() {
         {/* Feed */}
         <div className="flex-1 overflow-y-auto pb-28" style={{ scrollbarWidth: "none" }}>
           <div className="px-5 pt-4 space-y-4">
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
             {visible.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground py-16">
-                No posts match your search.
+              <div className="text-center py-16 px-6">
+                <div className="text-4xl mb-3">📰</div>
+                <p className="font-semibold text-foreground">
+                  {posts.length === 0 ? "No announcements yet" : "No posts match your search"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {posts.length === 0
+                    ? "Community news will appear here once the committee posts."
+                    : "Try a different search or filter."}
+                </p>
               </div>
             )}
             {visible.map((p) => (
@@ -229,19 +284,22 @@ function NewsPage() {
                 key={p.id}
                 post={p}
                 saved={saved.has(p.id)}
-                onSave={() => toggleSave(p.id)}
-                onShare={() => sharePost(p)}
-                onPin={() => togglePin(p.id)}
-                onDelete={() => deletePost(p.id)}
-                canManage={isAuthorized}
+                onSave={() => void toggleSave(p.id)}
+                onShare={() => void sharePost(p)}
+                onPin={() => void togglePin(p.id, p.pinned)}
+                onDelete={() => void deletePost(p.id)}
+                canPin={isAdmin}
+                canDelete={isAdmin || p.author_id === session?.user.id}
               />
             ))}
-            <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
+            {visible.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
+            )}
           </div>
         </div>
 
         {/* Create Post FAB */}
-        {isAuthorized && (
+        {canPublish && (
           <button
             onClick={() => setShowCreate(true)}
             className="absolute right-5 bottom-24 z-30 h-14 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-elevated flex items-center gap-2 active:scale-95 transition"
@@ -256,7 +314,7 @@ function NewsPage() {
             {[
               { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
               { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
-              { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/home" as const },
+              { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/fundraiser" as const },
               { id: "profile", icon: User, label: "Profile", to: "/account" as const },
             ].map((n) => (
               <button
@@ -271,14 +329,16 @@ function NewsPage() {
           </div>
         </div>
 
-        {showCreate && <CreatePostSheet onClose={() => setShowCreate(false)} onSubmit={addPost} />}
+        {showCreate && (
+          <CreatePostSheet onClose={() => setShowCreate(false)} onSubmit={addPost} canPin={isAdmin} />
+        )}
       </div>
     </PhoneFrame>
   );
 }
 
 function PostCard({
-  post, saved, onSave, onShare, onPin, onDelete, canManage,
+  post, saved, onSave, onShare, onPin, onDelete, canPin, canDelete,
 }: {
   post: Post;
   saved: boolean;
@@ -286,11 +346,14 @@ function PostCard({
   onShare: () => void;
   onPin: () => void;
   onDelete: () => void;
-  canManage: boolean;
+  canPin: boolean;
+  canDelete: boolean;
 }) {
   const [menu, setMenu] = useState(false);
-  const meta = CATEGORY_META[post.category];
+  const meta = categoryMeta(post.category);
   const Icon = meta.icon;
+  const authorName = post.author?.full_name ?? "Unknown member";
+  const authorRole = ROLE_LABEL[post.author?.role ?? "member"] ?? "Member";
 
   return (
     <article
@@ -306,16 +369,16 @@ function PostCard({
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
-        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${post.avatarBg} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}>
-          {post.initial}
+        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${meta.color} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}>
+          {initialOf(post.author?.full_name ?? null)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-foreground truncate">{post.author}</div>
+          <div className="text-sm font-semibold text-foreground truncate">{authorName}</div>
           <div className="text-[11px] text-muted-foreground truncate">
-            {post.role} · {post.timestamp}
+            {authorRole} · {relativeTime(post.created_at)}
           </div>
         </div>
-        {canManage && (
+        {(canPin || canDelete) && (
           <div className="relative">
             <button
               onClick={() => setMenu((v) => !v)}
@@ -326,18 +389,22 @@ function PostCard({
             </button>
             {menu && (
               <div className="absolute right-0 top-9 z-10 w-40 rounded-xl bg-popover border border-border shadow-elevated text-sm overflow-hidden">
-                <button
-                  onClick={() => { onPin(); setMenu(false); }}
-                  className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
-                >
-                  <Pin className="w-4 h-4" /> {post.pinned ? "Unpin" : "Pin"}
-                </button>
-                <button
-                  onClick={() => { onDelete(); setMenu(false); }}
-                  className="w-full text-left px-3 py-2 hover:bg-muted text-destructive flex items-center gap-2"
-                >
-                  <X className="w-4 h-4" /> Delete
-                </button>
+                {canPin && (
+                  <button
+                    onClick={() => { onPin(); setMenu(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
+                  >
+                    <Pin className="w-4 h-4" /> {post.pinned ? "Unpin" : "Pin"}
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={() => { onDelete(); setMenu(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-muted text-destructive flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> Delete
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -358,13 +425,6 @@ function PostCard({
           {post.content}
         </p>
       </div>
-
-      {/* Image */}
-      {post.imageEmoji && (
-        <div className={`mx-4 mb-3 h-44 rounded-xl bg-gradient-to-br ${post.imageBg ?? "from-primary to-accent-saffron"} flex items-center justify-center`}>
-          <span className="text-7xl opacity-90">{post.imageEmoji}</span>
-        </div>
-      )}
 
       {/* Footer */}
       <div className="border-t border-border px-2 py-1.5 flex items-center">
@@ -390,18 +450,26 @@ function PostCard({
 }
 
 function CreatePostSheet({
-  onClose, onSubmit,
+  onClose, onSubmit, canPin,
 }: {
   onClose: () => void;
-  onSubmit: (p: Omit<Post, "id" | "author" | "role" | "initial" | "avatarBg" | "timestamp">) => void;
+  onSubmit: (p: { title: string; content: string; category: Category; pinned: boolean }) => Promise<void>;
+  canPin: boolean;
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<Category>("Announcement");
   const [pinned, setPinned] = useState(false);
-  const [hasImage, setHasImage] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
-  const canSubmit = title.trim().length > 2 && content.trim().length > 5;
+  const canSubmit = title.trim().length > 2 && content.trim().length > 5 && !publishing;
+
+  const publish = async () => {
+    if (!canSubmit) return;
+    setPublishing(true);
+    await onSubmit({ title: title.trim(), content: content.trim(), category, pinned });
+    setPublishing(false);
+  };
 
   return (
     <div className="absolute inset-0 z-40 bg-foreground/40 backdrop-blur-sm flex items-end md:items-center justify-center">
@@ -461,17 +529,7 @@ function CreatePostSheet({
             </div>
           </div>
 
-          <button
-            onClick={() => setHasImage((v) => !v)}
-            className={`w-full h-12 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-semibold transition ${
-              hasImage ? "border-primary text-primary bg-primary-soft" : "border-border text-muted-foreground"
-            }`}
-          >
-            <ImageIcon className="w-4 h-4" />
-            {hasImage ? "Banner attached" : "Upload Image (optional)"}
-          </button>
-
-          <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted">
+          <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted ${canPin ? "" : "hidden"}`}>
             <input
               type="checkbox"
               checked={pinned}
@@ -496,19 +554,10 @@ function CreatePostSheet({
           </button>
           <button
             disabled={!canSubmit}
-            onClick={() =>
-              onSubmit({
-                title: title.trim(),
-                content: content.trim(),
-                category,
-                pinned,
-                imageEmoji: hasImage ? "🖼️" : undefined,
-                imageBg: hasImage ? CATEGORY_META[category].color : undefined,
-              })
-            }
-            className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+            onClick={() => void publish()}
+            className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Publish
+            {publishing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>) : "Publish"}
           </button>
         </div>
       </div>
