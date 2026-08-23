@@ -20,7 +20,7 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as FacilitiesIdRouteImport } from './routes/facilities.$id'
+import { Route as FacilitiesIdRouteImport } from './routes/facilities_.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,15 +78,15 @@ const SignupRoute = SignupRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FacilitiesIdRoute = FacilitiesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => FacilitiesRoute,
+  id: '/facilities_/$id',
+  path: '/facilities/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/facilities': typeof FacilitiesRouteWithChildren
+  '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
@@ -100,7 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/facilities': typeof FacilitiesRouteWithChildren
+  '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
@@ -115,7 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/facilities': typeof FacilitiesRouteWithChildren
+  '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
@@ -124,7 +124,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/facilities/$id': typeof FacilitiesIdRoute
+  '/facilities_/$id': typeof FacilitiesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,13 +168,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/signup'
-    | '/facilities/$id'
+    | '/facilities_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  FacilitiesRoute: typeof FacilitiesRouteWithChildren
+  FacilitiesRoute: typeof FacilitiesRoute
   FamilyRoute: typeof FamilyRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FundraiserRoute: typeof FundraiserRoute
@@ -183,6 +183,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  FacilitiesIdRoute: typeof FacilitiesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,32 +265,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/facilities/$id': {
-      id: '/facilities/$id'
-      path: '/$id'
+    '/facilities_/$id': {
+      id: '/facilities_/$id'
+      path: '/facilities/$id'
       fullPath: '/facilities/$id'
       preLoaderRoute: typeof FacilitiesIdRouteImport
-      parentRoute: typeof FacilitiesRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface FacilitiesRouteChildren {
-  FacilitiesIdRoute: typeof FacilitiesIdRoute
-}
-
-const FacilitiesRouteChildren: FacilitiesRouteChildren = {
-  FacilitiesIdRoute: FacilitiesIdRoute,
-}
-
-const FacilitiesRouteWithChildren = FacilitiesRoute._addFileChildren(
-  FacilitiesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  FacilitiesRoute: FacilitiesRouteWithChildren,
+  FacilitiesRoute: FacilitiesRoute,
   FamilyRoute: FamilyRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FundraiserRoute: FundraiserRoute,
@@ -298,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  FacilitiesIdRoute: FacilitiesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

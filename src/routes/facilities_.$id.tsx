@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft, Share2, Bookmark, BadgeCheck, Phone, Mail, Globe, MapPin,
   Navigation, Calendar, Users, Clock, UserCircle2, ExternalLink,
@@ -6,9 +7,10 @@ import {
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { getFacility } from "@/lib/facilities-data";
+import { supabase } from "@/integrations/supabase/client";
+import { categoryStyle, type Facility } from "@/lib/facilities-data";
 
-export const Route = createFileRoute("/facilities/$id")({
+export const Route = createFileRoute("/facilities_/$id")({
   component: FacilityDetailPage,
   head: () => ({ meta: [{ title: "Facility — Sangath" }] }),
   notFoundComponent: NotFound,
@@ -30,34 +32,75 @@ function NotFound() {
 }
 
 function FacilityDetailPage() {
-  const { id } = useParams({ from: "/facilities/$id" });
+  const { id } = useParams({ from: "/facilities_/$id" });
   const navigate = useNavigate();
-  const { checking } = useRequireAuth();
-  const f = getFacility(id);
+  const { checking, session } = useRequireAuth();
+  const [f, setF] = useState<Facility | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
 
-  if (checking) return <LoadingScreen />;
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const [detail, bookmark] = await Promise.all([
+        supabase.from("facilities").select("*").eq("id", id).maybeSingle(),
+        supabase
+          .from("saved_facilities")
+          .select("facility_id")
+          .eq("user_id", session.user.id)
+          .eq("facility_id", id)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setF(detail.data ?? null);
+      setIsSaved(!!bookmark.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, session]);
+
+  const toggleSaved = async () => {
+    if (!session || !f) return;
+    const wasSaved = isSaved;
+    setIsSaved(!wasSaved);
+    const { error } = wasSaved
+      ? await supabase
+          .from("saved_facilities")
+          .delete()
+          .eq("user_id", session.user.id)
+          .eq("facility_id", f.id)
+      : await supabase
+          .from("saved_facilities")
+          .insert({ user_id: session.user.id, facility_id: f.id });
+    if (error) setIsSaved(wasSaved);
+  };
+
+  if (checking || loading) return <LoadingScreen />;
   if (!f) return <NotFound />;
 
+  const style = categoryStyle(f.category);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;
 
   return (
     <PhoneFrame>
       <div className="relative flex flex-col min-h-screen md:min-h-[860px] bg-background">
         {/* Hero */}
-        <div className={`relative h-64 bg-gradient-to-br ${f.bg} flex items-center justify-center`}>
-          <span className="text-[140px] opacity-90 select-none">{f.emoji}</span>
+        <div className={`relative h-64 bg-gradient-to-br ${style.bg} flex items-center justify-center`}>
+          <span className="text-[140px] opacity-90 select-none">{style.emoji}</span>
           <div className="absolute top-8 left-0 right-0 px-5 flex items-center justify-between">
             <button onClick={() => navigate({ to: "/facilities" })} className="w-10 h-10 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex gap-2">
-              <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center">
-                <Share2 className="w-5 h-5" />
-              </button>
-              <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center">
-                <Bookmark className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={() => void toggleSaved()}
+              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center"
+              aria-label={isSaved ? "Remove bookmark" : "Save facility"}
+            >
+              <Bookmark className={`w-5 h-5 ${isSaved ? "fill-white" : ""}`} />
+            </button>
           </div>
         </div>
 
@@ -83,11 +126,13 @@ function FacilityDetailPage() {
           </div>
 
           {/* Contact */}
-          <Section title="Contact">
-            <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={f.phone} href={`tel:${f.phone}`} />
-            <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={f.email} href={`mailto:${f.email}`} />
-            <InfoRow icon={<Globe className="w-4 h-4" />} label="Website" value={f.website} href={`https://${f.website}`} />
-          </Section>
+          {(f.phone || f.email || f.website) && (
+            <Section title="Contact">
+              {f.phone && <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={f.phone} href={`tel:${f.phone}`} />}
+              {f.email && <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={f.email} href={`mailto:${f.email}`} />}
+              {f.website && <InfoRow icon={<Globe className="w-4 h-4" />} label="Website" value={f.website} href={`https://${f.website}`} />}
+            </Section>
+          )}
 
           {/* Address */}
           <Section title="Address">
@@ -103,28 +148,21 @@ function FacilityDetailPage() {
           </Section>
 
           {/* About */}
-          <Section title="About">
-            <p className="text-sm text-foreground leading-relaxed">{f.longDescription}</p>
-          </Section>
+          {f.long_description && (
+            <Section title="About">
+              <p className="text-sm text-foreground leading-relaxed">{f.long_description}</p>
+            </Section>
+          )}
 
           {/* Key Info */}
           <Section title="Key Information">
             <div className="grid grid-cols-2 gap-2.5">
-              <KeyInfo icon={<Calendar className="w-4 h-4" />} label="Established" value={String(f.established)} />
-              <KeyInfo icon={<Users className="w-4 h-4" />} label="Capacity" value={f.capacity} />
-              <KeyInfo icon={<Clock className="w-4 h-4" />} label="Timings" value={f.timings} />
-              <KeyInfo icon={<UserCircle2 className="w-4 h-4" />} label="Head" value={f.head} />
-            </div>
-          </Section>
-
-          {/* Gallery */}
-          <Section title="Gallery">
-            <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className={`aspect-square rounded-xl bg-gradient-to-br ${f.bg} flex items-center justify-center text-3xl opacity-${90 - i * 10}`}>
-                  {f.emoji}
-                </div>
-              ))}
+              {f.established !== null && (
+                <KeyInfo icon={<Calendar className="w-4 h-4" />} label="Established" value={String(f.established)} />
+              )}
+              {f.capacity && <KeyInfo icon={<Users className="w-4 h-4" />} label="Capacity" value={f.capacity} />}
+              {f.timings && <KeyInfo icon={<Clock className="w-4 h-4" />} label="Timings" value={f.timings} />}
+              {f.head && <KeyInfo icon={<UserCircle2 className="w-4 h-4" />} label="Head" value={f.head} />}
             </div>
           </Section>
 
@@ -150,19 +188,45 @@ function FacilityDetailPage() {
 
         {/* Sticky action bar */}
         <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 pb-5 flex gap-2">
-          <a href={`tel:${f.phone}`} className="flex-1 h-12 rounded-xl bg-success text-success-foreground text-sm font-semibold flex items-center justify-center gap-1.5">
-            <Phone className="w-4 h-4" /> Call Now
-          </a>
+          {f.phone && (
+            <a href={`tel:${f.phone}`} className="flex-1 h-12 rounded-xl bg-success text-success-foreground text-sm font-semibold flex items-center justify-center gap-1.5">
+              <Phone className="w-4 h-4" /> Call Now
+            </a>
+          )}
           <a href={mapsUrl} target="_blank" rel="noreferrer" className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-1.5">
             <Navigation className="w-4 h-4" /> Directions
           </a>
-          <button className="w-12 h-12 rounded-xl bg-muted text-foreground flex items-center justify-center">
+          <button
+            onClick={() => void shareFacility(f)}
+            className="w-12 h-12 rounded-xl bg-muted text-foreground flex items-center justify-center"
+            aria-label="Share"
+          >
             <Share2 className="w-5 h-5" />
           </button>
         </div>
       </div>
     </PhoneFrame>
   );
+}
+
+/** Native share sheet where available, clipboard otherwise. */
+async function shareFacility(f: Facility) {
+  const text = `${f.name}\n${f.address}${f.phone ? `\n${f.phone}` : ""}`;
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share({ title: f.name, text });
+      return;
+    } catch {
+      // User dismissed the share sheet — fall through to the clipboard copy.
+    }
+  }
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard blocked; nothing useful left to try.
+    }
+  }
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

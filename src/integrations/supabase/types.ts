@@ -39,6 +39,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      facilities: {
+        Row: {
+          address: string
+          capacity: string | null
+          category: string
+          city: string
+          created_at: string
+          description: string | null
+          email: string | null
+          established: number | null
+          head: string | null
+          id: string
+          long_description: string | null
+          name: string
+          phone: string | null
+          state: string
+          timings: string | null
+          updated_at: string
+          verified: boolean
+          website: string | null
+        }
+        Insert: {
+          address: string
+          capacity?: string | null
+          category: string
+          city: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          established?: number | null
+          head?: string | null
+          id: string
+          long_description?: string | null
+          name: string
+          phone?: string | null
+          state: string
+          timings?: string | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          capacity?: string | null
+          category?: string
+          city?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          established?: number | null
+          head?: string | null
+          id?: string
+          long_description?: string | null
+          name?: string
+          phone?: string | null
+          state?: string
+          timings?: string | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+        }
+        Relationships: []
+      }
       family_members: {
         Row: {
           created_at: string
@@ -119,6 +182,32 @@ export type Database = {
           village?: string | null
         }
         Relationships: []
+      }
+      saved_facilities: {
+        Row: {
+          created_at: string
+          facility_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          facility_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          facility_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_facilities_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

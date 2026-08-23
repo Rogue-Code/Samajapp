@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search, ArrowLeft, MapPin, Phone, Navigation, Bookmark,
-  ChevronDown, BadgeCheck, SlidersHorizontal, Home as HomeIcon, Building, HandHeart, User,
+  ChevronDown, BadgeCheck, Home as HomeIcon, Building, HandHeart, User,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { facilities, states, categories, cities } from "@/lib/facilities-data";
+import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import { categoryStyle, states, categories, cities, type Facility } from "@/lib/facilities-data";
 
 export const Route = createFileRoute("/facilities")({
   component: FacilitiesPage,
@@ -21,29 +23,89 @@ export const Route = createFileRoute("/facilities")({
 
 function FacilitiesPage() {
   const navigate = useNavigate();
-  const { checking } = useRequireAuth();
+  const { checking, session } = useRequireAuth();
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [state, setState] = useState("All States");
   const [category, setCategory] = useState<string>("All Categories");
   const [city, setCity] = useState("All Cities");
-  const [nearby, setNearby] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Set<string>>(new Set());
   const [openDrop, setOpenDrop] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const [list, bookmarks] = await Promise.all([
+        supabase.from("facilities").select("*").order("name"),
+        supabase.from("saved_facilities").select("facility_id").eq("user_id", session.user.id),
+      ]);
+      if (cancelled) return;
+      if (list.error) {
+        setError(friendlyAuthError(list.error.message));
+      } else {
+        setFacilities(list.data ?? []);
+      }
+      if (bookmarks.data) {
+        setSaved(new Set(bookmarks.data.map((b) => b.facility_id)));
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  const toggleSaved = async (facilityId: string) => {
+    if (!session) return;
+    const wasSaved = saved.has(facilityId);
+    // Optimistic — the row is tiny and reverting on error keeps the list responsive.
+    setSaved((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(facilityId);
+      else next.add(facilityId);
+      return next;
+    });
+    const { error: saveError } = wasSaved
+      ? await supabase
+          .from("saved_facilities")
+          .delete()
+          .eq("user_id", session.user.id)
+          .eq("facility_id", facilityId)
+      : await supabase
+          .from("saved_facilities")
+          .insert({ user_id: session.user.id, facility_id: facilityId });
+    if (saveError) {
+      setSaved((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(facilityId);
+        else next.delete(facilityId);
+        return next;
+      });
+      setError(friendlyAuthError(saveError.message));
+    }
+  };
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return facilities.filter((f) => {
-      if (term && ![f.name, f.category, f.city, f.state, f.head].some((v) => v.toLowerCase().includes(term))) return false;
+      if (
+        term &&
+        ![f.name, f.category, f.city, f.state, f.head ?? ""].some((v) => v.toLowerCase().includes(term))
+      )
+        return false;
       if (state !== "All States" && f.state !== state) return false;
       if (category !== "All Categories" && f.category !== category) return false;
       if (city !== "All Cities" && f.city !== city) return false;
       if (verifiedOnly && !f.verified) return false;
       return true;
     });
-  }, [q, state, category, city, verifiedOnly]);
+  }, [facilities, q, state, category, city, verifiedOnly]);
 
-  if (checking) return <LoadingScreen />;
+  if (checking || loading) return <LoadingScreen />;
 
   return (
     <PhoneFrame>
@@ -59,9 +121,6 @@ function FacilitiesPage() {
                 <h1 className="font-bold text-foreground text-lg leading-tight">Facilities</h1>
                 <p className="text-[11px] text-muted-foreground">{filtered.length} of {facilities.length} listings</p>
               </div>
-              <button className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <SlidersHorizontal className="w-5 h-5 text-foreground" />
-              </button>
             </div>
             <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
               <Search className="w-5 h-5 text-muted-foreground shrink-0" />
@@ -78,7 +137,6 @@ function FacilitiesPage() {
               <DropdownChip label={state} options={states} onSelect={setState} open={openDrop === "state"} setOpen={(o) => setOpenDrop(o ? "state" : null)} />
               <DropdownChip label={category} options={categories as string[]} onSelect={setCategory} open={openDrop === "cat"} setOpen={(o) => setOpenDrop(o ? "cat" : null)} />
               <DropdownChip label={city} options={cities} onSelect={setCity} open={openDrop === "city"} setOpen={(o) => setOpenDrop(o ? "city" : null)} />
-              <ToggleChip active={nearby} onClick={() => setNearby((v) => !v)} icon={<Navigation className="w-3.5 h-3.5" />} label="Nearby" />
               <ToggleChip active={verifiedOnly} onClick={() => setVerifiedOnly((v) => !v)} icon={<BadgeCheck className="w-3.5 h-3.5" />} label="Verified" />
             </div>
           </div>
@@ -86,17 +144,23 @@ function FacilitiesPage() {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto pb-24 px-5 pt-4 space-y-3" style={{ scrollbarWidth: "none" }}>
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center py-16">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-5xl mb-4">🔍</div>
-              <p className="font-semibold text-foreground">No facilities found</p>
+              <p className="font-semibold text-foreground">
+                {facilities.length === 0 ? "No facilities listed yet" : "No facilities found"}
+              </p>
               <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
-                Try changing your search or filters.
+                {facilities.length === 0
+                  ? "The community directory hasn't been set up yet."
+                  : "Try changing your search or filters."}
               </p>
             </div>
           )}
           {filtered.map((f) => {
-            const isSaved = !!saved[f.id];
+            const isSaved = saved.has(f.id);
+            const style = categoryStyle(f.category);
             return (
               <Link
                 key={f.id}
@@ -105,8 +169,8 @@ function FacilitiesPage() {
                 className="block rounded-2xl bg-card border border-border shadow-card overflow-hidden active:scale-[0.99] transition"
               >
                 <div className="flex">
-                  <div className={`w-24 shrink-0 bg-gradient-to-br ${f.bg} flex items-center justify-center text-4xl`}>
-                    {f.emoji}
+                  <div className={`w-24 shrink-0 bg-gradient-to-br ${style.bg} flex items-center justify-center text-4xl`}>
+                    {style.emoji}
                   </div>
                   <div className="flex-1 min-w-0 p-3">
                     <div className="flex items-start gap-1.5">
@@ -121,12 +185,14 @@ function FacilitiesPage() {
                   </div>
                 </div>
                 <div className="flex border-t border-border/60">
-                  <ActionBtn icon={<Phone className="w-3.5 h-3.5" />} label="Call" onClick={(e) => { e.preventDefault(); window.location.href = `tel:${f.phone}`; }} />
+                  {f.phone && (
+                    <ActionBtn icon={<Phone className="w-3.5 h-3.5" />} label="Call" onClick={(e) => { e.preventDefault(); window.location.href = `tel:${f.phone}`; }} />
+                  )}
                   <ActionBtn icon={<Navigation className="w-3.5 h-3.5" />} label="Directions" onClick={(e) => { e.preventDefault(); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`); }} />
                   <ActionBtn
                     icon={<Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-primary text-primary" : ""}`} />}
                     label={isSaved ? "Saved" : "Save"}
-                    onClick={(e) => { e.preventDefault(); setSaved((s) => ({ ...s, [f.id]: !s[f.id] })); }}
+                    onClick={(e) => { e.preventDefault(); void toggleSaved(f.id); }}
                   />
                 </div>
               </Link>
@@ -198,7 +264,7 @@ export function BottomNav({ active }: { active: "home" | "facilities" | "fundrai
   const items = [
     { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
     { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
-    { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/home" as const },
+    { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/fundraiser" as const },
     { id: "profile", icon: User, label: "Profile", to: "/account" as const },
   ];
   return (
