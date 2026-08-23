@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 
 export const Route = createFileRoute("/family")({
   component: FamilyPage,
-  head: () => ({ meta: [{ title: "Family Verification — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Family Verification — Sangath" }] }),
 });
 
 type Status = "verified" | "pending" | "approval";

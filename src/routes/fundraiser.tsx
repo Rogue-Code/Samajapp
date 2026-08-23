@@ -9,7 +9,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 
 export const Route = createFileRoute("/fundraiser")({
   component: FundraiserPage,
-  head: () => ({ meta: [{ title: "Fundraiser — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Fundraiser — Sangath" }] }),
 });
 
 type Campaign = {

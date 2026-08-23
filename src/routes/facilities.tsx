@@ -11,7 +11,7 @@ export const Route = createFileRoute("/facilities")({
   component: FacilitiesPage,
   head: () => ({
     meta: [
-      { title: "Facilities Directory — Samaj Connect" },
+      { title: "Facilities Directory — Sangath" },
       { name: "description", content: "Search community schools, hospitals, hostels, banks and more." },
     ],
   }),

@@ -9,7 +9,7 @@ import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/home")({
   component: HomePage,
-  head: () => ({ meta: [{ title: "Home — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Home — Sangath" }] }),
 });
 
 const events = [

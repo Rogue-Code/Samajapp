@@ -8,7 +8,7 @@ import { getFacility } from "@/lib/facilities-data";
 
 export const Route = createFileRoute("/facilities/$id")({
   component: FacilityDetailPage,
-  head: () => ({ meta: [{ title: "Facility — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Facility — Sangath" }] }),
   notFoundComponent: NotFound,
 });
 

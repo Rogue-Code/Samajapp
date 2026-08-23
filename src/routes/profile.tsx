@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
-  head: () => ({ meta: [{ title: "Profile Setup — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Profile Setup — Sangath" }] }),
 });
 
 function Field({

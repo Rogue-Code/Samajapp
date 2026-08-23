@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.samajconnect',
-  appName: 'Samaj Connect',
+  appId: 'com.sangath.community',
+  appName: 'Sangath',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

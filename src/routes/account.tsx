@@ -9,7 +9,7 @@ import { BottomNav } from "@/routes/facilities";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
-  head: () => ({ meta: [{ title: "My Profile — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "My Profile — Sangath" }] }),
 });
 
 function AccountPage() {

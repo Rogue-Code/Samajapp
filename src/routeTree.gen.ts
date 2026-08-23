@@ -13,11 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
 import { Route as FamilyRouteImport } from './routes/family'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FundraiserRouteImport } from './routes/fundraiser'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as OtpRouteImport } from './routes/otp'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as FacilitiesIdRouteImport } from './routes/facilities.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +41,11 @@ const FacilitiesRoute = FacilitiesRouteImport.update({
 const FamilyRoute = FamilyRouteImport.update({
   id: '/family',
   path: '/family',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FundraiserRoute = FundraiserRouteImport.update({
@@ -65,6 +73,16 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FacilitiesIdRoute = FacilitiesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -76,11 +94,14 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/facilities/$id': typeof FacilitiesIdRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +109,14 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/facilities/$id': typeof FacilitiesIdRoute
 }
 export interface FileRoutesById {
@@ -101,11 +125,14 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/facilities': typeof FacilitiesRouteWithChildren
   '/family': typeof FamilyRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
   '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/facilities/$id': typeof FacilitiesIdRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +142,14 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/forgot-password'
     | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
     | '/profile'
+    | '/reset-password'
+    | '/signup'
     | '/facilities/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +157,14 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/forgot-password'
     | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
     | '/profile'
+    | '/reset-password'
+    | '/signup'
     | '/facilities/$id'
   id:
     | '__root__'
@@ -139,11 +172,14 @@ export interface FileRouteTypes {
     | '/account'
     | '/facilities'
     | '/family'
+    | '/forgot-password'
     | '/fundraiser'
     | '/home'
     | '/news'
     | '/otp'
     | '/profile'
+    | '/reset-password'
+    | '/signup'
     | '/facilities/$id'
   fileRoutesById: FileRoutesById
 }
@@ -152,11 +188,14 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   FacilitiesRoute: typeof FacilitiesRouteWithChildren
   FamilyRoute: typeof FamilyRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   FundraiserRoute: typeof FundraiserRoute
   HomeRoute: typeof HomeRoute
   NewsRoute: typeof NewsRoute
   OtpRoute: typeof OtpRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -187,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/family'
       fullPath: '/family'
       preLoaderRoute: typeof FamilyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fundraiser': {
@@ -224,6 +270,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/facilities/$id': {
       id: '/facilities/$id'
       path: '/$id'
@@ -251,11 +311,14 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   FacilitiesRoute: FacilitiesRouteWithChildren,
   FamilyRoute: FamilyRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   FundraiserRoute: FundraiserRoute,
   HomeRoute: HomeRoute,
   NewsRoute: NewsRoute,
   OtpRoute: OtpRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

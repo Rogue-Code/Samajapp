@@ -10,7 +10,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 
 export const Route = createFileRoute("/news")({
   component: NewsPage,
-  head: () => ({ meta: [{ title: "Community News — Samaj Connect" }] }),
+  head: () => ({ meta: [{ title: "Community News — Sangath" }] }),
 });
 
 type Category =

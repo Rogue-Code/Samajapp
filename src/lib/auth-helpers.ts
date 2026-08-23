@@ -2,6 +2,29 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/** Email only — never store passwords in session/local storage. */
+export const PENDING_EMAIL_KEY = "sangath.pendingEmail";
+
+export function authRedirectUrl(path: string) {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}${path}`;
+}
+
+export function rememberPendingEmail(email: string) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(PENDING_EMAIL_KEY, email.trim());
+}
+
+export function readPendingEmail() {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem(PENDING_EMAIL_KEY)?.trim() ?? "";
+}
+
+export function clearPendingEmail() {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(PENDING_EMAIL_KEY);
+}
+
 export function isValidEmail(value: string) {
   return emailPattern.test(value.trim());
 }
