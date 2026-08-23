@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Camera, User, MapPin, Briefcase, Heart, Calendar, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, User, MapPin, Briefcase, Heart, Calendar, Check, Loader2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/profile")({
 
 function Field({
   icon: Icon, label, value, onChange, placeholder, type = "text",
-}: { icon: any; label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; }) {
+}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; }) {
   return (
     <div className="relative">
       <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">{label}</label>
@@ -87,10 +88,10 @@ function ProfilePage() {
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            <span className="text-xs font-semibold text-muted-foreground">Step 2 of 4 · 50%</span>
+            <span className="text-xs font-semibold text-muted-foreground">Last step</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full w-1/2 bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all" />
+            <div className="h-full w-full bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all" />
           </div>
         </div>
 
@@ -99,13 +100,8 @@ function ProfilePage() {
           <p className="text-sm text-muted-foreground mt-1">Tell us about yourself to connect with your community.</p>
 
           <div className="flex justify-center my-7">
-            <div className="relative">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center border-4 border-card shadow-card">
-                <User className="w-12 h-12 text-primary" />
-              </div>
-              <button className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-elevated border-2 border-card active:scale-95 transition">
-                <Camera className="w-4 h-4 text-primary-foreground" />
-              </button>
+            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center border-4 border-card shadow-card">
+              <User className="w-12 h-12 text-primary" />
             </div>
           </div>
 

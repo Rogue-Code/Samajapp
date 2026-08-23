@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, Camera, BadgeCheck, User, Phone, Mail, MapPin, Building2,
-  Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, Mail as MailIcon,
+  ArrowLeft, BadgeCheck, User, Phone, Mail, MapPin, Building2,
+  Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, LogOut,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -134,23 +135,23 @@ function AccountPage() {
           {/* Profile header card */}
           <section className="rounded-3xl bg-gradient-to-br from-primary-soft via-background to-accent p-5 border border-border shadow-card">
             <div className="flex items-center gap-4">
-              <div className="relative shrink-0">
+              <div className="shrink-0">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-elevated">
-                  {form.name.charAt(0)}
+                  {(form.name.trim()[0] ?? "?").toUpperCase()}
                 </div>
-                <button
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-elevated border-2 border-card active:scale-95 transition"
-                  aria-label="Change photo"
-                >
-                  <Camera className="w-4 h-4 text-primary-foreground" />
-                </button>
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-foreground text-lg leading-tight truncate">{form.name}</h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Member ID · SC-2024-08291</p>
-                <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-success/10 text-success text-[11px] font-bold">
-                  <BadgeCheck className="w-3.5 h-3.5" /> Verified Member
-                </span>
+                <h2 className="font-bold text-foreground text-lg leading-tight truncate">
+                  {form.name.trim() || "Your profile"}
+                </h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                  {session?.user.email}
+                </p>
+                {role !== "member" && (
+                  <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold capitalize">
+                    <BadgeCheck className="w-3.5 h-3.5" /> {role}
+                  </span>
+                )}
               </div>
             </div>
           </section>
@@ -268,16 +269,17 @@ function AccountPage() {
             )}
           </button>
 
-          {/* Support */}
-          <div className="text-center pt-2 pb-4">
-            <p className="text-sm text-muted-foreground">Need help updating your information?</p>
-            <a
-              href="mailto:support@samajconnect.com"
-              className="mt-2 inline-flex items-center gap-1.5 text-primary font-semibold text-sm hover:underline"
-            >
-              <MailIcon className="w-4 h-4" /> support@samajconnect.com
-            </a>
-          </div>
+          {/* Sign out */}
+          <button
+            onClick={() => {
+              void supabase.auth.signOut();
+              navigate({ to: "/" });
+            }}
+            className="w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
+          <div className="pb-4" />
         </div>
 
         <BottomNav active="profile" />
@@ -297,7 +299,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 function Field({
   icon: Icon, label, value, onChange, type = "text", disabled = false,
-}: { icon: any; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean }) {
+}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean }) {
   return (
     <div>
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">{label}</label>
