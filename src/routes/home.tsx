@@ -52,6 +52,7 @@ function HomePage() {
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3">
             <div className="flex items-center gap-3 mb-3">
+              <Logo className="w-10 h-10" />
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground">Good Morning 👋</div>
                 <div className="font-semibold text-foreground truncate">Ramesh Patel</div>
