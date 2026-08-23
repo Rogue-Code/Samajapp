@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Phone, HelpCircle, Globe, MessageCircle, Users, Loader2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
