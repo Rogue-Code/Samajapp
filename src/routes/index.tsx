@@ -33,8 +33,8 @@ function LoginPage() {
       <div className="flex flex-col min-h-screen md:min-h-[860px] px-6 pt-12 pb-8">
         <div className="flex items-center justify-between mb-10 fade-up">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-card">
-              <Users className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center shadow-card overflow-hidden">
+              <Logo className="w-8 h-8" />
             </div>
             <span className="font-semibold text-foreground">Samaj Connect</span>
           </div>
