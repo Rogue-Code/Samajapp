@@ -17,7 +17,6 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FundraiserRouteImport } from './routes/fundraiser'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as NewsRouteImport } from './routes/news'
-import { Route as OtpRouteImport } from './routes/otp'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -63,11 +62,6 @@ const NewsRoute = NewsRouteImport.update({
   path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OtpRoute = OtpRouteImport.update({
-  id: '/otp',
-  path: '/otp',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -98,7 +92,6 @@ export interface FileRoutesByFullPath {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
-  '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -113,7 +106,6 @@ export interface FileRoutesByTo {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
-  '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -129,7 +121,6 @@ export interface FileRoutesById {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
-  '/otp': typeof OtpRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -146,7 +137,6 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
-    | '/otp'
     | '/profile'
     | '/reset-password'
     | '/signup'
@@ -161,7 +151,6 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
-    | '/otp'
     | '/profile'
     | '/reset-password'
     | '/signup'
@@ -176,7 +165,6 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
-    | '/otp'
     | '/profile'
     | '/reset-password'
     | '/signup'
@@ -192,7 +180,6 @@ export interface RootRouteChildren {
   FundraiserRoute: typeof FundraiserRoute
   HomeRoute: typeof HomeRoute
   NewsRoute: typeof NewsRoute
-  OtpRoute: typeof OtpRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -256,13 +243,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/otp': {
-      id: '/otp'
-      path: '/otp'
-      fullPath: '/otp'
-      preLoaderRoute: typeof OtpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -315,7 +295,6 @@ const rootRouteChildren: RootRouteChildren = {
   FundraiserRoute: FundraiserRoute,
   HomeRoute: HomeRoute,
   NewsRoute: NewsRoute,
-  OtpRoute: OtpRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,

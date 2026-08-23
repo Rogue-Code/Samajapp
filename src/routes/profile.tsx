@@ -77,7 +77,14 @@ function ProfilePage() {
       <div className="flex flex-col min-h-screen md:min-h-[860px]">
         <div className="px-6 pt-8 pb-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 border-b border-border/50">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => navigate({ to: "/otp" })} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition">
+            <button
+              onClick={() => {
+                void supabase.auth.signOut();
+                navigate({ to: "/" });
+              }}
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+              aria-label="Sign out"
+            >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <span className="text-xs font-semibold text-muted-foreground">Step 2 of 4 · 50%</span>

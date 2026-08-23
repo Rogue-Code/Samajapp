@@ -8,7 +8,6 @@ import {
   destinationAfterLogin,
   friendlyAuthError,
   isValidEmail,
-  rememberPendingEmail,
 } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/")({
@@ -57,13 +56,7 @@ function LoginPage() {
       password,
     });
     if (authError) {
-      const message = friendlyAuthError(authError.message);
-      if (authError.message.toLowerCase().includes("email not confirmed")) {
-        rememberPendingEmail(email);
-        navigate({ to: "/otp" });
-        return;
-      }
-      setError(message);
+      setError(friendlyAuthError(authError.message));
       setLoading(false);
       return;
     }

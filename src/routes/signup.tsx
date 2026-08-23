@@ -4,11 +4,9 @@ import { ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react"
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  authRedirectUrl,
   destinationAfterLogin,
   friendlyAuthError,
   isValidEmail,
-  rememberPendingEmail,
 } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/signup")({
@@ -53,7 +51,6 @@ function SignupPage() {
       password,
       options: {
         data: { full_name: name.trim() },
-        emailRedirectTo: authRedirectUrl("/otp"),
       },
     });
     if (authError) {
@@ -66,13 +63,13 @@ function SignupPage() {
       setLoading(false);
       return;
     }
-    rememberPendingEmail(email);
-    if (data.session) {
-      const dest = await destinationAfterLogin();
-      navigate({ to: dest });
+    if (!data.session) {
+      setError("Account created, but you'll need to log in to continue.");
+      setLoading(false);
       return;
     }
-    navigate({ to: "/otp" });
+    const dest = await destinationAfterLogin();
+    navigate({ to: dest });
   };
 
   return (
