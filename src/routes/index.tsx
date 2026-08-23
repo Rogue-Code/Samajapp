@@ -45,8 +45,8 @@ function LoginPage() {
         </div>
 
         <div className="flex-1 flex flex-col fade-up" style={{ animationDelay: "60ms" }}>
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center mb-6 shadow-elevated">
-            <Users className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-3xl bg-card border border-border flex items-center justify-center mb-6 shadow-elevated overflow-hidden">
+            <Logo className="w-16 h-16" />
           </div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
             Welcome to your<br />Samaj community
