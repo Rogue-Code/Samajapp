@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Search, Bell, Home as HomeIcon, Building, HandHeart, User,
+  Bell, Home as HomeIcon, Building, HandHeart, User,
   Plus, Pin, Share2, Bookmark, MoreVertical, X,
-  ChevronLeft, Filter, Megaphone, Calendar, GraduationCap, Award,
+  ChevronLeft, Megaphone, Calendar, GraduationCap, Award,
   AlertTriangle, BookOpen, Flower2, Newspaper, Loader2,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -50,8 +50,6 @@ function categoryMeta(category: string) {
   return CATEGORY_META[category as Category] ?? FALLBACK_META;
 }
 
-const FILTERS = ["All", "Announcement", "Event", "Education", "Scholarship", "Achievement"] as const;
-
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrator",
   committee: "Committee Member",
@@ -77,6 +75,12 @@ function initialOf(name: string | null) {
   return (name?.trim()?.[0] ?? "?").toUpperCase();
 }
 
+/** Posts fetched per page as the feed is scrolled. */
+const PAGE_SIZE = 15;
+
+const POST_SELECT =
+  "id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, role)";
+
 function NewsPage() {
   const navigate = useNavigate();
   const { checking, session } = useRequireAuth();
@@ -84,45 +88,77 @@ function NewsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [showCreate, setShowCreate] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const load = useCallback(async () => {
-    if (!session) return;
-    const [feed, bookmarks] = await Promise.all([
-      supabase
+  /** Newest first. Pinned posts keep their badge but no longer jump the queue. */
+  const fetchPage = useCallback(
+    async (offset: number) => {
+      if (!session) return { rows: [] as Post[], done: true };
+      const { data, error: pageError } = await supabase
         .from("posts")
-        .select("id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, role)")
-        .order("pinned", { ascending: false })
-        .order("created_at", { ascending: false }),
-      supabase.from("saved_posts").select("post_id").eq("user_id", session.user.id),
-    ]);
-    if (feed.error) setError(friendlyAuthError(feed.error.message));
-    else {
-      setPosts((feed.data ?? []) as Post[]);
-      setError("");
-    }
-    if (bookmarks.data) setSaved(new Set(bookmarks.data.map((b) => b.post_id)));
-    setLoading(false);
-  }, [session]);
+        .select(POST_SELECT)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (pageError) {
+        setError(friendlyAuthError(pageError.message));
+        return { rows: [] as Post[], done: true };
+      }
+      const rows = (data ?? []) as Post[];
+      return { rows, done: rows.length < PAGE_SIZE };
+    },
+    [session],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const [first, bookmarks] = await Promise.all([
+        fetchPage(0),
+        supabase.from("saved_posts").select("post_id").eq("user_id", session.user.id),
+      ]);
+      if (cancelled) return;
+      setPosts(first.rows);
+      setHasMore(!first.done);
+      if (bookmarks.data) setSaved(new Set(bookmarks.data.map((b) => b.post_id)));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, fetchPage]);
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return posts
-      .filter((p) => (filter === "All" ? true : p.category === filter))
-      .filter((p) =>
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.content.toLowerCase().includes(q) ||
-        (p.author?.full_name ?? "").toLowerCase().includes(q),
-      );
-  }, [posts, query, filter]);
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const { rows, done } = await fetchPage(posts.length);
+    // Guard against a post being inserted mid-scroll and shifting the window.
+    setPosts((prev) => {
+      const seen = new Set(prev.map((p) => p.id));
+      return [...prev, ...rows.filter((r) => !seen.has(r.id))];
+    });
+    setHasMore(!done);
+    setLoadingMore(false);
+  }, [fetchPage, hasMore, loadingMore, posts.length]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root || loading || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore();
+      },
+      { root, rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore, loading, hasMore]);
 
   const toggleSave = async (id: string) => {
     if (!session) return;
@@ -152,7 +188,8 @@ function NewsPage() {
       setError(friendlyAuthError(pinError.message));
       return;
     }
-    await load();
+    // Patch in place rather than refetching, so the scroll position survives.
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !pinned } : p)));
   };
 
   const deletePost = async (id: string) => {
@@ -161,24 +198,30 @@ function NewsPage() {
       setError(friendlyAuthError(deleteError.message));
       return;
     }
-    await load();
+    setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const addPost = async (input: { title: string; content: string; category: Category; pinned: boolean }) => {
     if (!session) return;
-    const { error: insertError } = await supabase.from("posts").insert({
-      author_id: session.user.id,
-      title: input.title,
-      content: input.content,
-      category: input.category,
-      pinned: input.pinned,
-    });
+    const { data, error: insertError } = await supabase
+      .from("posts")
+      .insert({
+        author_id: session.user.id,
+        title: input.title,
+        content: input.content,
+        category: input.category,
+        pinned: input.pinned,
+      })
+      .select(POST_SELECT)
+      .single();
     if (insertError) {
       setError(friendlyAuthError(insertError.message));
       return;
     }
     setShowCreate(false);
-    await load();
+    // Newest first, so a fresh post belongs at the head of the feed.
+    if (data) setPosts((prev) => [data as Post, ...prev]);
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const sharePost = async (p: Post) => {
@@ -224,62 +267,23 @@ function NewsPage() {
                 <Bell className="w-5 h-5 text-foreground" />
               </button>
             </div>
-
-            <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
-              <Search className="w-5 h-5 text-muted-foreground shrink-0" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search announcements, events, notices..."
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} className="text-muted-foreground">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-              {FILTERS.map((f) => {
-                const active = filter === f;
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`shrink-0 px-3 h-8 rounded-full text-xs font-semibold border transition ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary shadow-soft"
-                        : "bg-card text-muted-foreground border-border"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
 
-        {/* Feed */}
-        <div className="flex-1 overflow-y-auto pb-28" style={{ scrollbarWidth: "none" }}>
+        {/* Feed — newest first, paged in as it is scrolled */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-28" style={{ scrollbarWidth: "none" }}>
           <div className="px-5 pt-4 space-y-4">
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
-            {visible.length === 0 && (
+            {posts.length === 0 && (
               <div className="text-center py-16 px-6">
                 <div className="text-4xl mb-3">📰</div>
-                <p className="font-semibold text-foreground">
-                  {posts.length === 0 ? "No announcements yet" : "No posts match your search"}
-                </p>
+                <p className="font-semibold text-foreground">No announcements yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {posts.length === 0
-                    ? "Community news will appear here once the committee posts."
-                    : "Try a different search or filter."}
+                  Community news will appear here once the committee posts.
                 </p>
               </div>
             )}
-            {visible.map((p) => (
+            {posts.map((p) => (
               <PostCard
                 key={p.id}
                 post={p}
@@ -292,7 +296,16 @@ function NewsPage() {
                 canDelete={isAdmin || p.author_id === session?.user.id}
               />
             ))}
-            {visible.length > 0 && (
+
+            {/* Tripwire for the next page */}
+            <div ref={sentinelRef} />
+
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!hasMore && posts.length > 0 && (
               <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
             )}
           </div>
