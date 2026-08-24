@@ -78,6 +78,17 @@ function initialOf(name: string | null) {
 /** Posts fetched per page as the feed is scrolled. */
 const PAGE_SIZE = 15;
 
+/**
+ * Mirrors the server ordering (pinned first, then newest first) so local
+ * edits can be re-sorted without refetching the whole feed.
+ */
+function sortFeed(rows: Post[]) {
+  return [...rows].sort(
+    (a, b) =>
+      Number(b.pinned) - Number(a.pinned) || b.created_at.localeCompare(a.created_at),
+  );
+}
+
 const POST_SELECT =
   "id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, role)";
 
@@ -95,13 +106,14 @@ function NewsPage() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  /** Newest first. Pinned posts keep their badge but no longer jump the queue. */
+  /** Pinned posts first, then newest first within each group. */
   const fetchPage = useCallback(
     async (offset: number) => {
       if (!session) return { rows: [] as Post[], done: true };
       const { data, error: pageError } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .order("pinned", { ascending: false })
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (pageError) {
@@ -188,8 +200,8 @@ function NewsPage() {
       setError(friendlyAuthError(pinError.message));
       return;
     }
-    // Patch in place rather than refetching, so the scroll position survives.
-    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !pinned } : p)));
+    // Re-sort locally rather than refetching; a newly pinned post moves to the top.
+    setPosts((prev) => sortFeed(prev.map((p) => (p.id === id ? { ...p, pinned: !pinned } : p))));
   };
 
   const deletePost = async (id: string) => {
@@ -219,8 +231,8 @@ function NewsPage() {
       return;
     }
     setShowCreate(false);
-    // Newest first, so a fresh post belongs at the head of the feed.
-    if (data) setPosts((prev) => [data as Post, ...prev]);
+    // Sort rather than prepend: an unpinned post belongs below any pinned ones.
+    if (data) setPosts((prev) => sortFeed([data as Post, ...prev]));
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
