@@ -27,6 +27,7 @@ const emptyForm = {
   occupation: "",
   dob: "",
   marital: "Single",
+  gender: null as "male" | "female" | "other" | null,
   admin: "no" as "yes" | "no",
 };
 
@@ -57,7 +58,7 @@ function AccountPage() {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, mobile, village, city, state, occupation, dob, marital_status, is_family_admin")
+        .select("full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin")
         .eq("id", session.user.id)
         .maybeSingle();
       if (cancelled) return;
@@ -71,6 +72,7 @@ function AccountPage() {
           occupation: data.occupation ?? "",
           dob: data.dob ?? "",
           marital: data.marital_status ?? "Single",
+          gender: data.gender === "male" || data.gender === "female" || data.gender === "other" ? data.gender : null,
           admin: data.is_family_admin ? "yes" : "no",
         });
       }
@@ -99,6 +101,7 @@ function AccountPage() {
         occupation: form.occupation,
         dob: form.dob,
         marital_status: form.marital,
+        gender: form.gender,
         is_family_admin: form.admin === "yes",
       })
       .eq("id", session.user.id);
@@ -166,6 +169,28 @@ function AccountPage() {
             <Field icon={MapPin} label="State" value={form.state} onChange={(v) => set("state", v)} />
             <Field icon={Briefcase} label="Occupation" value={form.occupation} onChange={(v) => set("occupation", v)} />
             <Field icon={Calendar} label="Date of Birth" value={form.dob} onChange={(v) => set("dob", v)} />
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Gender</label>
+              <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
+                {(["male", "female", "other"] as const).map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => set("gender", g)}
+                    className={`h-10 rounded-xl text-sm font-medium capitalize transition-all ${
+                      form.gender === g ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
+                {form.gender === null
+                  ? "Not set — your mobile number is hidden from other members until you set this."
+                  : "Affects whether your mobile number is shown to other members in the directory."}
+              </p>
+            </div>
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">

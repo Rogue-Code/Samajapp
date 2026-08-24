@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, Phone, MapPin, Briefcase, Heart, Cake, Users, BadgeCheck, Info,
+  ArrowLeft, Phone, MapPin, Briefcase, Heart, Cake, Users, BadgeCheck, Info, ChevronRight,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -39,19 +39,22 @@ function MemberProfilePage() {
   const { checking, session } = useRequireAuth();
   const [member, setMember] = useState<Member | null>(null);
   const [family, setFamily] = useState<FamilyNode[]>([]);
+  const [familyAdmin, setFamilyAdmin] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [profile, household] = await Promise.all([
+      const [profile, household, admin] = await Promise.all([
         supabase.rpc("get_member", { target_id: id }),
         supabase.rpc("get_member_family", { target_id: id }),
+        supabase.rpc("get_family_admin_of", { target_id: id }),
       ]);
       if (cancelled) return;
       setMember((profile.data?.[0] as Member) ?? null);
       setFamily((household.data ?? []) as FamilyNode[]);
+      setFamilyAdmin((admin.data?.[0] as Member) ?? null);
       setLoading(false);
     })();
     return () => {
@@ -135,12 +138,24 @@ function MemberProfilePage() {
               >
                 <Phone className="w-4 h-4" /> Call {member.mobile}
               </a>
+            ) : familyAdmin && familyAdmin.id !== member.id ? (
+              <button
+                onClick={() => navigate({ to: "/members/$id", params: { id: familyAdmin.id } })}
+                className="mt-4 w-full rounded-2xl bg-background border border-border px-3.5 py-3 flex items-center gap-3 text-left active:scale-[0.98] transition"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {(familyAdmin.full_name?.trim()[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] text-muted-foreground">No number shown — reach via family admin</div>
+                  <div className="text-sm font-semibold text-foreground truncate">{familyAdmin.full_name}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </button>
             ) : (
               <p className="mt-4 flex items-start gap-2 text-[11.5px] text-muted-foreground leading-relaxed">
                 <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
-                {member.is_family_admin
-                  ? "No contact number on file."
-                  : "Contact numbers are shared only for family admins. Reach this member through their family admin."}
+                No contact number shown for this member.
               </p>
             )}
           </section>

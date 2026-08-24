@@ -41,11 +41,12 @@ function ProfilePage() {
   const [occupation, setOccupation] = useState("");
   const [marital, setMarital] = useState("Single");
   const [dob, setDob] = useState("");
+  const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
   const [admin, setAdmin] = useState<"yes" | "no" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const canSubmit = name && village && occupation && dob && admin;
+  const canSubmit = name && village && occupation && dob && gender && admin;
 
   const handleSave = async () => {
     if (!canSubmit || saving || !session) return;
@@ -59,6 +60,7 @@ function ProfilePage() {
         occupation,
         dob,
         marital_status: marital,
+        gender,
         is_family_admin: admin === "yes",
         profile_completed: true,
       })
@@ -107,6 +109,27 @@ function ProfilePage() {
 
           <div className="space-y-4">
             <Field icon={User} label="Full Name" value={name} onChange={setName} placeholder="Ramesh Patel" />
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">Gender</label>
+              <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
+                {(["male", "female", "other"] as const).map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGender(g)}
+                    className={`h-10 rounded-xl text-sm font-medium capitalize transition-all ${
+                      gender === g ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
+                Affects whether your mobile number is shown to other members in the directory.
+              </p>
+            </div>
+
             <Field icon={MapPin} label="Village / City" value={village} onChange={setVillage} placeholder="Anand, Gujarat" />
             <Field icon={Briefcase} label="Occupation" value={occupation} onChange={setOccupation} placeholder="Business Owner" />
             <Field icon={Calendar} label="Date of Birth" value={dob} onChange={setDob} placeholder="DD / MM / YYYY" />

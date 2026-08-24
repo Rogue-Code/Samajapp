@@ -263,6 +263,7 @@ export type Database = {
           created_at: string
           dob: string | null
           full_name: string | null
+          gender: string | null
           id: string
           is_family_admin: boolean
           marital_status: string | null
@@ -279,6 +280,7 @@ export type Database = {
           created_at?: string
           dob?: string | null
           full_name?: string | null
+          gender?: string | null
           id: string
           is_family_admin?: boolean
           marital_status?: string | null
@@ -295,6 +297,7 @@ export type Database = {
           created_at?: string
           dob?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
           is_family_admin?: boolean
           marital_status?: string | null
@@ -414,6 +417,22 @@ export type Database = {
     Functions: {
       birth_year_of: { Args: { dob_text: string }; Returns: number }
       current_role_is: { Args: { required: string[] }; Returns: boolean }
+      get_family_admin_of: {
+        Args: { target_id: string }
+        Returns: {
+          birth_year: number
+          city: string
+          full_name: string
+          id: string
+          is_family_admin: boolean
+          marital_status: string
+          mobile: string
+          occupation: string
+          role: string
+          state: string
+          village: string
+        }[]
+      }
       get_member: {
         Args: { target_id: string }
         Returns: {
