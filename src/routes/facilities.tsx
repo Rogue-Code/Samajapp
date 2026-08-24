@@ -2,14 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search, ArrowLeft, MapPin, Phone, Navigation, Bookmark,
-  ChevronDown, BadgeCheck, Home as HomeIcon, Building, HandHeart, User,
+  BadgeCheck, Home as HomeIcon, Building, HandHeart, User,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { categoryStyle, states, categories, cities, type Facility } from "@/lib/facilities-data";
+import { categoryStyle, type Facility } from "@/lib/facilities-data";
 
 export const Route = createFileRoute("/facilities")({
   component: FacilitiesPage,
@@ -28,12 +28,7 @@ function FacilitiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
-  const [state, setState] = useState("All States");
-  const [category, setCategory] = useState<string>("All Categories");
-  const [city, setCity] = useState("All Cities");
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(new Set());
-  const [openDrop, setOpenDrop] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -97,13 +92,9 @@ function FacilitiesPage() {
         ![f.name, f.category, f.city, f.state, f.head ?? ""].some((v) => v.toLowerCase().includes(term))
       )
         return false;
-      if (state !== "All States" && f.state !== state) return false;
-      if (category !== "All Categories" && f.category !== category) return false;
-      if (city !== "All Cities" && f.city !== city) return false;
-      if (verifiedOnly && !f.verified) return false;
       return true;
     });
-  }, [facilities, q, state, category, city, verifiedOnly]);
+  }, [facilities, q]);
 
   if (checking || loading) return <LoadingScreen />;
 
@@ -131,14 +122,6 @@ function FacilitiesPage() {
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
             </div>
-
-            {/* Filter chips */}
-            <div className="flex gap-2 overflow-x-auto pt-3 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
-              <DropdownChip label={state} options={states} onSelect={setState} open={openDrop === "state"} setOpen={(o) => setOpenDrop(o ? "state" : null)} />
-              <DropdownChip label={category} options={categories as string[]} onSelect={setCategory} open={openDrop === "cat"} setOpen={(o) => setOpenDrop(o ? "cat" : null)} />
-              <DropdownChip label={city} options={cities} onSelect={setCity} open={openDrop === "city"} setOpen={(o) => setOpenDrop(o ? "city" : null)} />
-              <ToggleChip active={verifiedOnly} onClick={() => setVerifiedOnly((v) => !v)} icon={<BadgeCheck className="w-3.5 h-3.5" />} label="Verified" />
-            </div>
           </div>
         </div>
 
@@ -154,7 +137,7 @@ function FacilitiesPage() {
               <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
                 {facilities.length === 0
                   ? "The community directory hasn't been set up yet."
-                  : "Try changing your search or filters."}
+                  : "Try a different search."}
               </p>
             </div>
           )}
@@ -204,47 +187,6 @@ function FacilitiesPage() {
         <BottomNav active="facilities" />
       </div>
     </PhoneFrame>
-  );
-}
-
-function DropdownChip({ label, options, onSelect, open, setOpen }: {
-  label: string; options: string[]; onSelect: (v: string) => void; open: boolean; setOpen: (v: boolean) => void;
-}) {
-  return (
-    <div className="relative shrink-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="h-8 px-3 rounded-full bg-card border border-border text-xs font-semibold text-foreground flex items-center gap-1 shadow-soft"
-      >
-        {label} <ChevronDown className="w-3 h-3" />
-      </button>
-      {open && (
-        <div className="absolute top-10 left-0 z-40 min-w-[160px] bg-card border border-border rounded-xl shadow-elevated py-1 max-h-60 overflow-y-auto">
-          {options.map((o) => (
-            <button
-              key={o}
-              onClick={() => { onSelect(o); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs hover:bg-muted text-foreground"
-            >
-              {o}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ToggleChip({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1 shrink-0 transition shadow-soft border ${
-        active ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border"
-      }`}
-    >
-      {icon} {label}
-    </button>
   );
 }
 

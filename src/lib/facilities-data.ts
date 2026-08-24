@@ -6,14 +6,11 @@ export type FacilityCategory =
   | "School" | "College" | "Hostel" | "Hospital" | "Bank"
   | "Community Hall" | "Dharamshala" | "Trust" | "Coaching Center" | "Business Center";
 
-export const states = ["All States", "Gujarat", "Maharashtra", "Rajasthan", "Delhi"];
-
+/** Categories an admin can assign. "All Categories" is the directory-wide default. */
 export const categories: (FacilityCategory | "All Categories")[] = [
   "All Categories", "School", "College", "Hostel", "Hospital", "Bank",
   "Community Hall", "Dharamshala", "Trust", "Coaching Center", "Business Center",
 ];
-
-export const cities = ["All Cities", "Ahmedabad", "Surat", "Anand", "Vadodara", "Rajkot", "Dwarka", "Mumbai"];
 
 /** Presentation only — the icon and gradient a facility gets from its category. */
 const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
