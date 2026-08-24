@@ -302,6 +302,25 @@ function HomePage() {
         /* Scrollable body */
         <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
           {/* Upcoming Events */}
+          {events.length === 0 && isAdmin && (
+            <section className="pt-5">
+              <SectionHeader title="Upcoming Events" />
+              <div className="px-5 pt-3">
+                <button
+                  onClick={() => navigate({ to: "/admin" })}
+                  className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
+                >
+                  <div className="text-3xl mb-2">📅</div>
+                  <p className="text-sm font-semibold text-foreground">No events yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Add gatherings or camps in the admin console. Only you can see this prompt
+                    — members see nothing until an event is added.
+                  </p>
+                </button>
+              </div>
+            </section>
+          )}
+
           {events.length > 0 && (
             <section className="pt-5">
               <SectionHeader title="Upcoming Events" />
