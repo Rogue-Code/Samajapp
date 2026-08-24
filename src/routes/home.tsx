@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Search, Bell, Home as HomeIcon, Building, HandHeart, User,
   Calendar, MapPin, ChevronRight, ArrowRight, ChevronLeft, Check,
+  X, Loader2, Phone, Briefcase,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
@@ -31,6 +32,17 @@ type Sponsor = {
   emoji: string;
   link_url: string | null;
   facility_id: string | null;
+};
+
+type MemberResult = {
+  id: string;
+  full_name: string | null;
+  village: string | null;
+  city: string | null;
+  occupation: string | null;
+  mobile: string | null;
+  birth_year: number | null;
+  role: string;
 };
 
 type NewsRow = {
@@ -85,6 +97,9 @@ function HomePage() {
   const navigate = useNavigate();
   const { checking, session } = useRequireAuth();
   const { isAdmin } = useProfileRole(session);
+  const [term, setTerm] = useState("");
+  const [results, setResults] = useState<MemberResult[]>([]);
+  const [searching, setSearching] = useState(false);
   const [tab, setTab] = useState("home");
   const [adIndex, setAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -143,6 +158,23 @@ function HomePage() {
     return () => clearInterval(t);
   }, [nextAd, sponsored.length]);
 
+  // Debounced so typing does not fire a request per keystroke.
+  useEffect(() => {
+    const q = term.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      const { data } = await supabase.rpc("search_members", { term: q });
+      setResults((data ?? []) as MemberResult[]);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [term]);
+
   const toggleRsvp = async (eventId: string) => {
     if (!session) return;
     const had = rsvps.has(eventId);
@@ -197,14 +229,77 @@ function HomePage() {
             <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
               <Search className="w-5 h-5 text-muted-foreground shrink-0" />
               <input
-                placeholder="Search people, families, businesses, events..."
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                placeholder="Search members by name, village or work..."
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
+              {term && (
+                <button onClick={() => setTerm("")} className="text-muted-foreground" aria-label="Clear search">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Scrollable body */}
+        {/* Search results take over the body while a query is active */}
+        {term.trim().length >= 2 ? (
+          <div className="flex-1 overflow-y-auto pb-24 px-5 pt-4" style={{ scrollbarWidth: "none" }}>
+            {searching && (
+              <div className="flex justify-center py-10">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!searching && results.length === 0 && (
+              <div className="text-center py-16 px-6">
+                <div className="text-4xl mb-3">🔍</div>
+                <p className="font-semibold text-foreground">No members found</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Try a different name, village or occupation.
+                </p>
+              </div>
+            )}
+            {!searching && results.length > 0 && (
+              <div className="space-y-2.5">
+                <p className="text-[11px] text-muted-foreground px-1">
+                  {results.length} {results.length === 1 ? "member" : "members"}
+                </p>
+                {results.map((m) => {
+                  const place = [m.village, m.city].filter(Boolean).join(", ");
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => navigate({ to: "/members/$id", params: { id: m.id } })}
+                      className="w-full text-left rounded-2xl bg-card border border-border shadow-soft p-3.5 flex items-center gap-3 active:scale-[0.99] transition"
+                    >
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
+                        {(m.full_name?.trim()[0] ?? "?").toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-foreground truncate">{m.full_name}</div>
+                        {place && (
+                          <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                            <MapPin className="w-3 h-3 shrink-0" /> {place}
+                          </div>
+                        )}
+                        {m.occupation && (
+                          <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                            <Briefcase className="w-3 h-3 shrink-0" /> {m.occupation}
+                          </div>
+                        )}
+                      </div>
+                      {m.mobile && <Phone className="w-4 h-4 text-success shrink-0" />}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+
+        /* Scrollable body */
         <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
           {/* Upcoming Events */}
           {events.length > 0 && (
@@ -369,6 +464,8 @@ function HomePage() {
             <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
           </section>
         </div>
+
+        )}
 
         {/* Fixed Bottom Navigation */}
         <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">

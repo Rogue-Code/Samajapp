@@ -401,7 +401,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      birth_year_of: { Args: { dob_text: string }; Returns: number }
       current_role_is: { Args: { required: string[] }; Returns: boolean }
+      get_member: {
+        Args: { target_id: string }
+        Returns: {
+          birth_year: number
+          city: string
+          full_name: string
+          id: string
+          marital_status: string
+          mobile: string
+          occupation: string
+          role: string
+          state: string
+          village: string
+        }[]
+      }
+      get_member_family: {
+        Args: { target_id: string }
+        Returns: {
+          birth_year: number
+          full_name: string
+          id: string
+          relation: string
+          status: string
+        }[]
+      }
+      search_members: {
+        Args: { term: string }
+        Returns: {
+          birth_year: number
+          city: string
+          full_name: string
+          id: string
+          marital_status: string
+          mobile: string
+          occupation: string
+          role: string
+          village: string
+        }[]
+      }
       set_member_role: {
         Args: { new_role: string; target_id: string }
         Returns: undefined
