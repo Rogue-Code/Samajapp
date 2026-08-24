@@ -8,6 +8,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/home")({
@@ -83,6 +84,7 @@ function relativeTime(iso: string) {
 function HomePage() {
   const navigate = useNavigate();
   const { checking, session } = useRequireAuth();
+  const { isAdmin } = useProfileRole(session);
   const [tab, setTab] = useState("home");
   const [adIndex, setAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -245,6 +247,25 @@ function HomePage() {
           )}
 
           {/* Sponsored Banner Carousel */}
+          {!ad && isAdmin && (
+            <section className="pt-6">
+              <SectionHeader title="Sponsored" />
+              <div className="px-5 pt-3">
+                <button
+                  onClick={() => navigate({ to: "/admin" })}
+                  className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
+                >
+                  <div className="text-3xl mb-2">📣</div>
+                  <p className="text-sm font-semibold text-foreground">No sponsors yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Add local businesses or partners in the admin console. Only you can see
+                    this prompt — members see nothing until a sponsor is added.
+                  </p>
+                </button>
+              </div>
+            </section>
+          )}
+
           {ad && (
             <section className="pt-6">
               <SectionHeader title="Sponsored" />
