@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, Phone, MapPin, Briefcase, Heart, Cake, Users,
-  BadgeCheck, CheckCircle2, Clock, AlertCircle,
+  ArrowLeft, Phone, MapPin, Briefcase, Heart, Cake, Users, BadgeCheck, Info,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { FamilyTree, type FamilyNode } from "@/components/FamilyTree";
 
 export const Route = createFileRoute("/members_/$id")({
   component: MemberProfilePage,
@@ -23,27 +23,9 @@ type Member = {
   occupation: string | null;
   marital_status: string | null;
   mobile: string | null;
+  is_family_admin: boolean;
   birth_year: number | null;
   role: string;
-};
-
-type FamilyMember = {
-  id: string;
-  full_name: string;
-  relation: string;
-  birth_year: number | null;
-  status: string;
-};
-
-const RELATION_EMOJI: Record<string, string> = {
-  Father: "👨", Mother: "👩", Spouse: "💑", Son: "👦", Daughter: "👧",
-  Brother: "🧑", Sister: "👧", Grandfather: "👴", Grandmother: "👵", Other: "🧑",
-};
-
-const STATUS_META: Record<string, { icon: typeof CheckCircle2; className: string }> = {
-  verified: { icon: CheckCircle2, className: "text-success" },
-  pending: { icon: Clock, className: "text-warning" },
-  approval: { icon: AlertCircle, className: "text-destructive" },
 };
 
 function ageFromYear(year: number | null) {
@@ -56,7 +38,7 @@ function MemberProfilePage() {
   const navigate = useNavigate();
   const { checking, session } = useRequireAuth();
   const [member, setMember] = useState<Member | null>(null);
-  const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [family, setFamily] = useState<FamilyNode[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -69,7 +51,7 @@ function MemberProfilePage() {
       ]);
       if (cancelled) return;
       setMember((profile.data?.[0] as Member) ?? null);
-      setFamily((household.data ?? []) as FamilyMember[]);
+      setFamily((household.data ?? []) as FamilyNode[]);
       setLoading(false);
     })();
     return () => {
@@ -146,13 +128,20 @@ function MemberProfilePage() {
               </div>
             </div>
 
-            {member.mobile && (
+            {member.mobile ? (
               <a
                 href={`tel:${member.mobile}`}
                 className="mt-4 w-full h-12 rounded-2xl bg-success text-success-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
               >
                 <Phone className="w-4 h-4" /> Call {member.mobile}
               </a>
+            ) : (
+              <p className="mt-4 flex items-start gap-2 text-[11.5px] text-muted-foreground leading-relaxed">
+                <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
+                {member.is_family_admin
+                  ? "No contact number on file."
+                  : "Contact numbers are shared only for family admins. Reach this member through their family admin."}
+              </p>
             )}
           </section>
 
@@ -181,32 +170,20 @@ function MemberProfilePage() {
               )}
             </h2>
             {family.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-1 py-3">
-                No family members listed.
-              </p>
+              <p className="text-sm text-muted-foreground px-1 py-3">No family members listed.</p>
             ) : (
-              <div className="rounded-2xl bg-card border border-border shadow-soft divide-y divide-border/60">
-                {family.map((f) => {
-                  const meta = STATUS_META[f.status] ?? STATUS_META.pending;
-                  const StatusIcon = meta.icon;
-                  const memberAge = ageFromYear(f.birth_year);
-                  return (
-                    <div key={f.id} className="flex items-center gap-3 p-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center text-xl shrink-0">
-                        {RELATION_EMOJI[f.relation] ?? "🧑"}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-foreground truncate">{f.full_name}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {f.relation}
-                          {memberAge !== null && ` · ${memberAge} yrs`}
-                        </div>
-                      </div>
-                      <StatusIcon className={`w-4 h-4 shrink-0 ${meta.className}`} />
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                <FamilyTree
+                  members={family}
+                  selfName={member.full_name ?? "This member"}
+                  onOpen={(profileId) => navigate({ to: "/members/$id", params: { id: profileId } })}
+                />
+                {family.some((f) => f.linked_profile_id) && (
+                  <p className="text-[11px] text-muted-foreground mt-2 px-1">
+                    Cards with an arrow are on Sangath — tap to open their profile.
+                  </p>
+                )}
+              </>
             )}
           </section>
         </div>

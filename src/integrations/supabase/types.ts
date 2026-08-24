@@ -178,6 +178,7 @@ export type Database = {
           dob: string | null
           full_name: string
           id: string
+          linked_profile_id: string | null
           owner_id: string
           relation: string
           status: string
@@ -188,6 +189,7 @@ export type Database = {
           dob?: string | null
           full_name: string
           id?: string
+          linked_profile_id?: string | null
           owner_id: string
           relation: string
           status?: string
@@ -198,12 +200,21 @@ export type Database = {
           dob?: string | null
           full_name?: string
           id?: string
+          linked_profile_id?: string | null
           owner_id?: string
           relation?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "family_members_linked_profile_id_fkey"
+            columns: ["linked_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts: {
         Row: {
@@ -410,6 +421,7 @@ export type Database = {
           city: string
           full_name: string
           id: string
+          is_family_admin: boolean
           marital_status: string
           mobile: string
           occupation: string
@@ -424,6 +436,7 @@ export type Database = {
           birth_year: number
           full_name: string
           id: string
+          linked_profile_id: string
           relation: string
           status: string
         }[]
@@ -435,6 +448,7 @@ export type Database = {
           city: string
           full_name: string
           id: string
+          is_family_admin: boolean
           marital_status: string
           mobile: string
           occupation: string
