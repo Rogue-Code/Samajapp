@@ -119,6 +119,7 @@ function FacilitiesPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search facilities, schools, hospitals, hostels..."
+                autoComplete="off"
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
             </div>

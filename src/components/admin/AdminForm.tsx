@@ -32,6 +32,7 @@ export function AdminField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={3}
+          autoComplete="off"
           className={`${className} py-2.5 resize-none`}
         />
       ) : (
@@ -40,6 +41,7 @@ export function AdminField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          autoComplete="off"
           className={`${className} h-11`}
         />
       )}

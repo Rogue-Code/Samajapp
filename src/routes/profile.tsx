@@ -14,8 +14,8 @@ export const Route = createFileRoute("/profile")({
 });
 
 function Field({
-  icon: Icon, label, value, onChange, placeholder, type = "text",
-}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; }) {
+  icon: Icon, label, value, onChange, placeholder, type = "text", autoComplete = "off",
+}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; autoComplete?: string; }) {
   return (
     <div className="relative">
       <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">{label}</label>
@@ -26,6 +26,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60"
         />
       </div>
@@ -108,7 +109,7 @@ function ProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <Field icon={User} label="Full Name" value={name} onChange={setName} placeholder="Ramesh Patel" />
+            <Field icon={User} label="Full Name" value={name} onChange={setName} placeholder="Ramesh Patel" autoComplete="name" />
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">Gender</label>

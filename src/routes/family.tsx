@@ -390,6 +390,7 @@ function AddMemberSheet({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Suresh Patel"
+              autoComplete="off"
               className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </div>
@@ -481,6 +482,7 @@ function LinkAccountSheet({
               value={term}
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search by name or village"
+              autoComplete="off"
               className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
             />
           </div>

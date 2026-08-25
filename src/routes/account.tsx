@@ -161,8 +161,8 @@ function AccountPage() {
 
           {/* Personal Information */}
           <SectionCard title="Personal Information">
-            <Field icon={User} label="Full Name" value={form.name} onChange={(v) => set("name", v)} />
-            <Field icon={Phone} label="Mobile Number" value={form.mobile} onChange={(v) => set("mobile", v)} type="tel" />
+            <Field icon={User} label="Full Name" value={form.name} onChange={(v) => set("name", v)} autoComplete="name" />
+            <Field icon={Phone} label="Mobile Number" value={form.mobile} onChange={(v) => set("mobile", v)} type="tel" autoComplete="tel" />
             <Field icon={Mail} label="Email Address" value={session?.user.email ?? ""} onChange={() => {}} type="email" disabled />
             <Field icon={MapPin} label="Village" value={form.village} onChange={(v) => set("village", v)} />
             <Field icon={Building2} label="City" value={form.city} onChange={(v) => set("city", v)} />
@@ -323,8 +323,8 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 function Field({
-  icon: Icon, label, value, onChange, type = "text", disabled = false,
-}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean }) {
+  icon: Icon, label, value, onChange, type = "text", disabled = false, autoComplete = "off",
+}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean; autoComplete?: string }) {
   return (
     <div>
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">{label}</label>
@@ -335,6 +335,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
+          autoComplete={autoComplete}
           className="flex-1 bg-transparent outline-none text-foreground text-sm min-w-0 disabled:text-muted-foreground"
         />
       </div>

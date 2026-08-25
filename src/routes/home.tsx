@@ -232,6 +232,7 @@ function HomePage() {
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 placeholder="Search members by name, village or work..."
+                autoComplete="off"
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
               {term && (

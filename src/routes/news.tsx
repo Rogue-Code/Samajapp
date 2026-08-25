@@ -514,6 +514,7 @@ function CreatePostSheet({
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               placeholder="Add a clear, descriptive title"
+              autoComplete="off"
               className="mt-1 w-full h-11 px-3 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary"
             />
           </div>
