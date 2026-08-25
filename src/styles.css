@@ -80,15 +80,45 @@
   * {
     border-color: var(--color-border);
   }
+  html {
+    min-height: 100%;
+    overflow-x: hidden;
+  }
   html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  body, #root {
+    min-height: 100%;
+  }
+  input, textarea, select {
+    scroll-margin-block: 7rem;
+  }
 }
 
 @layer utilities {
+  .app-viewport {
+    min-height: 100vh;
+  }
+  @supports (min-height: 100dvh) {
+    .app-viewport {
+      min-height: 100dvh;
+    }
+  }
+  .keyboard-scroll-region {
+    scroll-padding-block: 7rem;
+  }
+  [data-keyboard-open] .keyboard-scroll-region {
+    max-height: 100vh;
+    padding-bottom: var(--keyboard-inset);
+  }
+  @supports (max-height: 100dvh) {
+    [data-keyboard-open] .keyboard-scroll-region {
+      max-height: 100dvh;
+    }
+  }
   .shake {
     animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
   }

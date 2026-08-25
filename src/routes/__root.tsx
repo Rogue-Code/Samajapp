@@ -71,7 +71,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" },
       { title: "Sangath" },
       { name: "description", content: "Sangath is a mobile app for managing family and community connections." },
       { name: "author", content: "Sangath" },
@@ -100,6 +100,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  // The Capacitor bundle mounts this whole tree into <div id="root">. Rendering
+  // <html>/<head>/<body> there makes React 19 adopt the real document elements as
+  // HostSingletons, so React ends up owning ancestors of its own container — and
+  // its event system then loops forever resolving the container on the first
+  // focus, pegging the renderer. Emit only the children in that build; index.html
+  // already provides the document. React 19 still hoists <title>/<meta> from
+  // HeadContent into <head> on its own.
+  if (typeof __CAPACITOR_SPA__ !== "undefined" && __CAPACITOR_SPA__) {
+    return (
+      <>
+        <HeadContent />
+        {children}
+      </>
+    );
+  }
+
   return (
     <html lang="en">
       <head>
