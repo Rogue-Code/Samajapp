@@ -1,8 +1,10 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, User, MapPin, Briefcase, Heart, Calendar, Check, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, User, Briefcase, Heart, Calendar, Check, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { PlacePicker } from "@/components/PlacePicker";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,9 +14,26 @@ export const Route = createLazyFileRoute("/profile")({
   component: ProfilePage,
 });
 
+const MARITAL_OPTIONS = ["Single", "Married", "Divorced", "Widowed", "Separated"] as const;
+type MaritalStatus = (typeof MARITAL_OPTIONS)[number];
+
 function Field({
-  icon: Icon, label, value, onChange, placeholder, type = "text", autoComplete = "off",
-}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; autoComplete?: string; }) {
+  icon: Icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  autoComplete = "off",
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: string;
+  autoComplete?: string;
+}) {
   return (
     <div className="relative">
       <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">{label}</label>
@@ -39,12 +58,32 @@ function ProfilePage() {
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
   const [occupation, setOccupation] = useState("");
-  const [marital, setMarital] = useState("Single");
+  const [marital, setMarital] = useState<MaritalStatus>("Single");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
   const [admin, setAdmin] = useState<"yes" | "no" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Every other field is required, so saving cannot blank it. avatar_url can be
+  // null, so without loading the current one first a re-save would wipe a photo
+  // the member had already set.
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      if (!cancelled && data?.avatar_url) setAvatarUrl(data.avatar_url);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   const canSubmit = name && village && occupation && dob && gender && admin;
 
@@ -60,6 +99,7 @@ function ProfilePage() {
         occupation,
         dob,
         marital_status: marital,
+        avatar_url: avatarUrl,
         gender,
         is_family_admin: admin === "yes",
         profile_completed: true,
@@ -99,19 +139,30 @@ function ProfilePage() {
 
         <div className="flex-1 px-6 py-6 pb-32 fade-up">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Profile Setup</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tell us about yourself to connect with your community.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tell us about yourself to connect with your community.
+          </p>
 
-          <div className="flex justify-center my-7">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center border-4 border-card shadow-card">
-              <User className="w-12 h-12 text-primary" />
-            </div>
+          <div className="my-7">
+            {session && (
+              <AvatarPicker userId={session.user.id} value={avatarUrl} onChange={setAvatarUrl} />
+            )}
           </div>
 
           <div className="space-y-4">
-            <Field icon={User} label="Full Name" value={name} onChange={setName} placeholder="Ramesh Patel" autoComplete="name" />
+            <Field
+              icon={User}
+              label="Full Name"
+              value={name}
+              onChange={setName}
+              placeholder="Ramesh Patel"
+              autoComplete="name"
+            />
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">Gender</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">
+                Gender
+              </label>
               <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
                 {(["male", "female", "other"] as const).map((g) => (
                   <button
@@ -125,34 +176,52 @@ function ProfilePage() {
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
-                Affects whether your mobile number is shown to other members in the directory.
-              </p>
             </div>
 
-            <Field icon={MapPin} label="Village / City" value={village} onChange={setVillage} placeholder="Anand, Gujarat" />
-            <Field icon={Briefcase} label="Occupation" value={occupation} onChange={setOccupation} placeholder="Business Owner" />
-            <Field icon={Calendar} label="Date of Birth" value={dob} onChange={setDob} placeholder="DD / MM / YYYY" />
+            <PlacePicker label="Village / City" value={village} onChange={setVillage} />
+            <Field
+              icon={Briefcase}
+              label="Occupation"
+              value={occupation}
+              onChange={setOccupation}
+              placeholder="Business Owner"
+            />
+            <Field
+              icon={Calendar}
+              label="Date of Birth"
+              value={dob}
+              onChange={setDob}
+              placeholder="DD / MM / YYYY"
+            />
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">Marital Status</label>
-              <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
-                {["Single", "Married", "Other"].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMarital(m)}
-                    className={`h-10 rounded-xl text-sm font-medium transition-all ${
-                      marital === m ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5 inline mr-1" /> {m}
-                  </button>
-                ))}
+              <label
+                htmlFor="marital"
+                className="text-xs font-medium text-muted-foreground mb-1.5 block px-1"
+              >
+                Marital Status
+              </label>
+              <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                <Heart className="w-4 h-4 text-muted-foreground shrink-0" />
+                <select
+                  id="marital"
+                  value={marital}
+                  onChange={(e) => setMarital(e.target.value as MaritalStatus)}
+                  className="flex-1 bg-transparent outline-none text-foreground appearance-none"
+                >
+                  {MARITAL_OPTIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="pt-2">
-              <label className="text-sm font-semibold text-foreground mb-3 block">Are you the Family Admin?</label>
+              <label className="text-sm font-semibold text-foreground mb-3 block">
+                Are you the Family Admin?
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 {(["yes", "no"] as const).map((v) => (
                   <button
@@ -162,13 +231,19 @@ function ProfilePage() {
                       admin === v ? "border-primary bg-primary-soft" : "border-border bg-card"
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
-                      admin === v ? "border-primary bg-primary" : "border-border"
-                    }`}>
-                      {admin === v && <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
+                        admin === v ? "border-primary bg-primary" : "border-border"
+                      }`}
+                    >
+                      {admin === v && (
+                        <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
+                      )}
                     </div>
                     <div className="text-2xl mb-1">{v === "yes" ? "👨‍👩‍👧" : "🙋"}</div>
-                    <div className="font-semibold text-foreground capitalize">{v === "yes" ? "Yes, I am" : "No, I'm not"}</div>
+                    <div className="font-semibold text-foreground capitalize">
+                      {v === "yes" ? "Yes, I am" : "No, I'm not"}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {v === "yes" ? "Manage family members" : "Join existing family"}
                     </div>

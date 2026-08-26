@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, CheckCircle2, Clock, AlertCircle, ChevronDown,
   UserPlus, Loader2, Trash2, X, Link as LinkIcon, Search, MapPin,
 } from "lucide-react";
-import { PhoneFrame } from "@/components/PhoneFrame";
+import { PhoneFrame, SheetPortal } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -372,61 +372,63 @@ function AddMemberSheet({
   };
 
   return (
-    <div className="fixed md:absolute inset-0 z-40 flex items-end">
-      <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
-      <div className="relative w-full bg-card rounded-t-3xl border-t border-border p-6 pb-8 fade-up">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-bold text-foreground text-lg">Add Family Member</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-label="Close">
-            <X className="w-4 h-4 text-foreground" />
+    <SheetPortal>
+      <div className="fixed md:absolute inset-0 z-40 flex items-end">
+        <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+        <div className="relative w-full bg-card rounded-t-3xl border-t border-border p-6 pb-8 fade-up">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-bold text-foreground text-lg">Add Family Member</h2>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-label="Close">
+              <X className="w-4 h-4 text-foreground" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Full Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Suresh Patel"
+                autoComplete="off"
+                className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Relation</label>
+              <select
+                value={relation}
+                onChange={(e) => setRelation(e.target.value)}
+                className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              >
+                {RELATIONS.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Date of Birth</label>
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={() => void submit()}
+            disabled={!canSave}
+            className="mt-6 w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            {saving ? (<><Loader2 className="w-5 h-5 animate-spin" /> Adding...</>) : "Add Member"}
           </button>
         </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Full Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Suresh Patel"
-              autoComplete="off"
-              className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Relation</label>
-            <select
-              value={relation}
-              onChange={(e) => setRelation(e.target.value)}
-              className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-            >
-              {RELATIONS.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Date of Birth</label>
-            <input
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={() => void submit()}
-          disabled={!canSave}
-          className="mt-6 w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          {saving ? (<><Loader2 className="w-5 h-5 animate-spin" /> Adding...</>) : "Add Member"}
-        </button>
       </div>
-    </div>
+    </SheetPortal>
   );
 }
 
@@ -461,68 +463,70 @@ function LinkAccountSheet({
   }, [term]);
 
   return (
-    <div className="fixed md:absolute inset-0 z-40 flex items-end">
-      <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
-      <div className="relative w-full bg-card rounded-t-3xl border-t border-border max-h-[85%] flex flex-col fade-up">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div className="min-w-0">
-            <h2 className="font-bold text-foreground">Link {member.full_name}</h2>
-            <p className="text-[11px] text-muted-foreground">Find their Sangath account</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0" aria-label="Close">
-            <X className="w-4 h-4 text-foreground" />
-          </button>
-        </div>
-
-        <div className="px-5 pt-4">
-          <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder="Search by name or village"
-              autoComplete="off"
-              className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2" style={{ scrollbarWidth: "none" }}>
-          {searching && (
-            <div className="flex justify-center py-6">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+    <SheetPortal>
+      <div className="fixed md:absolute inset-0 z-40 flex items-end">
+        <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+        <div className="relative w-full bg-card rounded-t-3xl border-t border-border max-h-[85%] flex flex-col fade-up">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <div className="min-w-0">
+              <h2 className="font-bold text-foreground">Link {member.full_name}</h2>
+              <p className="text-[11px] text-muted-foreground">Find their Sangath account</p>
             </div>
-          )}
-          {!searching && term.trim().length >= 2 && results.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">
-              No matching account. They may not have signed up yet.
-            </p>
-          )}
-          {!searching &&
-            results.map((r) => {
-              const place = [r.village, r.city].filter(Boolean).join(", ");
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => onPick(r.id)}
-                  className="w-full text-left rounded-2xl border border-border bg-background p-3 flex items-center gap-3 active:scale-[0.99] transition"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
-                    {(r.full_name?.trim()[0] ?? "?").toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">{r.full_name}</div>
-                    {place && (
-                      <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
-                        <MapPin className="w-3 h-3 shrink-0" /> {place}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0" aria-label="Close">
+              <X className="w-4 h-4 text-foreground" />
+            </button>
+          </div>
+
+          <div className="px-5 pt-4">
+            <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                placeholder="Search by name or village"
+                autoComplete="off"
+                className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2" style={{ scrollbarWidth: "none" }}>
+            {searching && (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!searching && term.trim().length >= 2 && results.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-8">
+                No matching account. They may not have signed up yet.
+              </p>
+            )}
+            {!searching &&
+              results.map((r) => {
+                const place = [r.village, r.city].filter(Boolean).join(", ");
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onPick(r.id)}
+                    className="w-full text-left rounded-2xl border border-border bg-background p-3 flex items-center gap-3 active:scale-[0.99] transition"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
+                      {(r.full_name?.trim()[0] ?? "?").toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{r.full_name}</div>
+                      {place && (
+                        <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                          <MapPin className="w-3 h-3 shrink-0" /> {place}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
         </div>
       </div>
-    </div>
+    </SheetPortal>
   );
 }

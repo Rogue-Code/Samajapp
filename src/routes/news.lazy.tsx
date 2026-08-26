@@ -6,7 +6,7 @@ import {
   ChevronLeft, Megaphone, Calendar, GraduationCap, Award,
   AlertTriangle, BookOpen, Flower2, Newspaper, Loader2,
 } from "lucide-react";
-import { PhoneFrame } from "@/components/PhoneFrame";
+import { PhoneFrame, SheetPortal } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
@@ -23,7 +23,8 @@ type Category =
 
 type Post = {
   id: string;
-  author_id: string;
+  // Null once the author deletes their account: the notice stays, the byline goes.
+  author_id: string | null;
   title: string;
   content: string;
   category: string;
@@ -376,7 +377,7 @@ function PostCard({
   const [menu, setMenu] = useState(false);
   const meta = categoryMeta(post.category);
   const Icon = meta.icon;
-  const authorName = post.author?.full_name ?? "Unknown member";
+  const authorName = post.author?.full_name ?? "Former member";
   const authorRole = ROLE_LABEL[post.author?.role ?? "member"] ?? "Member";
 
   return (
@@ -496,96 +497,98 @@ function CreatePostSheet({
   };
 
   return (
-    <div className="fixed md:absolute inset-0 z-40 bg-foreground/40 backdrop-blur-sm flex items-end md:items-center justify-center">
-      <div className="w-full md:max-w-md bg-card rounded-t-3xl md:rounded-3xl shadow-elevated max-h-[90%] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="text-base font-bold text-foreground">Create Post</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ scrollbarWidth: "none" }}>
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={120}
-              placeholder="Add a clear, descriptive title"
-              autoComplete="off"
-              className="mt-1 w-full h-11 px-3 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary"
-            />
+    <SheetPortal>
+      <div className="fixed md:absolute inset-0 z-40 bg-foreground/40 backdrop-blur-sm flex items-end md:items-center justify-center">
+        <div className="w-full md:max-w-md bg-card rounded-t-3xl md:rounded-3xl shadow-elevated max-h-[90%] flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h3 className="text-base font-bold text-foreground">Create Post</h3>
+            <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Post Content</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              maxLength={1500}
-              rows={5}
-              placeholder="Write your announcement, notice or update..."
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="text-[10px] text-muted-foreground text-right mt-1">{content.length}/1500</div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Category</label>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {(Object.keys(CATEGORY_META) as Category[]).map((c) => {
-                const active = category === c;
-                const Icon = CATEGORY_META[c].icon;
-                return (
-                  <button
-                    key={c}
-                    onClick={() => setCategory(c)}
-                    className={`h-10 px-3 rounded-xl text-xs font-semibold border flex items-center gap-2 transition ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground border-border"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" /> {c}
-                  </button>
-                );
-              })}
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ scrollbarWidth: "none" }}>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Title</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={120}
+                placeholder="Add a clear, descriptive title"
+                autoComplete="off"
+                className="mt-1 w-full h-11 px-3 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary"
+              />
             </div>
-          </div>
 
-          <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted ${canPin ? "" : "hidden"}`}>
-            <input
-              type="checkbox"
-              checked={pinned}
-              onChange={(e) => setPinned(e.target.checked)}
-              className="w-4 h-4 accent-primary"
-            />
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Pin className="w-3.5 h-3.5" /> Featured Announcement
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Post Content</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                maxLength={1500}
+                rows={5}
+                placeholder="Write your announcement, notice or update..."
+                className="mt-1 w-full px-3 py-2.5 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary resize-none"
+              />
+              <div className="text-[10px] text-muted-foreground text-right mt-1">{content.length}/1500</div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Category</label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {(Object.keys(CATEGORY_META) as Category[]).map((c) => {
+                  const active = category === c;
+                  const Icon = CATEGORY_META[c].icon;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCategory(c)}
+                      className={`h-10 px-3 rounded-xl text-xs font-semibold border flex items-center gap-2 transition ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-foreground border-border"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" /> {c}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="text-[11px] text-muted-foreground">Pin to top of the feed</div>
             </div>
-          </label>
-        </div>
 
-        <div className="border-t border-border px-5 py-3 flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 h-11 rounded-xl bg-muted text-foreground text-sm font-semibold"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={!canSubmit}
-            onClick={() => void publish()}
-            className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {publishing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>) : "Publish"}
-          </button>
+            <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted ${canPin ? "" : "hidden"}`}>
+              <input
+                type="checkbox"
+                checked={pinned}
+                onChange={(e) => setPinned(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <Pin className="w-3.5 h-3.5" /> Featured Announcement
+                </div>
+                <div className="text-[11px] text-muted-foreground">Pin to top of the feed</div>
+              </div>
+            </label>
+          </div>
+
+          <div className="border-t border-border px-5 py-3 flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 h-11 rounded-xl bg-muted text-foreground text-sm font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!canSubmit}
+              onClick={() => void publish()}
+              className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {publishing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>) : "Publish"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </SheetPortal>
   );
 }

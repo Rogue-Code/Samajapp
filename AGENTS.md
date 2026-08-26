@@ -84,13 +84,26 @@ trailing `_` opts a route out of that nesting. If you add a new
 `<parent>.<child>` route pair and the parent has no `<Outlet />`, name the
 child `<parent>_.<child>.tsx`.
 
-**Bottom sheets must use `fixed md:absolute inset-0`, not `absolute
-inset-0`.** The `PhoneFrame` component only has a fixed height at
-desktop widths (`md:h-[860px]`); at mobile widths it grows with content.
-An `absolute inset-0` sheet inside it anchors to the *document* bottom,
-not the viewport, so the Save/submit button can render below the fold
-and be unreachable. See any `AdminSheet`/`AddMemberSheet`/
-`CreatePostSheet` for the pattern.
+**Bottom sheets must render through `<SheetPortal>` from
+`PhoneFrame.tsx` — never inline.** A sheet placed inline anchors its
+`absolute` positioning to whichever route wrapper happens to carry
+`relative` (e.g. account's `relative flex flex-col min-h-screen`), and
+those stretch to the full page height — so the sheet's submit button
+renders hundreds of pixels below the fold and cannot be reached. Fixed
+2026-08-26: `PhoneFrame` is now two boxes — a non-scrolling outer frame
+that owns `relative` and the sizing, and `.keyboard-scroll-region`
+inside it that scrolls. `SheetPortal` puts sheets into a
+`display:contents` layer that is a sibling of the scroll region, so
+they resolve against the frame. Keep the sheet's own
+`fixed md:absolute inset-0` classes — `fixed` is what makes it work at
+mobile widths, where the body scrolls rather than the frame. Do not
+anchor a sheet to `.keyboard-scroll-region` either; it would scroll
+away with the content. See `DeleteAccountSheet` or `CreatePostSheet`.
+
+When verifying a sheet, measure at a mobile width *and* a desktop
+width. Note that `fade-up` runs 0.45s with a 12px `translateY`, so a
+`getBoundingClientRect()` taken right after opening reads 12px low —
+call `el.getAnimations().forEach(a => a.finish())` first.
 
 ## Workflow for schema changes
 

@@ -29,6 +29,29 @@ export function isStrongPassword(password: string) {
   return passwordRules(password).every((r) => r.passed);
 }
 
+/**
+ * Email a six-digit sign-in code.
+ *
+ * `createUser` is the only thing separating signup from login: on the login screen
+ * it stays false so a typo cannot silently create a second account, and Supabase
+ * reports an unknown address instead.
+ */
+export async function sendEmailOtp(email: string, createUser: boolean) {
+  return supabase.auth.signInWithOtp({
+    email: email.trim(),
+    options: { shouldCreateUser: createUser },
+  });
+}
+
+/** Exchange the emailed code for a session. */
+export async function verifyEmailOtp(email: string, token: string) {
+  return supabase.auth.verifyOtp({
+    email: email.trim(),
+    token: token.trim(),
+    type: "email",
+  });
+}
+
 /** Where a signed-in member should land: Home when their profile is set up, otherwise profile setup. */
 export async function destinationAfterLogin(): Promise<"/home" | "/profile"> {
   const { data: userData } = await supabase.auth.getUser();
@@ -45,15 +68,25 @@ export async function destinationAfterLogin(): Promise<"/home" | "/profile"> {
 /** Human-friendly copy for auth errors; never surfaces raw provider internals. */
 export function friendlyAuthError(message: string | undefined): string {
   const m = (message ?? "").toLowerCase();
-  if (m.includes("invalid login credentials")) return "Incorrect email or password. Please try again.";
-  if (m.includes("email not confirmed")) return "Please verify your email address before logging in.";
-  if (m.includes("already registered") || m.includes("already been registered") || m.includes("user already"))
+  if (m.includes("invalid login credentials"))
+    return "Incorrect email or password. Please try again.";
+  if (m.includes("signups not allowed") || m.includes("user not found"))
+    return "No account found for this email. Please sign up first.";
+  if (m.includes("email not confirmed"))
+    return "Please verify your email address before logging in.";
+  if (
+    m.includes("already registered") ||
+    m.includes("already been registered") ||
+    m.includes("user already")
+  )
     return "This email is already registered. Try logging in instead.";
   if (m.includes("expired")) return "This code has expired. Please request a new one.";
-  if (m.includes("invalid") && m.includes("token")) return "Incorrect verification code. Please try again.";
+  if (m.includes("invalid") && m.includes("token"))
+    return "Incorrect verification code. Please try again.";
   if (m.includes("otp")) return "Incorrect or expired verification code. Please request a new one.";
   if (m.includes("rate limit") || m.includes("too many") || m.includes("security purposes"))
     return "Too many attempts. Please wait a moment before trying again.";
-  if (m.includes("weak") || m.includes("password should")) return "Please choose a stronger password.";
+  if (m.includes("weak") || m.includes("password should"))
+    return "Please choose a stronger password.";
   return message || "Something went wrong. Please try again.";
 }

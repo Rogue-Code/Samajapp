@@ -1,69 +1,65 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { supabase } from "@/integrations/supabase/client";
+import { OtpInput } from "@/components/OtpInput";
 import {
   destinationAfterLogin,
   friendlyAuthError,
   isValidEmail,
+  sendEmailOtp,
+  verifyEmailOtp,
 } from "@/lib/auth-helpers";
 
 export const Route = createLazyFileRoute("/signup")({
   component: SignupPage,
 });
 
+/** Seconds before the member may ask for another code. */
+const RESEND_DELAY = 45;
+
 function SignupPage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  const canSubmit =
-    name.trim().length > 1 &&
-    isValidEmail(email) &&
-    password.length >= 8 &&
-    password === confirm;
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [cooldown]);
 
-  const handleSignup = async () => {
+  const sendCode = async () => {
     if (!isValidEmail(email)) {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (!canSubmit || loading) return;
+    if (loading) return;
     setError("");
     setLoading(true);
-    const { data, error: authError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { full_name: name.trim() },
-      },
-    });
-    if (authError) {
-      setError(friendlyAuthError(authError.message));
-      setLoading(false);
+    const { error: otpError } = await sendEmailOtp(email, true);
+    setLoading(false);
+    if (otpError) {
+      setError(friendlyAuthError(otpError.message));
       return;
     }
-    if (data.user && data.user.identities && data.user.identities.length === 0) {
-      setError("This email is already registered. Try logging in instead.");
-      setLoading(false);
-      return;
-    }
-    if (!data.session) {
-      setError("Account created, but you'll need to log in to continue.");
+    setCode("");
+    setStep("code");
+    setCooldown(RESEND_DELAY);
+  };
+
+  const verify = async () => {
+    if (code.length !== 6 || loading) return;
+    setError("");
+    setLoading(true);
+    const { data, error: verifyError } = await verifyEmailOtp(email, code);
+    if (verifyError || !data.session) {
+      setError(friendlyAuthError(verifyError?.message));
+      setCode("");
       setLoading(false);
       return;
     }
@@ -71,162 +67,159 @@ function SignupPage() {
     navigate({ to: dest });
   };
 
+  // Submit as soon as all six digits are in — saves a tap on mobile.
+  useEffect(() => {
+    if (step === "code" && code.length === 6 && !loading) void verify();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, step]);
+
   return (
     <PhoneFrame>
       <div className="flex flex-col min-h-screen md:min-h-[860px] px-6 pt-8 pb-8">
         <button
-          onClick={() => navigate({ to: "/" })}
+          onClick={() => (step === "code" ? setStep("email") : navigate({ to: "/" }))}
           className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
 
-        <div className="mt-6 fade-up">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Create your account</h1>
-          <p className="text-muted-foreground mt-2 text-base">Join Sangath with your email and password.</p>
-        </div>
+        {step === "email" ? (
+          <>
+            <div className="mt-6 fade-up">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                Create your account
+              </h1>
+              <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+                Enter your email and we'll send you a 6-digit code to verify it. No password needed.
+              </p>
+            </div>
 
-        <form
-          className="mt-8 space-y-4 fade-up"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSignup();
-          }}
-        >
-          <Field
-            icon={User}
-            label="Full Name"
-            value={name}
-            onChange={setName}
-            placeholder="Ramesh Patel"
-            autoComplete="name"
-          />
-          <Field
-            icon={Mail}
-            label="Email"
-            value={email}
-            onChange={setEmail}
-            placeholder="you@email.com"
-            type="email"
-            autoComplete="email"
-          />
-          <PasswordField
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            show={showPassword}
-            onToggle={() => setShowPassword((v) => !v)}
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-          />
-          <PasswordField
-            label="Confirm Password"
-            value={confirm}
-            onChange={setConfirm}
-            show={showPassword}
-            onToggle={() => setShowPassword((v) => !v)}
-            autoComplete="new-password"
-            placeholder="Re-enter password"
-          />
+            <form
+              className="mt-8 space-y-4 fade-up"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendCode();
+              }}
+            >
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Email Address
+                </label>
+                <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@email.com"
+                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 px-1">
+                  We'll only use this to sign you in and keep your account secure.
+                </p>
+              </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={!canSubmit || loading}
-            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Creating account...
-              </>
-            ) : (
-              "Sign Up"
-            )}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={!isValidEmail(email) || loading}
+                className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Sending code...
+                  </>
+                ) : (
+                  "Send verification code"
+                )}
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="mt-6 fade-up">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter the code</h1>
+              <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+                We sent a 6-digit code to{" "}
+                <span className="font-medium text-foreground">{email}</span>. It expires in a few
+                minutes.
+              </p>
+            </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+            <div className="mt-8 fade-up">
+              <OtpInput value={code} onChange={setCode} error={Boolean(error)} />
+
+              {error && <p className="text-sm text-destructive mt-4">{error}</p>}
+
+              <button
+                type="button"
+                onClick={() => void verify()}
+                disabled={code.length !== 6 || loading}
+                className="mt-6 w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Verifying...
+                  </>
+                ) : (
+                  "Verify & continue"
+                )}
+              </button>
+
+              <div className="mt-5 text-center text-sm text-muted-foreground">
+                Didn't get it?{" "}
+                {cooldown > 0 ? (
+                  <span>Resend in {cooldown}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void sendCode()}
+                    className="font-semibold text-primary"
+                  >
+                    Resend code
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        <p className="mt-auto pt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <button type="button" onClick={() => navigate({ to: "/" })} className="font-semibold text-primary">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/" })}
+            className="font-semibold text-primary"
+          >
             Login
           </button>
         </p>
+
+        <p className="mt-4 text-[11px] text-center text-muted-foreground leading-relaxed">
+          By creating an account you agree to our{" "}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/terms" })}
+            className="text-primary font-medium underline underline-offset-2"
+          >
+            Terms
+          </button>{" "}
+          and confirm you have read our{" "}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/privacy" })}
+            className="text-primary font-medium underline underline-offset-2"
+          >
+            Privacy Policy
+          </button>
+          , including who in the community can see your mobile number.
+        </p>
       </div>
     </PhoneFrame>
-  );
-}
-
-function Field({
-  icon: Icon,
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  autoComplete,
-}: {
-  icon: typeof User;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  type?: string;
-  autoComplete?: string;
-}) {
-  return (
-    <div>
-      <label className="text-sm font-medium text-foreground mb-2 block">{label}</label>
-      <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-        <input
-          type={type}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
-        />
-      </div>
-    </div>
-  );
-}
-
-function PasswordField({
-  label,
-  value,
-  onChange,
-  show,
-  onToggle,
-  autoComplete,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  show: boolean;
-  onToggle: () => void;
-  autoComplete?: string;
-  placeholder: string;
-}) {
-  return (
-    <div>
-      <label className="text-sm font-medium text-foreground mb-2 block">{label}</label>
-      <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-        <Lock className="w-4 h-4 text-muted-foreground" />
-        <input
-          type={show ? "text" : "password"}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
-        />
-        <button type="button" onClick={onToggle} className="text-muted-foreground" aria-label={show ? "Hide password" : "Show password"}>
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
   );
 }

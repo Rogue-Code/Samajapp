@@ -14,3 +14,22 @@ additional_redirect_urls = [
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+# Signup and login both use a 6-digit emailed code (signInWithOtp + verifyOtp).
+otp_length = 6
+# 10 minutes: long enough to switch to a mail app and back, short enough that a
+# code left sitting in an inbox stops working.
+otp_expiry = 600
+
+# The stock templates send only a {{ .ConfirmationURL }} link, which the code entry
+# screen has nothing to verify against. Both of these send {{ .Token }} instead.
+#
+# Both are needed: signInWithOtp picks "confirmation" (Confirm signup) for an address
+# it has not seen before and "magic_link" for a returning member. Updating only one
+# leaves half the members receiving a link they cannot use.
+[auth.email.template.magic_link]
+subject = "Your Sangath login code"
+content_path = "./supabase/templates/otp_code.html"
+
+[auth.email.template.confirmation]
+subject = "Your Sangath verification code"
+content_path = "./supabase/templates/otp_code.html"

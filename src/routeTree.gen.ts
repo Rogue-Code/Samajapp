@@ -18,9 +18,11 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FundraiserRouteImport } from './routes/fundraiser'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as FacilitiesIdRouteImport } from './routes/facilities_.$id'
 import { Route as MembersIdRouteImport } from './routes/members_.$id'
 
@@ -71,6 +73,11 @@ const NewsRoute = NewsRouteImport.update({
   path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/news.lazy').then((d) => d.Route))
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/privacy.lazy').then((d) => d.Route))
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -88,6 +95,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/signup.lazy').then((d) => d.Route))
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/terms.lazy').then((d) => d.Route))
 const FacilitiesIdRoute = FacilitiesIdRouteImport.update({
   id: '/facilities_/$id',
   path: '/facilities/$id',
@@ -111,9 +123,11 @@ export interface FileRoutesByFullPath {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/facilities/$id': typeof FacilitiesIdRoute
   '/members/$id': typeof MembersIdRoute
 }
@@ -127,9 +141,11 @@ export interface FileRoutesByTo {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/facilities/$id': typeof FacilitiesIdRoute
   '/members/$id': typeof MembersIdRoute
 }
@@ -144,9 +160,11 @@ export interface FileRoutesById {
   '/fundraiser': typeof FundraiserRoute
   '/home': typeof HomeRoute
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/facilities_/$id': typeof FacilitiesIdRoute
   '/members_/$id': typeof MembersIdRoute
 }
@@ -162,9 +180,11 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/facilities/$id'
     | '/members/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -178,9 +198,11 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/facilities/$id'
     | '/members/$id'
   id:
@@ -194,9 +216,11 @@ export interface FileRouteTypes {
     | '/fundraiser'
     | '/home'
     | '/news'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/facilities_/$id'
     | '/members_/$id'
   fileRoutesById: FileRoutesById
@@ -211,9 +235,11 @@ export interface RootRouteChildren {
   FundraiserRoute: typeof FundraiserRoute
   HomeRoute: typeof HomeRoute
   NewsRoute: typeof NewsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   FacilitiesIdRoute: typeof FacilitiesIdRoute
   MembersIdRoute: typeof MembersIdRoute
 }
@@ -283,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -302,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/facilities_/$id': {
@@ -331,9 +371,11 @@ const rootRouteChildren: RootRouteChildren = {
   FundraiserRoute: FundraiserRoute,
   HomeRoute: HomeRoute,
   NewsRoute: NewsRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   FacilitiesIdRoute: FacilitiesIdRoute,
   MembersIdRoute: MembersIdRoute,
 }

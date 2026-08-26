@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft, BadgeCheck, User, Phone, Mail, MapPin, Building2,
   Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, LogOut,
+  FileText, Shield, Trash2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -12,6 +13,7 @@ import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { BottomNav } from "@/components/BottomNav";
+import { DeleteAccountSheet } from "@/components/DeleteAccountSheet";
 
 export const Route = createLazyFileRoute("/account")({
   component: AccountPage,
@@ -38,6 +40,7 @@ function AccountPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [family, setFamily] = useState<{ total: number; verified: number }>({ total: 0, verified: 0 });
 
@@ -293,6 +296,24 @@ function AccountPage() {
             )}
           </button>
 
+          {/* Legal */}
+          <SectionCard title="Legal">
+            <button
+              onClick={() => navigate({ to: "/privacy" })}
+              className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
+            >
+              <Shield className="w-4 h-4 text-muted-foreground" /> Privacy Policy
+              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => navigate({ to: "/terms" })}
+              className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
+            >
+              <FileText className="w-4 h-4 text-muted-foreground" /> Terms of Use
+              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+            </button>
+          </SectionCard>
+
           {/* Sign out */}
           <button
             onClick={() => {
@@ -303,8 +324,31 @@ function AccountPage() {
           >
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
+
+          {/* Danger zone */}
+          <SectionCard title="Danger Zone">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Deleting your account removes your profile, your family members and your photo for
+              good. Community news you published stays in the feed without your name.
+            </p>
+            <button
+              onClick={() => setShowDelete(true)}
+              className="mt-1 w-full h-12 rounded-2xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+            >
+              <Trash2 className="w-4 h-4" /> Delete Account
+            </button>
+          </SectionCard>
+
           <div className="pb-4" />
         </div>
+
+        {showDelete && session && (
+          <DeleteAccountSheet
+            userId={session.user.id}
+            onClose={() => setShowDelete(false)}
+            onDeleted={() => navigate({ to: "/" })}
+          />
+        )}
 
         <BottomNav active="profile" />
       </div>
