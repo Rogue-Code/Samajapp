@@ -1,8 +1,17 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowLeft, Plus, Pencil, Trash2, ShieldCheck, Building, Calendar,
-  Megaphone, Users, BadgeCheck,
+  ArrowLeft,
+  Plus,
+  Pencil,
+  Trash2,
+  ShieldCheck,
+  Building,
+  Calendar,
+  Megaphone,
+  Users,
+  BadgeCheck,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -20,18 +29,39 @@ export const Route = createLazyFileRoute("/admin")({
 type Tab = "facilities" | "events" | "sponsors" | "members";
 
 type FacilityRow = {
-  id: string; name: string; category: string; city: string; state: string;
-  address: string; description: string | null; long_description: string | null;
-  phone: string | null; email: string | null; website: string | null;
-  head: string | null; established: number | null; capacity: string | null;
-  timings: string | null; verified: boolean;
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  state: string;
+  address: string;
+  description: string | null;
+  long_description: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  head: string | null;
+  established: number | null;
+  capacity: string | null;
+  timings: string | null;
+  verified: boolean;
 };
 type EventRow = {
-  id: string; title: string; starts_at: string; location: string | null; emoji: string;
+  id: string;
+  title: string;
+  starts_at: string;
+  location: string | null;
+  emoji: string;
 };
 type SponsorRow = {
-  id: string; name: string; description: string | null; emoji: string;
-  facility_id: string | null; link_url: string | null; active: boolean; sort_order: number;
+  id: string;
+  name: string;
+  description: string | null;
+  emoji: string;
+  facility_id: string | null;
+  link_url: string | null;
+  active: boolean;
+  sort_order: number;
 };
 type MemberRow = { id: string; full_name: string | null; village: string | null; role: string };
 
@@ -56,6 +86,7 @@ function slugify(value: string) {
 
 function AdminPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { isAdmin, canPublish, loading: roleLoading } = useProfileRole(session);
   const [tab, setTab] = useState<Tab>("facilities");
@@ -77,7 +108,10 @@ function AdminPage() {
     const [f, e, s, m] = await Promise.all([
       supabase.from("facilities").select("*").order("name"),
       supabase.from("events").select("id, title, starts_at, location, emoji").order("starts_at"),
-      supabase.from("sponsors").select("id, name, description, emoji, facility_id, link_url, active, sort_order").order("sort_order"),
+      supabase
+        .from("sponsors")
+        .select("id, name, description, emoji, facility_id, link_url, active, sort_order")
+        .order("sort_order"),
       supabase.from("profiles").select("id, full_name, village, role").order("full_name"),
     ]);
     setFacilities(f.data ?? []);
@@ -190,7 +224,7 @@ function AdminPage() {
             This area is for committee members and administrators.
           </p>
           <button
-            onClick={() => navigate({ to: "/home" })}
+            onClick={goBack}
             className="mt-6 h-11 px-6 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
           >
             Back to Home
@@ -215,7 +249,7 @@ function AdminPage() {
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
-              onClick={() => navigate({ to: "/home" })}
+              onClick={goBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
@@ -245,12 +279,18 @@ function AdminPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 pb-28 space-y-3" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="flex-1 overflow-y-auto px-5 py-4 pb-28 space-y-3"
+          style={{ scrollbarWidth: "none" }}
+        >
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {activeTab === "facilities" && (
             <>
-              <AddButton label="Add Facility" onClick={() => setEditFacility({ verified: false })} />
+              <AddButton
+                label="Add Facility"
+                onClick={() => setEditFacility({ verified: false })}
+              />
               {facilities.map((f) => (
                 <RowCard
                   key={f.id}
@@ -258,7 +298,9 @@ function AdminPage() {
                   subtitle={`${f.category} · ${f.city}, ${f.state}`}
                   badge={f.verified ? "Verified" : undefined}
                   onEdit={() => setEditFacility(f)}
-                  onDelete={() => void run(() => supabase.from("facilities").delete().eq("id", f.id))}
+                  onDelete={() =>
+                    void run(() => supabase.from("facilities").delete().eq("id", f.id))
+                  }
                 />
               ))}
               {facilities.length === 0 && (
@@ -293,7 +335,12 @@ function AdminPage() {
 
           {activeTab === "sponsors" && (
             <>
-              <AddButton label="Add Sponsor" onClick={() => setEditSponsor({ emoji: "🏢", active: true, sort_order: sponsors.length + 1 })} />
+              <AddButton
+                label="Add Sponsor"
+                onClick={() =>
+                  setEditSponsor({ emoji: "🏢", active: true, sort_order: sponsors.length + 1 })
+                }
+              />
               {sponsors.map((s) => (
                 <RowCard
                   key={s.id}
@@ -322,7 +369,10 @@ function AdminPage() {
               {members.map((m) => {
                 const isSelf = m.id === session?.user.id;
                 return (
-                  <div key={m.id} className="rounded-2xl bg-card border border-border shadow-soft p-3.5">
+                  <div
+                    key={m.id}
+                    className="rounded-2xl bg-card border border-border shadow-soft p-3.5"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
                         {(m.full_name?.trim()?.[0] ?? "?").toUpperCase()}
@@ -330,9 +380,16 @@ function AdminPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-foreground truncate">
                           {m.full_name ?? "Unnamed member"}
-                          {isSelf && <span className="text-[10px] text-muted-foreground font-normal"> (you)</span>}
+                          {isSelf && (
+                            <span className="text-[10px] text-muted-foreground font-normal">
+                              {" "}
+                              (you)
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[11px] text-muted-foreground truncate">{m.village ?? "—"}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {m.village ?? "—"}
+                        </div>
                       </div>
                       {m.role !== "member" && (
                         <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
@@ -347,7 +404,9 @@ function AdminPage() {
                           disabled={isSelf || m.role === r || saving}
                           onClick={() => void changeRole(m.id, r)}
                           className={`h-8 rounded-lg text-[11px] font-semibold capitalize transition disabled:opacity-40 ${
-                            m.role === r ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                            m.role === r
+                              ? "bg-card text-foreground shadow-soft"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {r}
@@ -458,7 +517,9 @@ function AdminPage() {
               label="Established"
               type="number"
               value={editFacility.established ? String(editFacility.established) : ""}
-              onChange={(v) => setEditFacility({ ...editFacility, established: v ? Number(v) : null })}
+              onChange={(v) =>
+                setEditFacility({ ...editFacility, established: v ? Number(v) : null })
+              }
               placeholder="e.g. 1995"
               hint="Year only."
             />
@@ -485,8 +546,8 @@ function AdminPage() {
               <span className="text-sm font-medium text-foreground">
                 Verified by the community
                 <span className="block text-[11px] font-normal text-muted-foreground mt-0.5">
-                  Only tick this once someone has confirmed the details are correct — members
-                  rely on this badge.
+                  Only tick this once someone has confirmed the details are correct — members rely
+                  on this badge.
                 </span>
               </span>
             </label>
@@ -644,7 +705,11 @@ function EmptyNote({ title, text }: { title: string; text: string }) {
 }
 
 function RowCard({
-  title, subtitle, badge, onEdit, onDelete,
+  title,
+  subtitle,
+  badge,
+  onEdit,
+  onDelete,
 }: {
   title: string;
   subtitle: string;
@@ -666,7 +731,11 @@ function RowCard({
           )}
         </div>
         <div className="flex gap-1.5 shrink-0">
-          <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center" aria-label="Edit">
+          <button
+            onClick={onEdit}
+            className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center"
+            aria-label="Edit"
+          >
             <Pencil className="w-4 h-4 text-foreground" />
           </button>
           <button
@@ -683,7 +752,10 @@ function RowCard({
           <p className="text-xs text-foreground">Delete this permanently?</p>
           <div className="flex gap-2 mt-2">
             <button
-              onClick={() => { setConfirming(false); onDelete(); }}
+              onClick={() => {
+                setConfirming(false);
+                onDelete();
+              }}
               className="flex-1 h-9 rounded-lg bg-destructive text-destructive-foreground text-xs font-semibold"
             >
               Delete

@@ -1,10 +1,28 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Bell, Home as HomeIcon, Building, HandHeart, User,
-  Plus, Pin, Share2, Bookmark, MoreVertical, X,
-  ChevronLeft, Megaphone, Calendar, GraduationCap, Award,
-  AlertTriangle, BookOpen, Flower2, Newspaper, Loader2,
+  Bell,
+  Home as HomeIcon,
+  Building,
+  HandHeart,
+  User,
+  Plus,
+  Pin,
+  Share2,
+  Bookmark,
+  MoreVertical,
+  X,
+  ChevronLeft,
+  Megaphone,
+  Calendar,
+  GraduationCap,
+  Award,
+  AlertTriangle,
+  BookOpen,
+  Flower2,
+  Newspaper,
+  Loader2,
 } from "lucide-react";
 import { PhoneFrame, SheetPortal } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -18,8 +36,14 @@ export const Route = createLazyFileRoute("/news")({
 });
 
 type Category =
-  | "Announcement" | "Event" | "Education" | "Scholarship"
-  | "Achievement" | "Obituary" | "Emergency Notice" | "General Update";
+  | "Announcement"
+  | "Event"
+  | "Education"
+  | "Scholarship"
+  | "Achievement"
+  | "Obituary"
+  | "Emergency Notice"
+  | "General Update";
 
 type Post = {
   id: string;
@@ -34,12 +58,12 @@ type Post = {
 };
 
 const CATEGORY_META: Record<Category, { icon: typeof Megaphone; color: string }> = {
-  "Announcement": { icon: Megaphone, color: "from-primary to-accent-saffron" },
-  "Event": { icon: Calendar, color: "from-success to-primary" },
-  "Education": { icon: BookOpen, color: "from-primary to-success" },
-  "Scholarship": { icon: GraduationCap, color: "from-accent-saffron to-warning" },
-  "Achievement": { icon: Award, color: "from-warning to-accent-saffron" },
-  "Obituary": { icon: Flower2, color: "from-muted-foreground to-foreground" },
+  Announcement: { icon: Megaphone, color: "from-primary to-accent-saffron" },
+  Event: { icon: Calendar, color: "from-success to-primary" },
+  Education: { icon: BookOpen, color: "from-primary to-success" },
+  Scholarship: { icon: GraduationCap, color: "from-accent-saffron to-warning" },
+  Achievement: { icon: Award, color: "from-warning to-accent-saffron" },
+  Obituary: { icon: Flower2, color: "from-muted-foreground to-foreground" },
   "Emergency Notice": { icon: AlertTriangle, color: "from-destructive to-accent-saffron" },
   "General Update": { icon: Newspaper, color: "from-secondary-foreground to-muted-foreground" },
 };
@@ -68,7 +92,11 @@ function relativeTime(iso: string) {
   const days = Math.floor(hours / 24);
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function initialOf(name: string | null) {
@@ -84,8 +112,7 @@ const PAGE_SIZE = 15;
  */
 function sortFeed(rows: Post[]) {
   return [...rows].sort(
-    (a, b) =>
-      Number(b.pinned) - Number(a.pinned) || b.created_at.localeCompare(a.created_at),
+    (a, b) => Number(b.pinned) - Number(a.pinned) || b.created_at.localeCompare(a.created_at),
   );
 }
 
@@ -94,6 +121,7 @@ const POST_SELECT =
 
 function NewsPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish, isAdmin } = useProfileRole(session);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -195,7 +223,10 @@ function NewsPage() {
   };
 
   const togglePin = async (id: string, pinned: boolean) => {
-    const { error: pinError } = await supabase.from("posts").update({ pinned: !pinned }).eq("id", id);
+    const { error: pinError } = await supabase
+      .from("posts")
+      .update({ pinned: !pinned })
+      .eq("id", id);
     if (pinError) {
       setError(friendlyAuthError(pinError.message));
       return;
@@ -213,7 +244,12 @@ function NewsPage() {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const addPost = async (input: { title: string; content: string; category: Category; pinned: boolean }) => {
+  const addPost = async (input: {
+    title: string;
+    content: string;
+    category: Category;
+    pinned: boolean;
+  }) => {
     if (!session) return;
     const { data, error: insertError } = await supabase
       .from("posts")
@@ -265,7 +301,7 @@ function NewsPage() {
           <div className="px-5 pt-8 pb-3">
             <div className="flex items-center gap-3 mb-3">
               <button
-                onClick={() => navigate({ to: "/home" })}
+                onClick={goBack}
                 className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
                 aria-label="Back"
               >
@@ -283,7 +319,11 @@ function NewsPage() {
         </div>
 
         {/* Feed — newest first, paged in as it is scrolled */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-28" style={{ scrollbarWidth: "none" }}>
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto pb-28"
+          style={{ scrollbarWidth: "none" }}
+        >
           <div className="px-5 pt-4 space-y-4">
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
             {posts.length === 0 && (
@@ -318,7 +358,9 @@ function NewsPage() {
               </div>
             )}
             {!hasMore && posts.length > 0 && (
-              <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
+              <div className="text-center text-xs text-muted-foreground py-6">
+                You're all caught up ✨
+              </div>
             )}
           </div>
         </div>
@@ -339,7 +381,12 @@ function NewsPage() {
             {[
               { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
               { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
-              { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/fundraiser" as const },
+              {
+                id: "fundraiser",
+                icon: HandHeart,
+                label: "Fundraiser",
+                to: "/fundraiser" as const,
+              },
               { id: "profile", icon: User, label: "Profile", to: "/account" as const },
             ].map((n) => (
               <button
@@ -355,7 +402,11 @@ function NewsPage() {
         </div>
 
         {showCreate && (
-          <CreatePostSheet onClose={() => setShowCreate(false)} onSubmit={addPost} canPin={isAdmin} />
+          <CreatePostSheet
+            onClose={() => setShowCreate(false)}
+            onSubmit={addPost}
+            canPin={isAdmin}
+          />
         )}
       </div>
     </PhoneFrame>
@@ -363,7 +414,14 @@ function NewsPage() {
 }
 
 function PostCard({
-  post, saved, onSave, onShare, onPin, onDelete, canPin, canDelete,
+  post,
+  saved,
+  onSave,
+  onShare,
+  onPin,
+  onDelete,
+  canPin,
+  canDelete,
 }: {
   post: Post;
   saved: boolean;
@@ -394,7 +452,9 @@ function PostCard({
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
-        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${meta.color} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}>
+        <div
+          className={`w-11 h-11 rounded-full bg-gradient-to-br ${meta.color} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}
+        >
           {initialOf(post.author?.full_name ?? null)}
         </div>
         <div className="flex-1 min-w-0">
@@ -416,7 +476,10 @@ function PostCard({
               <div className="absolute right-0 top-9 z-10 w-40 rounded-xl bg-popover border border-border shadow-elevated text-sm overflow-hidden">
                 {canPin && (
                   <button
-                    onClick={() => { onPin(); setMenu(false); }}
+                    onClick={() => {
+                      onPin();
+                      setMenu(false);
+                    }}
                     className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
                   >
                     <Pin className="w-4 h-4" /> {post.pinned ? "Unpin" : "Pin"}
@@ -424,7 +487,10 @@ function PostCard({
                 )}
                 {canDelete && (
                   <button
-                    onClick={() => { onDelete(); setMenu(false); }}
+                    onClick={() => {
+                      onDelete();
+                      setMenu(false);
+                    }}
                     className="w-full text-left px-3 py-2 hover:bg-muted text-destructive flex items-center gap-2"
                   >
                     <X className="w-4 h-4" /> Delete
@@ -438,7 +504,9 @@ function PostCard({
 
       {/* Category chip */}
       <div className="px-4 pb-2">
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold text-white bg-gradient-to-r ${meta.color}`}>
+        <span
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold text-white bg-gradient-to-r ${meta.color}`}
+        >
           <Icon className="w-3 h-3" /> {post.category}
         </span>
       </div>
@@ -475,10 +543,17 @@ function PostCard({
 }
 
 function CreatePostSheet({
-  onClose, onSubmit, canPin,
+  onClose,
+  onSubmit,
+  canPin,
 }: {
   onClose: () => void;
-  onSubmit: (p: { title: string; content: string; category: Category; pinned: boolean }) => Promise<void>;
+  onSubmit: (p: {
+    title: string;
+    content: string;
+    category: Category;
+    pinned: boolean;
+  }) => Promise<void>;
   canPin: boolean;
 }) {
   const [title, setTitle] = useState("");
@@ -502,12 +577,18 @@ function CreatePostSheet({
         <div className="w-full md:max-w-md bg-card rounded-t-3xl md:rounded-3xl shadow-elevated max-h-[90%] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h3 className="text-base font-bold text-foreground">Create Post</h3>
-            <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ scrollbarWidth: "none" }}>
+          <div
+            className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+            style={{ scrollbarWidth: "none" }}
+          >
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Title</label>
               <input
@@ -530,7 +611,9 @@ function CreatePostSheet({
                 placeholder="Write your announcement, notice or update..."
                 className="mt-1 w-full px-3 py-2.5 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary resize-none"
               />
-              <div className="text-[10px] text-muted-foreground text-right mt-1">{content.length}/1500</div>
+              <div className="text-[10px] text-muted-foreground text-right mt-1">
+                {content.length}/1500
+              </div>
             </div>
 
             <div>
@@ -556,7 +639,9 @@ function CreatePostSheet({
               </div>
             </div>
 
-            <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted ${canPin ? "" : "hidden"}`}>
+            <label
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted ${canPin ? "" : "hidden"}`}
+            >
               <input
                 type="checkbox"
                 checked={pinned}
@@ -584,7 +669,13 @@ function CreatePostSheet({
               onClick={() => void publish()}
               className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {publishing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>) : "Publish"}
+              {publishing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
+                </>
+              ) : (
+                "Publish"
+              )}
             </button>
           </div>
         </div>

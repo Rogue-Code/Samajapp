@@ -1,8 +1,20 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowLeft, Plus, CheckCircle2, Clock, AlertCircle, ChevronDown,
-  UserPlus, Loader2, Trash2, X, Link as LinkIcon, Search, MapPin,
+  ArrowLeft,
+  Plus,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  ChevronDown,
+  UserPlus,
+  Loader2,
+  Trash2,
+  X,
+  Link as LinkIcon,
+  Search,
+  MapPin,
 } from "lucide-react";
 import { PhoneFrame, SheetPortal } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -33,19 +45,43 @@ interface MemberSearchResult {
 }
 
 const RELATIONS = [
-  "Father", "Mother", "Spouse", "Son", "Daughter",
-  "Brother", "Sister", "Grandfather", "Grandmother", "Other",
+  "Father",
+  "Mother",
+  "Spouse",
+  "Son",
+  "Daughter",
+  "Brother",
+  "Sister",
+  "Grandfather",
+  "Grandmother",
+  "Other",
 ] as const;
 
 const RELATION_EMOJI: Record<string, string> = {
-  Father: "👨", Mother: "👩", Spouse: "💑", Son: "👦", Daughter: "👧",
-  Brother: "🧑", Sister: "👧", Grandfather: "👴", Grandmother: "👵", Other: "🧑",
+  Father: "👨",
+  Mother: "👩",
+  Spouse: "💑",
+  Son: "👦",
+  Daughter: "👧",
+  Brother: "🧑",
+  Sister: "👧",
+  Grandfather: "👴",
+  Grandmother: "👵",
+  Other: "🧑",
 };
 
-const statusMap: Record<Status, { label: string; icon: typeof CheckCircle2; color: string; bg: string }> = {
+const statusMap: Record<
+  Status,
+  { label: string; icon: typeof CheckCircle2; color: string; bg: string }
+> = {
   verified: { label: "Verified", icon: CheckCircle2, color: "text-success", bg: "bg-success-soft" },
   pending: { label: "Pending", icon: Clock, color: "text-warning", bg: "bg-warning-soft" },
-  approval: { label: "Needs Approval", icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/10" },
+  approval: {
+    label: "Needs Approval",
+    icon: AlertCircle,
+    color: "text-destructive",
+    bg: "bg-destructive/10",
+  },
 };
 
 function statusOf(value: string): Status {
@@ -75,6 +111,7 @@ function formatDob(dob: string | null) {
 
 function FamilyPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,7 +211,7 @@ function FamilyPage() {
         <div className="px-6 pt-8 pb-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 border-b border-border/50">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => navigate({ to: "/home" })}
+              onClick={goBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
               aria-label="Back"
             >
@@ -186,9 +223,14 @@ function FamilyPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 pb-32 fade-up" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="flex-1 overflow-y-auto px-6 py-6 pb-32 fade-up"
+          style={{ scrollbarWidth: "none" }}
+        >
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Family Members</h1>
-          <p className="text-sm text-muted-foreground mt-1">Verify and manage your family connections.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Verify and manage your family connections.
+          </p>
 
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
@@ -223,7 +265,10 @@ function FamilyPage() {
                 const open = expanded === m.id;
                 const age = ageFrom(m.dob);
                 return (
-                  <div key={m.id} className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden transition-all">
+                  <div
+                    key={m.id}
+                    className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden transition-all"
+                  >
                     <button
                       onClick={() => setExpanded(open ? null : m.id)}
                       className="w-full flex items-center gap-3 p-4 active:bg-muted/50 transition"
@@ -233,17 +278,26 @@ function FamilyPage() {
                       </div>
                       <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground truncate">{m.full_name}</span>
-                          {status === "verified" && <CheckCircle2 className="w-4 h-4 text-success shrink-0" />}
+                          <span className="font-semibold text-foreground truncate">
+                            {m.full_name}
+                          </span>
+                          {status === "verified" && (
+                            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {m.relation}{age !== null && ` · ${age} yrs`}
+                          {m.relation}
+                          {age !== null && ` · ${age} yrs`}
                         </div>
-                        <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full ${s.bg} ${s.color} text-[10px] font-semibold`}>
+                        <div
+                          className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full ${s.bg} ${s.color} text-[10px] font-semibold`}
+                        >
                           <s.icon className="w-3 h-3" /> {s.label}
                         </div>
                       </div>
-                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+                      <ChevronDown
+                        className={`w-5 h-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+                      />
                     </button>
                     {open && (
                       <div className="px-4 pb-4 pt-1 border-t border-border/50 fade-up">
@@ -254,7 +308,9 @@ function FamilyPage() {
                           </div>
                           <div>
                             <div className="text-muted-foreground">Date of Birth</div>
-                            <div className="font-medium text-foreground mt-0.5">{formatDob(m.dob)}</div>
+                            <div className="font-medium text-foreground mt-0.5">
+                              {formatDob(m.dob)}
+                            </div>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-3">
@@ -264,7 +320,11 @@ function FamilyPage() {
                               disabled={busyId === m.id}
                               className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
                             >
-                              {busyId === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                              {busyId === m.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4" />
+                              )}
                               Mark Verified
                             </button>
                           )}
@@ -284,7 +344,8 @@ function FamilyPage() {
                           {m.linked_profile_id ? (
                             <div className="flex items-center gap-2">
                               <span className="flex-1 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
-                                <LinkIcon className="w-3.5 h-3.5" /> Linked — their card opens this profile
+                                <LinkIcon className="w-3.5 h-3.5" /> Linked — their card opens this
+                                profile
                               </span>
                               <button
                                 onClick={() => void setLink(m.id, null)}
@@ -329,7 +390,7 @@ function FamilyPage() {
 
         <div className="sticky bottom-0 px-6 py-4 bg-background/90 backdrop-blur-xl border-t border-border/50">
           <button
-            onClick={() => navigate({ to: "/home" })}
+            onClick={goBack}
             className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition"
           >
             Done
@@ -374,18 +435,28 @@ function AddMemberSheet({
   return (
     <SheetPortal>
       <div className="fixed md:absolute inset-0 z-40 flex items-end">
-        <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+        <button
+          className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+          onClick={onClose}
+          aria-label="Close"
+        />
         <div className="relative w-full bg-card rounded-t-3xl border-t border-border p-6 pb-8 fade-up">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-bold text-foreground text-lg">Add Family Member</h2>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-label="Close">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
+              aria-label="Close"
+            >
               <X className="w-4 h-4 text-foreground" />
             </button>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Full Name</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
+                Full Name
+              </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -396,20 +467,26 @@ function AddMemberSheet({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Relation</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
+                Relation
+              </label>
               <select
                 value={relation}
                 onChange={(e) => setRelation(e.target.value)}
                 className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
               >
                 {RELATIONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Date of Birth</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
+                Date of Birth
+              </label>
               <input
                 type="date"
                 value={dob}
@@ -424,7 +501,13 @@ function AddMemberSheet({
             disabled={!canSave}
             className="mt-6 w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            {saving ? (<><Loader2 className="w-5 h-5 animate-spin" /> Adding...</>) : "Add Member"}
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" /> Adding...
+              </>
+            ) : (
+              "Add Member"
+            )}
           </button>
         </div>
       </div>
@@ -437,7 +520,9 @@ function AddMemberSheet({
  * in the public family tree becomes a link to that member's profile.
  */
 function LinkAccountSheet({
-  member, onClose, onPick,
+  member,
+  onClose,
+  onPick,
 }: {
   member: Member;
   onClose: () => void;
@@ -465,14 +550,22 @@ function LinkAccountSheet({
   return (
     <SheetPortal>
       <div className="fixed md:absolute inset-0 z-40 flex items-end">
-        <button className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+        <button
+          className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+          onClick={onClose}
+          aria-label="Close"
+        />
         <div className="relative w-full bg-card rounded-t-3xl border-t border-border max-h-[85%] flex flex-col fade-up">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="min-w-0">
               <h2 className="font-bold text-foreground">Link {member.full_name}</h2>
               <p className="text-[11px] text-muted-foreground">Find their Sangath account</p>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0" aria-label="Close">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0"
+              aria-label="Close"
+            >
               <X className="w-4 h-4 text-foreground" />
             </button>
           </div>
@@ -490,7 +583,10 @@ function LinkAccountSheet({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2" style={{ scrollbarWidth: "none" }}>
+          <div
+            className="flex-1 overflow-y-auto px-5 py-4 space-y-2"
+            style={{ scrollbarWidth: "none" }}
+          >
             {searching && (
               <div className="flex justify-center py-6">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -514,7 +610,9 @@ function LinkAccountSheet({
                       {(r.full_name?.trim()[0] ?? "?").toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground truncate">{r.full_name}</div>
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        {r.full_name}
+                      </div>
                       {place && (
                         <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                           <MapPin className="w-3 h-3 shrink-0" /> {place}

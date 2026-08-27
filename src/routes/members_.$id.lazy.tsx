@@ -1,7 +1,17 @@
 import { createLazyFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, Phone, MapPin, Briefcase, Heart, Cake, Users, BadgeCheck, Info, ChevronRight,
+  ArrowLeft,
+  Phone,
+  MapPin,
+  Briefcase,
+  Heart,
+  Cake,
+  Users,
+  BadgeCheck,
+  Info,
+  ChevronRight,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -35,6 +45,7 @@ function ageFromYear(year: number | null) {
 function MemberProfilePage() {
   const { id } = useParams({ from: "/members_/$id" });
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const [member, setMember] = useState<Member | null>(null);
   const [family, setFamily] = useState<FamilyNode[]>([]);
@@ -73,7 +84,7 @@ function MemberProfilePage() {
             This profile may have been removed.
           </p>
           <button
-            onClick={() => navigate({ to: "/home" })}
+            onClick={goBack}
             className="mt-6 h-11 px-6 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
           >
             Back to Home
@@ -93,7 +104,7 @@ function MemberProfilePage() {
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
-              onClick={() => navigate({ to: "/home" })}
+              onClick={goBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
@@ -105,7 +116,10 @@ function MemberProfilePage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 pb-28 space-y-5" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="flex-1 overflow-y-auto px-5 py-5 pb-28 space-y-5"
+          style={{ scrollbarWidth: "none" }}
+        >
           {/* Identity */}
           <section className="rounded-3xl bg-gradient-to-br from-primary-soft via-background to-accent p-5 border border-border shadow-card">
             <div className="flex items-center gap-4">
@@ -115,7 +129,9 @@ function MemberProfilePage() {
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
                   {member.full_name}
-                  {isSelf && <span className="text-[11px] font-normal text-muted-foreground"> (you)</span>}
+                  {isSelf && (
+                    <span className="text-[11px] font-normal text-muted-foreground"> (you)</span>
+                  )}
                 </h2>
                 {place && (
                   <p className="text-[11px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
@@ -146,8 +162,12 @@ function MemberProfilePage() {
                   {(familyAdmin.full_name?.trim()[0] ?? "?").toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-muted-foreground">No number shown — reach via family admin</div>
-                  <div className="text-sm font-semibold text-foreground truncate">{familyAdmin.full_name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    No number shown — reach via family admin
+                  </div>
+                  <div className="text-sm font-semibold text-foreground truncate">
+                    {familyAdmin.full_name}
+                  </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
               </button>
@@ -163,8 +183,16 @@ function MemberProfilePage() {
           <section>
             <h2 className="font-bold text-foreground text-sm mb-3 px-1">Details</h2>
             <div className="rounded-2xl bg-card border border-border shadow-soft divide-y divide-border/60">
-              <DetailRow icon={<Briefcase className="w-4 h-4" />} label="Occupation" value={member.occupation} />
-              <DetailRow icon={<Heart className="w-4 h-4" />} label="Marital status" value={member.marital_status} />
+              <DetailRow
+                icon={<Briefcase className="w-4 h-4" />}
+                label="Occupation"
+                value={member.occupation}
+              />
+              <DetailRow
+                icon={<Heart className="w-4 h-4" />}
+                label="Marital status"
+                value={member.marital_status}
+              />
               <DetailRow
                 icon={<Cake className="w-4 h-4" />}
                 label="Age"
@@ -190,7 +218,9 @@ function MemberProfilePage() {
                 <FamilyTree
                   members={family}
                   selfName={member.full_name ?? "This member"}
-                  onOpen={(profileId) => navigate({ to: "/members/$id", params: { id: profileId } })}
+                  onOpen={(profileId) =>
+                    navigate({ to: "/members/$id", params: { id: profileId } })
+                  }
                 />
                 {family.some((f) => f.linked_profile_id) && (
                   <p className="text-[11px] text-muted-foreground mt-2 px-1">
@@ -207,7 +237,9 @@ function MemberProfilePage() {
 }
 
 function DetailRow({
-  icon, label, value,
+  icon,
+  label,
+  value,
 }: {
   icon: React.ReactNode;
   label: string;

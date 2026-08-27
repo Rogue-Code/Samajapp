@@ -1,8 +1,20 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useMemo, useState } from "react";
 import {
-  ChevronLeft, Bell, Home as HomeIcon, Building, HandHeart, User,
-  Users, Share2, TrendingUp, Award, Plus, Sparkles, AlertTriangle,
+  ChevronLeft,
+  Bell,
+  Home as HomeIcon,
+  Building,
+  HandHeart,
+  User,
+  Users,
+  Share2,
+  TrendingUp,
+  Award,
+  Plus,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -38,9 +50,39 @@ const activeCampaign: Campaign = {
 };
 
 const pastCampaigns: Campaign[] = [
-  { id: 2, title: "Scholarship Fund 2025", desc: "", target: 2000000, raised: 2400000, donors: 612, status: "Completed", emoji: "📚", bg: "from-success to-primary" },
-  { id: 3, title: "Community Hall Renovation", desc: "", target: 5000000, raised: 5300000, donors: 1024, status: "Completed", emoji: "🏛️", bg: "from-warning to-accent-saffron" },
-  { id: 4, title: "Medical Assistance Drive", desc: "", target: 500000, raised: 480000, donors: 287, status: "Closed", emoji: "🏥", bg: "from-destructive to-accent-saffron" },
+  {
+    id: 2,
+    title: "Scholarship Fund 2025",
+    desc: "",
+    target: 2000000,
+    raised: 2400000,
+    donors: 612,
+    status: "Completed",
+    emoji: "📚",
+    bg: "from-success to-primary",
+  },
+  {
+    id: 3,
+    title: "Community Hall Renovation",
+    desc: "",
+    target: 5000000,
+    raised: 5300000,
+    donors: 1024,
+    status: "Completed",
+    emoji: "🏛️",
+    bg: "from-warning to-accent-saffron",
+  },
+  {
+    id: 4,
+    title: "Medical Assistance Drive",
+    desc: "",
+    target: 500000,
+    raised: 480000,
+    donors: 287,
+    status: "Closed",
+    emoji: "🏥",
+    bg: "from-destructive to-accent-saffron",
+  },
 ];
 
 const recentDonations = [
@@ -63,6 +105,7 @@ function shortINR(n: number) {
 
 function FundraiserPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish } = useProfileRole(session);
 
@@ -80,7 +123,7 @@ function FundraiserPage() {
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
-              onClick={() => navigate({ to: "/home" })}
+              onClick={goBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
@@ -101,7 +144,9 @@ function FundraiserPage() {
           {/* Hero campaign */}
           <section className="px-5 pt-4">
             <article className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
-              <div className={`relative h-40 bg-gradient-to-br ${activeCampaign.bg} flex items-center justify-center`}>
+              <div
+                className={`relative h-40 bg-gradient-to-br ${activeCampaign.bg} flex items-center justify-center`}
+              >
                 <span className="text-7xl opacity-90">{activeCampaign.emoji}</span>
                 <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-[10.5px] font-bold uppercase tracking-wider text-success">
                   <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
@@ -112,17 +157,25 @@ function FundraiserPage() {
                 </button>
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-bold text-foreground leading-snug">{activeCampaign.title}</h2>
-                <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">{activeCampaign.desc}</p>
+                <h2 className="text-lg font-bold text-foreground leading-snug">
+                  {activeCampaign.title}
+                </h2>
+                <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+                  {activeCampaign.desc}
+                </p>
 
                 <div className="mt-4 flex items-end justify-between">
                   <div>
                     <div className="text-[11px] text-muted-foreground">Raised</div>
-                    <div className="text-xl font-bold text-foreground">{shortINR(activeCampaign.raised)}</div>
+                    <div className="text-xl font-bold text-foreground">
+                      {shortINR(activeCampaign.raised)}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-[11px] text-muted-foreground">Goal</div>
-                    <div className="text-sm font-semibold text-foreground">{shortINR(activeCampaign.target)}</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {shortINR(activeCampaign.target)}
+                    </div>
                   </div>
                 </div>
 
@@ -171,9 +224,13 @@ function FundraiserPage() {
                 const initial = d.anonymous ? "?" : d.name.charAt(0);
                 return (
                   <div key={d.id} className="flex items-center gap-3 p-3.5">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-soft ${
-                      d.anonymous ? "bg-muted-foreground" : "bg-gradient-to-br from-primary to-accent-saffron"
-                    }`}>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-soft ${
+                        d.anonymous
+                          ? "bg-muted-foreground"
+                          : "bg-gradient-to-br from-primary to-accent-saffron"
+                      }`}
+                    >
                       {initial}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -195,21 +252,37 @@ function FundraiserPage() {
                 const pct = Math.min(100, Math.round((c.raised / c.target) * 100));
                 const success = c.raised >= c.target;
                 return (
-                  <article key={c.id} className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex">
-                    <div className={`w-20 shrink-0 bg-gradient-to-br ${c.bg} flex items-center justify-center`}>
+                  <article
+                    key={c.id}
+                    className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex"
+                  >
+                    <div
+                      className={`w-20 shrink-0 bg-gradient-to-br ${c.bg} flex items-center justify-center`}
+                    >
                       <span className="text-3xl opacity-90">{c.emoji}</span>
                     </div>
                     <div className="flex-1 min-w-0 p-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-foreground text-[13.5px] leading-tight line-clamp-1">{c.title}</h3>
-                        <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                          c.status === "Completed"
-                            ? "bg-success-soft text-success"
-                            : "bg-muted text-muted-foreground"
-                        }`}>{c.status}</span>
+                        <h3 className="font-semibold text-foreground text-[13.5px] leading-tight line-clamp-1">
+                          {c.title}
+                        </h3>
+                        <span
+                          className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            c.status === "Completed"
+                              ? "bg-success-soft text-success"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {c.status}
+                        </span>
                       </div>
                       <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>Raised <span className="text-foreground font-semibold">{shortINR(c.raised)}</span></span>
+                        <span>
+                          Raised{" "}
+                          <span className="text-foreground font-semibold">
+                            {shortINR(c.raised)}
+                          </span>
+                        </span>
                         <span>Goal {shortINR(c.target)}</span>
                       </div>
                       <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -247,9 +320,7 @@ function FundraiserPage() {
 
         {/* Admin FAB */}
         {canPublish && (
-          <button
-            className="absolute right-5 bottom-24 z-30 h-14 px-5 rounded-full bg-foreground text-background font-semibold shadow-elevated flex items-center gap-2 active:scale-95 transition"
-          >
+          <button className="absolute right-5 bottom-24 z-30 h-14 px-5 rounded-full bg-foreground text-background font-semibold shadow-elevated flex items-center gap-2 active:scale-95 transition">
             <Plus className="w-5 h-5" /> Campaign
           </button>
         )}
@@ -259,9 +330,27 @@ function FundraiserPage() {
           <div className="flex items-center justify-around">
             {[
               { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const, active: false },
-              { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const, active: false },
-              { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/fundraiser" as const, active: true },
-              { id: "profile", icon: User, label: "Profile", to: "/account" as const, active: false },
+              {
+                id: "facilities",
+                icon: Building,
+                label: "Facilities",
+                to: "/facilities" as const,
+                active: false,
+              },
+              {
+                id: "fundraiser",
+                icon: HandHeart,
+                label: "Fundraiser",
+                to: "/fundraiser" as const,
+                active: true,
+              },
+              {
+                id: "profile",
+                icon: User,
+                label: "Profile",
+                to: "/account" as const,
+                active: false,
+              },
             ].map((n) => (
               <button
                 key={n.id}
@@ -269,15 +358,19 @@ function FundraiserPage() {
                 className="flex flex-col items-center gap-1 py-1 px-4 relative"
               >
                 {n.active && <span className="absolute -top-2 w-8 h-1 rounded-full bg-primary" />}
-                <n.icon className={`w-5 h-5 ${n.active ? "text-primary" : "text-muted-foreground"}`} strokeWidth={n.active ? 2.5 : 2} />
-                <span className={`text-[10.5px] font-medium ${n.active ? "text-primary" : "text-muted-foreground"}`}>
+                <n.icon
+                  className={`w-5 h-5 ${n.active ? "text-primary" : "text-muted-foreground"}`}
+                  strokeWidth={n.active ? 2.5 : 2}
+                />
+                <span
+                  className={`text-[10.5px] font-medium ${n.active ? "text-primary" : "text-muted-foreground"}`}
+                >
                   {n.label}
                 </span>
               </button>
             ))}
           </div>
         </div>
-
       </div>
     </PhoneFrame>
   );
@@ -291,7 +384,15 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-function ImpactStat({ icon: Icon, label, value }: { icon: typeof Award; label: string; value: string }) {
+function ImpactStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Award;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl bg-primary-foreground/15 backdrop-blur-sm p-3">
       <Icon className="w-4 h-4 opacity-90" />

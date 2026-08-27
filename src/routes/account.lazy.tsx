@@ -1,9 +1,25 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoBack } from "@/hooks/use-go-back";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, BadgeCheck, User, Phone, Mail, MapPin, Building2,
-  Briefcase, Calendar, Heart, ShieldCheck, Users, ChevronRight, Check, LogOut,
-  FileText, Shield, Trash2,
+  ArrowLeft,
+  BadgeCheck,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Building2,
+  Briefcase,
+  Calendar,
+  Heart,
+  ShieldCheck,
+  Users,
+  ChevronRight,
+  Check,
+  LogOut,
+  FileText,
+  Shield,
+  Trash2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -34,6 +50,7 @@ const emptyForm = {
 
 function AccountPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish, role } = useProfileRole(session);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -42,7 +59,10 @@ function AccountPage() {
   const [error, setError] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [family, setFamily] = useState<{ total: number; verified: number }>({ total: 0, verified: 0 });
+  const [family, setFamily] = useState<{ total: number; verified: number }>({
+    total: 0,
+    verified: 0,
+  });
 
   useEffect(() => {
     if (!session) return;
@@ -60,7 +80,9 @@ function AccountPage() {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin")
+        .select(
+          "full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin",
+        )
         .eq("id", session.user.id)
         .maybeSingle();
       if (cancelled) return;
@@ -74,7 +96,10 @@ function AccountPage() {
           occupation: data.occupation ?? "",
           dob: data.dob ?? "",
           marital: data.marital_status ?? "Single",
-          gender: data.gender === "male" || data.gender === "female" || data.gender === "other" ? data.gender : null,
+          gender:
+            data.gender === "male" || data.gender === "female" || data.gender === "other"
+              ? data.gender
+              : null,
           admin: data.is_family_admin ? "yes" : "no",
         });
       }
@@ -125,7 +150,7 @@ function AccountPage() {
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
-              onClick={() => navigate({ to: "/home" })}
+              onClick={goBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
               aria-label="Back"
             >
@@ -163,24 +188,73 @@ function AccountPage() {
 
           {/* Personal Information */}
           <SectionCard title="Personal Information">
-            <Field icon={User} label="Full Name" value={form.name} onChange={(v) => set("name", v)} autoComplete="name" />
-            <Field icon={Phone} label="Mobile Number" value={form.mobile} onChange={(v) => set("mobile", v)} type="tel" autoComplete="tel" />
-            <Field icon={Mail} label="Email Address" value={session?.user.email ?? ""} onChange={() => {}} type="email" disabled />
-            <Field icon={MapPin} label="Village" value={form.village} onChange={(v) => set("village", v)} />
-            <Field icon={Building2} label="City" value={form.city} onChange={(v) => set("city", v)} />
-            <Field icon={MapPin} label="State" value={form.state} onChange={(v) => set("state", v)} />
-            <Field icon={Briefcase} label="Occupation" value={form.occupation} onChange={(v) => set("occupation", v)} />
-            <Field icon={Calendar} label="Date of Birth" value={form.dob} onChange={(v) => set("dob", v)} />
+            <Field
+              icon={User}
+              label="Full Name"
+              value={form.name}
+              onChange={(v) => set("name", v)}
+              autoComplete="name"
+            />
+            <Field
+              icon={Phone}
+              label="Mobile Number"
+              value={form.mobile}
+              onChange={(v) => set("mobile", v)}
+              type="tel"
+              autoComplete="tel"
+            />
+            <Field
+              icon={Mail}
+              label="Email Address"
+              value={session?.user.email ?? ""}
+              onChange={() => {}}
+              type="email"
+              disabled
+            />
+            <Field
+              icon={MapPin}
+              label="Village"
+              value={form.village}
+              onChange={(v) => set("village", v)}
+            />
+            <Field
+              icon={Building2}
+              label="City"
+              value={form.city}
+              onChange={(v) => set("city", v)}
+            />
+            <Field
+              icon={MapPin}
+              label="State"
+              value={form.state}
+              onChange={(v) => set("state", v)}
+            />
+            <Field
+              icon={Briefcase}
+              label="Occupation"
+              value={form.occupation}
+              onChange={(v) => set("occupation", v)}
+            />
+            <Field
+              icon={Calendar}
+              label="Date of Birth"
+              value={form.dob}
+              onChange={(v) => set("dob", v)}
+            />
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">Gender</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
+                Gender
+              </label>
               <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
                 {(["male", "female", "other"] as const).map((g) => (
                   <button
                     key={g}
                     onClick={() => set("gender", g)}
                     className={`h-10 rounded-xl text-sm font-medium capitalize transition-all ${
-                      form.gender === g ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                      form.gender === g
+                        ? "bg-card text-foreground shadow-soft"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {g}
@@ -204,7 +278,9 @@ function AccountPage() {
                     key={m}
                     onClick={() => set("marital", m)}
                     className={`h-10 rounded-xl text-sm font-medium transition-all ${
-                      form.marital === m ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                      form.marital === m
+                        ? "bg-card text-foreground shadow-soft"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {m}
@@ -223,7 +299,9 @@ function AccountPage() {
                     key={v}
                     onClick={() => set("admin", v)}
                     className={`h-10 rounded-xl text-sm font-medium transition-all ${
-                      form.admin === v ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
+                      form.admin === v
+                        ? "bg-card text-foreground shadow-soft"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {v === "yes" ? "Yes, I am Admin" : "No"}
@@ -238,7 +316,11 @@ function AccountPage() {
             <Row
               icon={<Users className="w-4 h-4" />}
               label="Family Members"
-              value={family.total === 0 ? "None added yet" : `${family.total} member${family.total === 1 ? "" : "s"}`}
+              value={
+                family.total === 0
+                  ? "None added yet"
+                  : `${family.total} member${family.total === 1 ? "" : "s"}`
+              }
             />
             <Row
               icon={<BadgeCheck className="w-4 h-4" />}
@@ -247,7 +329,13 @@ function AccountPage() {
                 family.total === 0 ? (
                   "—"
                 ) : (
-                  <span className={family.verified === family.total ? "text-success font-semibold" : "font-semibold"}>
+                  <span
+                    className={
+                      family.verified === family.total
+                        ? "text-success font-semibold"
+                        : "font-semibold"
+                    }
+                  >
                     {family.verified} of {family.total}
                   </span>
                 )
@@ -288,7 +376,9 @@ function AccountPage() {
             className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {saved ? (
-              <><Check className="w-5 h-5" strokeWidth={3} /> Profile Updated</>
+              <>
+                <Check className="w-5 h-5" strokeWidth={3} /> Profile Updated
+              </>
             ) : saving ? (
               "Saving..."
             ) : (
@@ -360,17 +450,35 @@ function SectionCard({ title, children }: { title: string; children: React.React
   return (
     <section>
       <h2 className="font-bold text-foreground text-sm mb-3 px-1">{title}</h2>
-      <div className="rounded-2xl bg-card border border-border shadow-soft p-4 space-y-3.5">{children}</div>
+      <div className="rounded-2xl bg-card border border-border shadow-soft p-4 space-y-3.5">
+        {children}
+      </div>
     </section>
   );
 }
 
 function Field({
-  icon: Icon, label, value, onChange, type = "text", disabled = false, autoComplete = "off",
-}: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean; autoComplete?: string }) {
+  icon: Icon,
+  label,
+  value,
+  onChange,
+  type = "text",
+  disabled = false,
+  autoComplete = "off",
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  disabled?: boolean;
+  autoComplete?: string;
+}) {
   return (
     <div>
-      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">{label}</label>
+      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
+        {label}
+      </label>
       <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 h-12 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
         <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
         <input
@@ -386,10 +494,20 @@ function Field({
   );
 }
 
-function Row({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function Row({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-3 py-1">
-      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">{icon}</div>
+      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        {icon}
+      </div>
       <div className="flex-1 min-w-0">
         <div className="text-[11px] text-muted-foreground">{label}</div>
         <div className="text-sm font-semibold text-foreground truncate">{value}</div>
