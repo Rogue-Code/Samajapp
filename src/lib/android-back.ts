@@ -36,13 +36,18 @@ export function setupAndroidBackButton() {
   void App.addListener("backButton", ({ canGoBack }) => {
     if (closeOpenSheet()) return;
 
-    if (canGoBack && window.history.length > 1) {
+    // Deliberately not gated on window.history.length: after a client-side
+    // replace it can still read 1 on a route the member navigated to, which sent
+    // this straight to exitApp and dropped them on the launcher mid-session.
+    // canGoBack comes from the WebView itself and is the reliable signal; when
+    // there is genuinely nothing behind, back() is a harmless no-op.
+    if (canGoBack) {
       window.history.back();
       return;
     }
 
-    // Nothing left to go back to — this is a root screen, so exit rather than
-    // sitting on a dead button.
+    // A root screen with nothing behind it — leave the app rather than sitting
+    // on a dead button.
     void App.exitApp();
   });
 }
