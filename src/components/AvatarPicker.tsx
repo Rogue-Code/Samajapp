@@ -12,6 +12,12 @@ interface Props {
   userId: string;
   value: string | null;
   onChange: (url: string) => void;
+  /**
+   * Smaller circle with no caption, for sitting inside an existing layout such as
+   * the Account header card. Profile Setup uses the default, where the picker is
+   * the focus of the screen.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -22,7 +28,7 @@ interface Props {
  * nothing already gives a sensible result; dragging and the zoom slider are there
  * for members who want to adjust it themselves.
  */
-export function AvatarPicker({ userId, value, onChange }: Props) {
+export function AvatarPicker({ userId, value, onChange, compact = false }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{
@@ -181,28 +187,32 @@ export function AvatarPicker({ userId, value, onChange }: Props) {
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-card shadow-card active:scale-95 transition"
+        className={`relative ${compact ? "w-20 h-20" : "w-28 h-28"} rounded-full overflow-hidden border-4 border-card shadow-card active:scale-95 transition`}
         aria-label={value ? "Change profile photo" : "Add profile photo"}
       >
         {value ? (
           <img src={value} alt="" className="w-full h-full object-cover" />
         ) : (
           <span className="w-full h-full bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center">
-            <User className="w-12 h-12 text-primary" />
+            <User className={compact ? "w-9 h-9 text-primary" : "w-12 h-12 text-primary"} />
           </span>
         )}
-        <span className="absolute bottom-0 inset-x-0 h-8 bg-foreground/55 flex items-center justify-center">
-          <Camera className="w-4 h-4 text-background" />
+        <span
+          className={`absolute bottom-0 inset-x-0 ${compact ? "h-6" : "h-8"} bg-foreground/55 flex items-center justify-center`}
+        >
+          <Camera className={compact ? "w-3.5 h-3.5 text-background" : "w-4 h-4 text-background"} />
         </span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        className="mt-2 text-sm font-medium text-primary"
-      >
-        {value ? "Change photo" : "Add photo"}
-      </button>
+      {!compact && (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="mt-2 text-sm font-medium text-primary"
+        >
+          {value ? "Change photo" : "Add photo"}
+        </button>
+      )}
 
       {error && !src && <p className="mt-2 text-sm text-destructive text-center">{error}</p>}
 

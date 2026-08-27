@@ -29,6 +29,8 @@ import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { MARITAL_OPTIONS, type MaritalStatus } from "@/lib/profile-options";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { PlacePicker } from "@/components/PlacePicker";
 import { BottomNav } from "@/components/BottomNav";
 import { DeleteAccountSheet } from "@/components/DeleteAccountSheet";
 
@@ -46,6 +48,7 @@ const emptyForm = {
   dob: "",
   marital: "Single",
   gender: null as "male" | "female" | "other" | null,
+  avatarUrl: null as string | null,
   admin: "no" as "yes" | "no",
 };
 
@@ -82,7 +85,7 @@ function AccountPage() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin",
+          "full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin, avatar_url",
         )
         .eq("id", session.user.id)
         .maybeSingle();
@@ -102,6 +105,7 @@ function AccountPage() {
               ? data.gender
               : null,
           admin: data.is_family_admin ? "yes" : "no",
+          avatarUrl: data.avatar_url ?? null,
         });
       }
       setLoadingProfile(false);
@@ -131,6 +135,7 @@ function AccountPage() {
         marital_status: form.marital,
         gender: form.gender,
         is_family_admin: form.admin === "yes",
+        avatar_url: form.avatarUrl,
       })
       .eq("id", session.user.id);
     setSaving(false);
@@ -167,9 +172,18 @@ function AccountPage() {
           <section className="rounded-3xl bg-gradient-to-br from-primary-soft via-background to-accent p-5 border border-border shadow-card">
             <div className="flex items-center gap-4">
               <div className="shrink-0">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-elevated">
-                  {(form.name.trim()[0] ?? "?").toUpperCase()}
-                </div>
+                {session ? (
+                  <AvatarPicker
+                    userId={session.user.id}
+                    value={form.avatarUrl}
+                    onChange={(url) => set("avatarUrl", url)}
+                    compact
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-elevated">
+                    {(form.name.trim()[0] ?? "?").toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
@@ -212,12 +226,7 @@ function AccountPage() {
               type="email"
               disabled
             />
-            <Field
-              icon={MapPin}
-              label="Village"
-              value={form.village}
-              onChange={(v) => set("village", v)}
-            />
+            <PlacePicker label="Village" value={form.village} onChange={(v) => set("village", v)} />
             <Field
               icon={Building2}
               label="City"
