@@ -218,7 +218,7 @@ export type Database = {
       }
       posts: {
         Row: {
-          author_id: string
+          author_id: string | null
           category: string
           content: string
           created_at: string
@@ -228,7 +228,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          author_id: string
+          author_id?: string | null
           category?: string
           content: string
           created_at?: string
@@ -238,7 +238,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           category?: string
           content?: string
           created_at?: string
@@ -420,6 +420,7 @@ export type Database = {
     Functions: {
       birth_year_of: { Args: { dob_text: string }; Returns: number }
       current_role_is: { Args: { required: string[] }; Returns: boolean }
+      delete_my_account: { Args: never; Returns: undefined }
       get_family_admin_of: {
         Args: { target_id: string }
         Returns: {
