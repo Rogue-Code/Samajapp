@@ -28,6 +28,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { MARITAL_OPTIONS, type MaritalStatus } from "@/lib/profile-options";
 import { BottomNav } from "@/components/BottomNav";
 import { DeleteAccountSheet } from "@/components/DeleteAccountSheet";
 
@@ -261,31 +262,42 @@ function AccountPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
-                {form.gender === null
-                  ? "Not set — your mobile number is hidden from other members until you set this."
-                  : "Affects whether your mobile number is shown to other members in the directory."}
-              </p>
+              {/*
+                The explanatory line is gone, to match Profile Setup. The unset
+                warning stays: it is not an explanation but a live status, and
+                without it a member has no way to discover their number is hidden.
+              */}
+              {form.gender === null && (
+                <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
+                  Not set — your mobile number is hidden from other members until you set this.
+                </p>
+              )}
             </div>
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
                 <Heart className="w-3 h-3 inline mr-1" /> Marital Status
               </label>
-              <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
-                {["Single", "Married", "Other"].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => set("marital", m)}
-                    className={`h-10 rounded-xl text-sm font-medium transition-all ${
-                      form.marital === m
-                        ? "bg-card text-foreground shadow-soft"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                <select
+                  value={
+                    MARITAL_OPTIONS.includes(form.marital as MaritalStatus) ? form.marital : ""
+                  }
+                  onChange={(e) => set("marital", e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-foreground appearance-none"
+                >
+                  {/* Older rows may hold a value no longer offered (e.g. the
+                      retired "Other"); keep it selectable rather than silently
+                      rewriting the member's saved answer. */}
+                  {!MARITAL_OPTIONS.includes(form.marital as MaritalStatus) && (
+                    <option value="">{form.marital || "Select"}</option>
+                  )}
+                  {MARITAL_OPTIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

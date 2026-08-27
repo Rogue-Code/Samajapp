@@ -9,13 +9,11 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { MARITAL_OPTIONS, type MaritalStatus } from "@/lib/profile-options";
 
 export const Route = createLazyFileRoute("/profile")({
   component: ProfilePage,
 });
-
-const MARITAL_OPTIONS = ["Single", "Married", "Divorced", "Widowed", "Separated"] as const;
-type MaritalStatus = (typeof MARITAL_OPTIONS)[number];
 
 function Field({
   icon: Icon,
