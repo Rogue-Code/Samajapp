@@ -1,4 +1,5 @@
 import { App } from "@capacitor/app";
+import type { AnyRouter } from "@tanstack/react-router";
 
 /** The layer PhoneFrame portals bottom sheets into. */
 const SHEET_LAYER_ID = "sangath-sheet-layer";
@@ -30,19 +31,19 @@ function closeOpenSheet(): boolean {
  * underneath instead of closing the picker. Order is: dismiss a sheet, else step
  * back through history, else leave the app.
  */
-export function setupAndroidBackButton() {
+export function setupAndroidBackButton(router: AnyRouter) {
   if (typeof window === "undefined") return;
 
-  void App.addListener("backButton", ({ canGoBack }) => {
+  void App.addListener("backButton", () => {
     if (closeOpenSheet()) return;
 
-    // Deliberately not gated on window.history.length: after a client-side
-    // replace it can still read 1 on a route the member navigated to, which sent
-    // this straight to exitApp and dropped them on the launcher mid-session.
-    // canGoBack comes from the WebView itself and is the reliable signal; when
-    // there is genuinely nothing behind, back() is a harmless no-op.
-    if (canGoBack) {
-      window.history.back();
+    // The router's own stack is the only accurate source here. Capacitor reports
+    // canGoBack from the WebView's *document* history, which does not reliably
+    // track client-side navigations — on Login → Sign Up it read false, so back
+    // fell through to exitApp and dropped the member on the launcher one screen
+    // into the app. window.history.length is no better: a replace leaves it at 1.
+    if (router.history.canGoBack()) {
+      router.history.back();
       return;
     }
 

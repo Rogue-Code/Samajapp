@@ -7,9 +7,12 @@ import { setupAndroidBackButton } from "./lib/android-back";
 import "./styles.css";
 
 setupMobileKeyboardViewport();
-setupAndroidBackButton();
 
 const router = getRouter();
+
+// After getRouter: the back handler needs the router's own history, since the
+// WebView's document history does not track client-side navigation reliably.
+setupAndroidBackButton(router);
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
