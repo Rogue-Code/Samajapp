@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -63,7 +64,13 @@ type SponsorRow = {
   active: boolean;
   sort_order: number;
 };
-type MemberRow = { id: string; full_name: string | null; village: string | null; role: string };
+type MemberRow = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  village: string | null;
+  role: string;
+};
 
 const FACILITY_CATEGORIES = categories.filter((c) => c !== "All Categories") as string[];
 const ROLES = ["member", "committee", "admin"] as const;
@@ -112,7 +119,10 @@ function AdminPage() {
         .from("sponsors")
         .select("id, name, description, emoji, facility_id, link_url, active, sort_order")
         .order("sort_order"),
-      supabase.from("profiles").select("id, full_name, village, role").order("full_name"),
+      supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, village, role")
+        .order("full_name"),
     ]);
     setFacilities(f.data ?? []);
     setEvents(e.data ?? []);
@@ -374,9 +384,7 @@ function AdminPage() {
                     className="rounded-2xl bg-card border border-border shadow-soft p-3.5"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
-                        {(m.full_name?.trim()?.[0] ?? "?").toUpperCase()}
-                      </div>
+                      <Avatar url={m.avatar_url} name={m.full_name} className="w-10 h-10" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-foreground truncate">
                           {m.full_name ?? "Unnamed member"}

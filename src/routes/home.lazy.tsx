@@ -1,9 +1,23 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Search, Bell, Home as HomeIcon, Building, HandHeart, User,
-  Calendar, MapPin, ChevronRight, ArrowRight, ChevronLeft, Check,
-  X, Loader2, Phone, Briefcase,
+  Search,
+  Bell,
+  Home as HomeIcon,
+  Building,
+  HandHeart,
+  User,
+  Calendar,
+  MapPin,
+  ChevronRight,
+  ArrowRight,
+  ChevronLeft,
+  Check,
+  X,
+  Loader2,
+  Phone,
+  Briefcase,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
@@ -36,6 +50,7 @@ type Sponsor = {
 type MemberResult = {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   village: string | null;
   city: string | null;
   occupation: string | null;
@@ -89,7 +104,11 @@ function relativeTime(iso: string) {
   const days = Math.floor(hours / 24);
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function HomePage() {
@@ -103,6 +122,7 @@ function HomePage() {
   const [adIndex, setAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [rsvps, setRsvps] = useState<Set<string>>(new Set());
   const [sponsored, setSponsored] = useState<Sponsor[]>([]);
@@ -112,7 +132,11 @@ function HomePage() {
     if (!session) return;
     const nowIso = new Date().toISOString();
     const [profile, eventList, rsvpList, sponsorList, newsList] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("id", session.user.id).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", session.user.id)
+        .maybeSingle(),
       supabase
         .from("events")
         .select("id, title, starts_at, location, emoji")
@@ -131,6 +155,7 @@ function HomePage() {
         .limit(3),
     ]);
     setFullName(profile.data?.full_name ?? null);
+    setAvatarUrl(profile.data?.avatar_url ?? null);
     setEvents(eventList.data ?? []);
     setRsvps(new Set((rsvpList.data ?? []).map((r) => r.event_id)));
     setSponsored(sponsorList.data ?? []);
@@ -184,7 +209,11 @@ function HomePage() {
       return next;
     });
     const { error } = had
-      ? await supabase.from("event_rsvps").delete().eq("user_id", session.user.id).eq("event_id", eventId)
+      ? await supabase
+          .from("event_rsvps")
+          .delete()
+          .eq("user_id", session.user.id)
+          .eq("event_id", eventId)
       : await supabase.from("event_rsvps").insert({ user_id: session.user.id, event_id: eventId });
     if (error) {
       setRsvps((prev) => {
@@ -219,10 +248,14 @@ function HomePage() {
               </button>
               <button
                 onClick={() => navigate({ to: "/account" })}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shadow-card ring-2 ring-background"
+                className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shadow-card ring-2 ring-background"
                 aria-label="Profile"
               >
-                {initial}
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  initial
+                )}
               </button>
             </div>
             <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
@@ -235,7 +268,11 @@ function HomePage() {
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
               {term && (
-                <button onClick={() => setTerm("")} className="text-muted-foreground" aria-label="Clear search">
+                <button
+                  onClick={() => setTerm("")}
+                  className="text-muted-foreground"
+                  aria-label="Clear search"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -245,7 +282,10 @@ function HomePage() {
 
         {/* Search results take over the body while a query is active */}
         {term.trim().length >= 2 ? (
-          <div className="flex-1 overflow-y-auto pb-24 px-5 pt-4" style={{ scrollbarWidth: "none" }}>
+          <div
+            className="flex-1 overflow-y-auto pb-24 px-5 pt-4"
+            style={{ scrollbarWidth: "none" }}
+          >
             {searching && (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -273,11 +313,11 @@ function HomePage() {
                       onClick={() => navigate({ to: "/members/$id", params: { id: m.id } })}
                       className="w-full text-left rounded-2xl bg-card border border-border shadow-soft p-3.5 flex items-center gap-3 active:scale-[0.99] transition"
                     >
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
-                        {(m.full_name?.trim()[0] ?? "?").toUpperCase()}
-                      </div>
+                      <Avatar url={m.avatar_url} name={m.full_name} className="w-11 h-11" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-foreground truncate">{m.full_name}</div>
+                        <div className="text-sm font-semibold text-foreground truncate">
+                          {m.full_name}
+                        </div>
                         {place && (
                           <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                             <MapPin className="w-3 h-3 shrink-0" /> {place}
@@ -298,192 +338,230 @@ function HomePage() {
             )}
           </div>
         ) : (
+          /* Scrollable body */
+          <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
+            {/* Upcoming Events */}
+            {events.length === 0 && isAdmin && (
+              <section className="pt-5">
+                <SectionHeader title="Upcoming Events" />
+                <div className="px-5 pt-3">
+                  <button
+                    onClick={() => navigate({ to: "/admin" })}
+                    className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
+                  >
+                    <div className="text-3xl mb-2">📅</div>
+                    <p className="text-sm font-semibold text-foreground">No events yet</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Add gatherings or camps in the admin console. Only you can see this prompt —
+                      members see nothing until an event is added.
+                    </p>
+                  </button>
+                </div>
+              </section>
+            )}
 
-        /* Scrollable body */
-        <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-          {/* Upcoming Events */}
-          {events.length === 0 && isAdmin && (
-            <section className="pt-5">
-              <SectionHeader title="Upcoming Events" />
-              <div className="px-5 pt-3">
-                <button
-                  onClick={() => navigate({ to: "/admin" })}
-                  className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
+            {events.length > 0 && (
+              <section className="pt-5">
+                <SectionHeader title="Upcoming Events" />
+                <div
+                  className="flex gap-3 overflow-x-auto px-5 pb-2 pt-3 snap-x snap-mandatory"
+                  style={{ scrollbarWidth: "none" }}
                 >
-                  <div className="text-3xl mb-2">📅</div>
-                  <p className="text-sm font-semibold text-foreground">No events yet</p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Add gatherings or camps in the admin console. Only you can see this prompt
-                    — members see nothing until an event is added.
-                  </p>
-                </button>
-              </div>
-            </section>
-          )}
-
-          {events.length > 0 && (
-            <section className="pt-5">
-              <SectionHeader title="Upcoming Events" />
-              <div className="flex gap-3 overflow-x-auto px-5 pb-2 pt-3 snap-x snap-mandatory" style={{ scrollbarWidth: "none" }}>
-                {events.map((e, i) => {
-                  const going = rsvps.has(e.id);
-                  return (
-                    <article key={e.id} className="snap-start shrink-0 w-[260px] rounded-2xl bg-card border border-border shadow-card overflow-hidden">
-                      <div className={`h-28 bg-gradient-to-br ${gradientFor(i)} relative flex items-center justify-center`}>
-                        <span className="text-5xl opacity-90">{e.emoji}</span>
-                      </div>
-                      <div className="p-3">
-                        <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">{e.title}</h3>
-                        <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Calendar className="w-3 h-3" /> {formatEventDate(e.starts_at)}
+                  {events.map((e, i) => {
+                    const going = rsvps.has(e.id);
+                    return (
+                      <article
+                        key={e.id}
+                        className="snap-start shrink-0 w-[260px] rounded-2xl bg-card border border-border shadow-card overflow-hidden"
+                      >
+                        <div
+                          className={`h-28 bg-gradient-to-br ${gradientFor(i)} relative flex items-center justify-center`}
+                        >
+                          <span className="text-5xl opacity-90">{e.emoji}</span>
                         </div>
-                        {e.location && (
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <MapPin className="w-3 h-3" /> <span className="truncate">{e.location}</span>
+                        <div className="p-3">
+                          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
+                            {e.title}
+                          </h3>
+                          <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Calendar className="w-3 h-3" /> {formatEventDate(e.starts_at)}
                           </div>
-                        )}
-                        <button
-                          onClick={() => void toggleRsvp(e.id)}
-                          className={`mt-2.5 w-full h-9 rounded-xl text-xs font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1.5 ${
-                            going
-                              ? "bg-success-soft text-success"
-                              : "bg-primary text-primary-foreground"
-                          }`}
-                        >
-                          {going ? (<><Check className="w-3.5 h-3.5" strokeWidth={3} /> Going</>) : "Register"}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                          {e.location && (
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <MapPin className="w-3 h-3" />{" "}
+                              <span className="truncate">{e.location}</span>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => void toggleRsvp(e.id)}
+                            className={`mt-2.5 w-full h-9 rounded-xl text-xs font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1.5 ${
+                              going
+                                ? "bg-success-soft text-success"
+                                : "bg-primary text-primary-foreground"
+                            }`}
+                          >
+                            {going ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" strokeWidth={3} /> Going
+                              </>
+                            ) : (
+                              "Register"
+                            )}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-          {/* Sponsored Banner Carousel */}
-          {!ad && isAdmin && (
-            <section className="pt-6">
-              <SectionHeader title="Sponsored" />
-              <div className="px-5 pt-3">
-                <button
-                  onClick={() => navigate({ to: "/admin" })}
-                  className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
-                >
-                  <div className="text-3xl mb-2">📣</div>
-                  <p className="text-sm font-semibold text-foreground">No sponsors yet</p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Add local businesses or partners in the admin console. Only you can see
-                    this prompt — members see nothing until a sponsor is added.
-                  </p>
-                </button>
-              </div>
-            </section>
-          )}
+            {/* Sponsored Banner Carousel */}
+            {!ad && isAdmin && (
+              <section className="pt-6">
+                <SectionHeader title="Sponsored" />
+                <div className="px-5 pt-3">
+                  <button
+                    onClick={() => navigate({ to: "/admin" })}
+                    className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
+                  >
+                    <div className="text-3xl mb-2">📣</div>
+                    <p className="text-sm font-semibold text-foreground">No sponsors yet</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Add local businesses or partners in the admin console. Only you can see this
+                      prompt — members see nothing until a sponsor is added.
+                    </p>
+                  </button>
+                </div>
+              </section>
+            )}
 
-          {ad && (
-            <section className="pt-6">
-              <SectionHeader title="Sponsored" />
-              <div className="px-5 pt-3">
-                <article
-                  onClick={() => openSponsor(ad, navigate)}
-                  className="relative rounded-3xl overflow-hidden shadow-card border border-border bg-card cursor-pointer active:scale-[0.99] transition"
-                >
-                  <div className={`relative h-[240px] bg-gradient-to-br ${gradientFor(adIndex)} flex items-center justify-center`}>
-                    <span className="text-8xl opacity-90 drop-shadow-lg">{ad.emoji}</span>
-                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider">
-                      Sponsored
-                    </span>
-                    {sponsored.length > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); prevAd(); }}
-                          aria-label="Previous"
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
-                        >
-                          <ChevronLeft className="w-5 h-5 text-foreground" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); nextAd(); }}
-                          aria-label="Next"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
-                        >
-                          <ChevronRight className="w-5 h-5 text-foreground" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-3 p-3.5">
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-foreground truncate">{ad.name}</div>
-                      {ad.description && (
-                        <div className="text-[11px] text-muted-foreground truncate">{ad.description}</div>
+            {ad && (
+              <section className="pt-6">
+                <SectionHeader title="Sponsored" />
+                <div className="px-5 pt-3">
+                  <article
+                    onClick={() => openSponsor(ad, navigate)}
+                    className="relative rounded-3xl overflow-hidden shadow-card border border-border bg-card cursor-pointer active:scale-[0.99] transition"
+                  >
+                    <div
+                      className={`relative h-[240px] bg-gradient-to-br ${gradientFor(adIndex)} flex items-center justify-center`}
+                    >
+                      <span className="text-8xl opacity-90 drop-shadow-lg">{ad.emoji}</span>
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider">
+                        Sponsored
+                      </span>
+                      {sponsored.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              prevAd();
+                            }}
+                            aria-label="Previous"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
+                          >
+                            <ChevronLeft className="w-5 h-5 text-foreground" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              nextAd();
+                            }}
+                            aria-label="Next"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
+                          >
+                            <ChevronRight className="w-5 h-5 text-foreground" />
+                          </button>
+                        </>
                       )}
                     </div>
-                    {(ad.facility_id || ad.link_url) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openSponsor(ad, navigate); }}
-                        className="shrink-0 h-9 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.98] transition"
-                      >
-                        View Details
-                      </button>
-                    )}
-                  </div>
-                </article>
-                {sponsored.length > 1 && (
-                  <div className="mt-3 flex items-center justify-center gap-1.5">
-                    {sponsored.map((s, i) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setAdIndex(i)}
-                        aria-label={`Go to slide ${i + 1}`}
-                        className={`h-1.5 rounded-full transition-all ${i === adIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
-                      />
-                    ))}
+                    <div className="flex items-center justify-between gap-3 p-3.5">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-foreground truncate">{ad.name}</div>
+                        {ad.description && (
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {ad.description}
+                          </div>
+                        )}
+                      </div>
+                      {(ad.facility_id || ad.link_url) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openSponsor(ad, navigate);
+                          }}
+                          className="shrink-0 h-9 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.98] transition"
+                        >
+                          View Details
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                  {sponsored.length > 1 && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5">
+                      {sponsored.map((s, i) => (
+                        <button
+                          key={s.id}
+                          onClick={() => setAdIndex(i)}
+                          aria-label={`Go to slide ${i + 1}`}
+                          className={`h-1.5 rounded-full transition-all ${i === adIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Latest News */}
+            <section className="pt-6">
+              <SectionHeader title="Latest News" onViewAll={() => navigate({ to: "/news" })} />
+              <div className="px-5 pt-3 space-y-3">
+                {news.length === 0 && (
+                  <div className="text-center py-10 px-6 rounded-2xl border-2 border-dashed border-border">
+                    <div className="text-3xl mb-2">📰</div>
+                    <p className="text-sm font-semibold text-foreground">No announcements yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Community news will show up here.
+                    </p>
                   </div>
                 )}
+                {news.map((n, i) => (
+                  <article
+                    key={n.id}
+                    onClick={() => navigate({ to: "/news" })}
+                    className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex cursor-pointer active:scale-[0.99] transition"
+                  >
+                    <div
+                      className={`w-24 shrink-0 bg-gradient-to-br ${gradientFor(i)} flex items-center justify-center`}
+                    >
+                      <span className="text-4xl opacity-90">📣</span>
+                    </div>
+                    <div className="flex-1 min-w-0 p-3">
+                      <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
+                        {n.title}
+                      </h3>
+                      <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">
+                        {n.content}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">
+                          {relativeTime(n.created_at)}
+                        </span>
+                        <span className="text-[11px] font-semibold text-primary flex items-center gap-0.5">
+                          Read More <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="text-center text-xs text-muted-foreground py-6">
+                You're all caught up ✨
               </div>
             </section>
-          )}
-
-          {/* Latest News */}
-          <section className="pt-6">
-            <SectionHeader title="Latest News" onViewAll={() => navigate({ to: "/news" })} />
-            <div className="px-5 pt-3 space-y-3">
-              {news.length === 0 && (
-                <div className="text-center py-10 px-6 rounded-2xl border-2 border-dashed border-border">
-                  <div className="text-3xl mb-2">📰</div>
-                  <p className="text-sm font-semibold text-foreground">No announcements yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Community news will show up here.
-                  </p>
-                </div>
-              )}
-              {news.map((n, i) => (
-                <article
-                  key={n.id}
-                  onClick={() => navigate({ to: "/news" })}
-                  className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex cursor-pointer active:scale-[0.99] transition"
-                >
-                  <div className={`w-24 shrink-0 bg-gradient-to-br ${gradientFor(i)} flex items-center justify-center`}>
-                    <span className="text-4xl opacity-90">📣</span>
-                  </div>
-                  <div className="flex-1 min-w-0 p-3">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">{n.title}</h3>
-                    <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{n.content}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground">{relativeTime(n.created_at)}</span>
-                      <span className="text-[11px] font-semibold text-primary flex items-center gap-0.5">
-                        Read More <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <div className="text-center text-xs text-muted-foreground py-6">You're all caught up ✨</div>
-          </section>
-        </div>
-
+          </div>
         )}
 
         {/* Fixed Bottom Navigation */}
@@ -512,7 +590,9 @@ function HomePage() {
                     className={`w-5 h-5 transition ${active ? "text-primary" : "text-muted-foreground"}`}
                     strokeWidth={active ? 2.5 : 2}
                   />
-                  <span className={`text-[10.5px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
+                  <span
+                    className={`text-[10.5px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}
+                  >
                     {n.label}
                   </span>
                 </button>
@@ -541,7 +621,10 @@ function SectionHeader({ title, onViewAll }: { title: string; onViewAll?: () => 
     <div className="px-5 flex items-center justify-between">
       <h2 className="text-base font-bold text-foreground">{title}</h2>
       {onViewAll && (
-        <button onClick={onViewAll} className="text-xs font-semibold text-primary flex items-center gap-0.5">
+        <button
+          onClick={onViewAll}
+          className="text-xs font-semibold text-primary flex items-center gap-0.5"
+        >
           View All <ChevronRight className="w-3.5 h-3.5" />
         </button>
       )}

@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useEffect, useState } from "react";
 import {
@@ -26,6 +27,7 @@ export const Route = createLazyFileRoute("/members_/$id")({
 type Member = {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   village: string | null;
   city: string | null;
   state: string | null;
@@ -123,9 +125,12 @@ function MemberProfilePage() {
           {/* Identity */}
           <section className="rounded-3xl bg-gradient-to-br from-primary-soft via-background to-accent p-5 border border-border shadow-card">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-2xl font-bold border-4 border-card shadow-elevated shrink-0">
-                {(member.full_name?.trim()[0] ?? "?").toUpperCase()}
-              </div>
+              <Avatar
+                url={member.avatar_url}
+                name={member.full_name}
+                className="w-20 h-20 border-4 border-card shadow-elevated"
+                textClassName="text-2xl"
+              />
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
                   {member.full_name}
@@ -158,9 +163,12 @@ function MemberProfilePage() {
                 onClick={() => navigate({ to: "/members/$id", params: { id: familyAdmin.id } })}
                 className="mt-4 w-full rounded-2xl bg-background border border-border px-3.5 py-3 flex items-center gap-3 text-left active:scale-[0.98] transition"
               >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {(familyAdmin.full_name?.trim()[0] ?? "?").toUpperCase()}
-                </div>
+                <Avatar
+                  url={familyAdmin.avatar_url}
+                  name={familyAdmin.full_name}
+                  className="w-9 h-9"
+                  textClassName="text-xs"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] text-muted-foreground">
                     No number shown — reach via family admin
@@ -218,6 +226,7 @@ function MemberProfilePage() {
                 <FamilyTree
                   members={family}
                   selfName={member.full_name ?? "This member"}
+                  selfAvatarUrl={member.avatar_url}
                   onOpen={(profileId) =>
                     navigate({ to: "/members/$id", params: { id: profileId } })
                   }

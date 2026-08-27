@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@/components/Avatar";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -40,6 +41,7 @@ interface Member {
 interface MemberSearchResult {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   village: string | null;
   city: string | null;
 }
@@ -606,9 +608,7 @@ function LinkAccountSheet({
                     onClick={() => onPick(r.id)}
                     className="w-full text-left rounded-2xl border border-border bg-background p-3 flex items-center gap-3 active:scale-[0.99] transition"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shrink-0">
-                      {(r.full_name?.trim()[0] ?? "?").toUpperCase()}
-                    </div>
+                    <Avatar url={r.avatar_url} name={r.full_name} className="w-10 h-10" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-foreground truncate">
                         {r.full_name}

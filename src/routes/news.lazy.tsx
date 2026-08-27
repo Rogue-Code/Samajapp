@@ -54,7 +54,7 @@ type Post = {
   category: string;
   pinned: boolean;
   created_at: string;
-  author: { full_name: string | null; role: string } | null;
+  author: { full_name: string | null; avatar_url: string | null; role: string } | null;
 };
 
 const CATEGORY_META: Record<Category, { icon: typeof Megaphone; color: string }> = {
@@ -117,7 +117,7 @@ function sortFeed(rows: Post[]) {
 }
 
 const POST_SELECT =
-  "id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, role)";
+  "id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, avatar_url, role)";
 
 function NewsPage() {
   const navigate = useNavigate();
@@ -453,9 +453,13 @@ function PostCard({
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
         <div
-          className={`w-11 h-11 rounded-full bg-gradient-to-br ${meta.color} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}
+          className={`w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br ${meta.color} flex items-center justify-center text-white font-bold shadow-soft shrink-0`}
         >
-          {initialOf(post.author?.full_name ?? null)}
+          {post.author?.avatar_url ? (
+            <img src={post.author.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            initialOf(post.author?.full_name ?? null)
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-foreground truncate">{authorName}</div>

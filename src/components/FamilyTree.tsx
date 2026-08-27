@@ -7,11 +7,20 @@ export type FamilyNode = {
   birth_year: number | null;
   status: string;
   linked_profile_id: string | null;
+  avatar_url: string | null;
 };
 
 const RELATION_EMOJI: Record<string, string> = {
-  Father: "👨", Mother: "👩", Spouse: "💑", Son: "👦", Daughter: "👧",
-  Brother: "🧑", Sister: "👧", Grandfather: "👴", Grandmother: "👵", Other: "🧑",
+  Father: "👨",
+  Mother: "👩",
+  Spouse: "💑",
+  Son: "👦",
+  Daughter: "👧",
+  Brother: "🧑",
+  Sister: "👧",
+  Grandfather: "👴",
+  Grandmother: "👵",
+  Other: "🧑",
 };
 
 /**
@@ -19,10 +28,15 @@ const RELATION_EMOJI: Record<string, string> = {
  * generations, so the tree reads top-to-bottom like a conventional one.
  */
 const GENERATION: Record<string, number> = {
-  Grandfather: 0, Grandmother: 0,
-  Father: 1, Mother: 1,
-  Spouse: 2, Brother: 2, Sister: 2,
-  Son: 3, Daughter: 3,
+  Grandfather: 0,
+  Grandmother: 0,
+  Father: 1,
+  Mother: 1,
+  Spouse: 2,
+  Brother: 2,
+  Sister: 2,
+  Son: 3,
+  Daughter: 3,
 };
 
 const GENERATION_LABEL: Record<number, string> = {
@@ -33,11 +47,12 @@ const GENERATION_LABEL: Record<number, string> = {
   4: "Other relatives",
 };
 
-const STATUS_META: Record<string, { icon: typeof CheckCircle2; className: string; label: string }> = {
-  verified: { icon: CheckCircle2, className: "text-success", label: "Verified" },
-  pending: { icon: Clock, className: "text-warning", label: "Pending" },
-  approval: { icon: AlertCircle, className: "text-destructive", label: "Needs approval" },
-};
+const STATUS_META: Record<string, { icon: typeof CheckCircle2; className: string; label: string }> =
+  {
+    verified: { icon: CheckCircle2, className: "text-success", label: "Verified" },
+    pending: { icon: Clock, className: "text-warning", label: "Pending" },
+    approval: { icon: AlertCircle, className: "text-destructive", label: "Needs approval" },
+  };
 
 function ageFromYear(year: number | null) {
   return year ? new Date().getFullYear() - year : null;
@@ -52,10 +67,14 @@ function generationOf(relation: string) {
  * their own generation so the relations read against a fixed point.
  */
 export function FamilyTree({
-  members, selfName, onOpen,
+  members,
+  selfName,
+  selfAvatarUrl,
+  onOpen,
 }: {
   members: FamilyNode[];
   selfName: string;
+  selfAvatarUrl: string | null;
   onOpen: (profileId: string) => void;
 }) {
   const rows = [0, 1, 2, 3, 4]
@@ -72,7 +91,7 @@ export function FamilyTree({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {row.gen === 2 && <SelfCard name={selfName} />}
+            {row.gen === 2 && <SelfCard name={selfName} avatarUrl={selfAvatarUrl} />}
             {row.people.map((m) => (
               <PersonCard key={m.id} person={m} onOpen={onOpen} />
             ))}
@@ -104,11 +123,15 @@ function Connector() {
   );
 }
 
-function SelfCard({ name }: { name: string }) {
+function SelfCard({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   return (
     <div className="flex items-center gap-2.5 rounded-2xl border-2 border-primary bg-primary-soft px-3 py-2.5 min-w-[46%] flex-1">
-      <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
-        {(name.trim()[0] ?? "?").toUpperCase()}
+      <div className="w-9 h-9 rounded-xl overflow-hidden bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          (name.trim()[0] ?? "?").toUpperCase()
+        )}
       </div>
       <div className="min-w-0">
         <div className="text-[13px] font-semibold text-foreground truncate">{name}</div>
@@ -119,7 +142,8 @@ function SelfCard({ name }: { name: string }) {
 }
 
 function PersonCard({
-  person, onOpen,
+  person,
+  onOpen,
 }: {
   person: FamilyNode;
   onOpen: (profileId: string) => void;
@@ -131,13 +155,20 @@ function PersonCard({
 
   const body = (
     <>
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center text-lg shrink-0">
-        {RELATION_EMOJI[person.relation] ?? "🧑"}
+      <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-primary-soft to-accent flex items-center justify-center text-lg shrink-0">
+        {person.avatar_url ? (
+          <img src={person.avatar_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          (RELATION_EMOJI[person.relation] ?? "🧑")
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-foreground truncate flex items-center gap-1">
           <span className="truncate">{person.full_name}</span>
-          <StatusIcon className={`w-3 h-3 shrink-0 ${status.className}`} aria-label={status.label} />
+          <StatusIcon
+            className={`w-3 h-3 shrink-0 ${status.className}`}
+            aria-label={status.label}
+          />
         </div>
         <div className="text-[10px] text-muted-foreground truncate">
           {person.relation}

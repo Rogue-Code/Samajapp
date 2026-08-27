@@ -218,7 +218,7 @@ export type Database = {
       }
       posts: {
         Row: {
-          author_id: string | null
+          author_id: string
           category: string
           content: string
           created_at: string
@@ -228,7 +228,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          author_id?: string | null
+          author_id: string
           category?: string
           content: string
           created_at?: string
@@ -238,7 +238,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          author_id?: string | null
+          author_id?: string
           category?: string
           content?: string
           created_at?: string
@@ -420,10 +420,10 @@ export type Database = {
     Functions: {
       birth_year_of: { Args: { dob_text: string }; Returns: number }
       current_role_is: { Args: { required: string[] }; Returns: boolean }
-      delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined }
       get_family_admin_of: {
         Args: { target_id: string }
         Returns: {
+          avatar_url: string
           birth_year: number
           city: string
           full_name: string
@@ -440,6 +440,7 @@ export type Database = {
       get_member: {
         Args: { target_id: string }
         Returns: {
+          avatar_url: string
           birth_year: number
           city: string
           full_name: string
@@ -456,6 +457,7 @@ export type Database = {
       get_member_family: {
         Args: { target_id: string }
         Returns: {
+          avatar_url: string
           birth_year: number
           full_name: string
           id: string
@@ -467,6 +469,7 @@ export type Database = {
       search_members: {
         Args: { term: string }
         Returns: {
+          avatar_url: string
           birth_year: number
           city: string
           full_name: string
