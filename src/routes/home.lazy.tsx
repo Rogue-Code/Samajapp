@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { BottomNav } from "@/components/BottomNav";
 import { Avatar } from "@/components/Avatar";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -564,42 +565,7 @@ function HomePage() {
           </div>
         )}
 
-        {/* Fixed Bottom Navigation */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
-          <div className="flex items-center justify-around">
-            {[
-              { id: "home", icon: HomeIcon, label: "Home" },
-              { id: "facilities", icon: Building, label: "Facilities" },
-              { id: "fundraiser", icon: HandHeart, label: "Fundraiser" },
-              { id: "profile", icon: User, label: "Profile" },
-            ].map((n) => {
-              const active = tab === n.id;
-              return (
-                <button
-                  key={n.id}
-                  onClick={() => {
-                    setTab(n.id);
-                    if (n.id === "facilities") navigate({ to: "/facilities" });
-                    if (n.id === "fundraiser") navigate({ to: "/fundraiser" });
-                    if (n.id === "profile") navigate({ to: "/account" });
-                  }}
-                  className="flex flex-col items-center gap-1 py-1 px-4 relative"
-                >
-                  {active && <span className="absolute -top-2 w-8 h-1 rounded-full bg-primary" />}
-                  <n.icon
-                    className={`w-5 h-5 transition ${active ? "text-primary" : "text-muted-foreground"}`}
-                    strokeWidth={active ? 2.5 : 2}
-                  />
-                  <span
-                    className={`text-[10.5px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}
-                  >
-                    {n.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <BottomNav active="home" />
       </div>
     </PhoneFrame>
   );

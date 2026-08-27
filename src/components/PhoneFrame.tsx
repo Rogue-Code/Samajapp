@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 const SHEET_LAYER_ID = "sangath-sheet-layer";
+const NAV_LAYER_ID = "sangath-nav-layer";
 
 export function PhoneFrame({ children }: { children: ReactNode }) {
   return (
@@ -21,7 +22,11 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
         >
           {children}
         </div>
-        {/* display:contents so the layer itself lays out nothing. */}
+        {/*
+          display:contents so the layers themselves lay out nothing. The nav
+          layer comes first so sheets (z-50) stack above the bottom bar (z-30).
+        */}
+        <div id={NAV_LAYER_ID} style={{ display: "contents" }} />
         <div id={SHEET_LAYER_ID} style={{ display: "contents" }} />
       </div>
     </div>
@@ -40,13 +45,28 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
  * makes `absolute` resolve against the fixed-height frame instead.
  */
 export function SheetPortal({ children }: { children: ReactNode }) {
+  return <LayerPortal id={SHEET_LAYER_ID}>{children}</LayerPortal>;
+}
+
+/**
+ * Renders the bottom navigation into the frame's nav layer.
+ *
+ * Same reasoning as SheetPortal: rendered in place, `absolute bottom-0` resolved
+ * against the route's own wrapper, which grows with its content — so the bar sat
+ * at the bottom of the *page* and scrolled out of view instead of staying put.
+ */
+export function NavPortal({ children }: { children: ReactNode }) {
+  return <LayerPortal id={NAV_LAYER_ID}>{children}</LayerPortal>;
+}
+
+function LayerPortal({ id, children }: { id: string; children: ReactNode }) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
 
   // The layer is rendered by PhoneFrame in the same commit, so it exists by the
   // time effects run — but not during SSR or the first render pass.
   useEffect(() => {
-    setTarget(document.getElementById(SHEET_LAYER_ID));
-  }, []);
+    setTarget(document.getElementById(id));
+  }, [id]);
 
   if (!target) return null;
   return createPortal(children, target);

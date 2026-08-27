@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { BottomNav } from "@/components/BottomNav";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -375,31 +376,7 @@ function NewsPage() {
           </button>
         )}
 
-        {/* Bottom Nav */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
-          <div className="flex items-center justify-around">
-            {[
-              { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
-              { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
-              {
-                id: "fundraiser",
-                icon: HandHeart,
-                label: "Fundraiser",
-                to: "/fundraiser" as const,
-              },
-              { id: "profile", icon: User, label: "Profile", to: "/account" as const },
-            ].map((n) => (
-              <button
-                key={n.id}
-                onClick={() => navigate({ to: n.to })}
-                className="flex flex-col items-center gap-1 py-1 px-4"
-              >
-                <n.icon className="w-5 h-5 text-muted-foreground" />
-                <span className="text-[10.5px] font-medium text-muted-foreground">{n.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <BottomNav active="home" />
 
         {showCreate && (
           <CreatePostSheet

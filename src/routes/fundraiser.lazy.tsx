@@ -1,4 +1,5 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { BottomNav } from "@/components/BottomNav";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useMemo, useState } from "react";
 import {
@@ -325,52 +326,7 @@ function FundraiserPage() {
           </button>
         )}
 
-        {/* Bottom Nav */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-3 pt-2 pb-4">
-          <div className="flex items-center justify-around">
-            {[
-              { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const, active: false },
-              {
-                id: "facilities",
-                icon: Building,
-                label: "Facilities",
-                to: "/facilities" as const,
-                active: false,
-              },
-              {
-                id: "fundraiser",
-                icon: HandHeart,
-                label: "Fundraiser",
-                to: "/fundraiser" as const,
-                active: true,
-              },
-              {
-                id: "profile",
-                icon: User,
-                label: "Profile",
-                to: "/account" as const,
-                active: false,
-              },
-            ].map((n) => (
-              <button
-                key={n.id}
-                onClick={() => navigate({ to: n.to })}
-                className="flex flex-col items-center gap-1 py-1 px-4 relative"
-              >
-                {n.active && <span className="absolute -top-2 w-8 h-1 rounded-full bg-primary" />}
-                <n.icon
-                  className={`w-5 h-5 ${n.active ? "text-primary" : "text-muted-foreground"}`}
-                  strokeWidth={n.active ? 2.5 : 2}
-                />
-                <span
-                  className={`text-[10.5px] font-medium ${n.active ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {n.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <BottomNav active="fundraiser" />
       </div>
     </PhoneFrame>
   );
