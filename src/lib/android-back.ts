@@ -1,5 +1,6 @@
 import { App } from "@capacitor/app";
 import type { AnyRouter } from "@tanstack/react-router";
+import { HOME_ROUTE, resolveBack } from "@/lib/back-navigation";
 
 /** The layer PhoneFrame portals bottom sheets into. */
 const SHEET_LAYER_ID = "sangath-sheet-layer";
@@ -26,10 +27,9 @@ function closeOpenSheet(): boolean {
 /**
  * Wire Android's hardware/gesture back button.
  *
- * Without this Capacitor falls back to WebView history, which ignores open
- * sheets — pressing back while the village picker was up navigated the page
- * underneath instead of closing the picker. Order is: dismiss a sheet, else step
- * back through history, else leave the app.
+ * Sheets come first regardless — pressing back while the village picker is up
+ * has to close the picker, not navigate the page underneath. Beyond that the
+ * destination is resolveBack's call; see back-navigation.ts for the reasoning.
  */
 export function setupAndroidBackButton(router: AnyRouter) {
   if (typeof window === "undefined") return;
@@ -37,18 +37,20 @@ export function setupAndroidBackButton(router: AnyRouter) {
   void App.addListener("backButton", () => {
     if (closeOpenSheet()) return;
 
-    // The router's own stack is the only accurate source here. Capacitor reports
-    // canGoBack from the WebView's *document* history, which does not reliably
+    // The router's own stack is the only accurate source of canGoBack. Capacitor
+    // reports it from the WebView's *document* history, which does not reliably
     // track client-side navigations — on Login → Sign Up it read false, so back
     // fell through to exitApp and dropped the member on the launcher one screen
-    // into the app. window.history.length is no better: a replace leaves it at 1.
-    if (router.history.canGoBack()) {
-      router.history.back();
-      return;
+    // into the app.
+    switch (resolveBack(router.state.location.pathname, router.history.canGoBack())) {
+      case "history":
+        router.history.back();
+        return;
+      case "home":
+        void router.navigate({ to: HOME_ROUTE });
+        return;
+      case "exit":
+        void App.exitApp();
     }
-
-    // A root screen with nothing behind it — leave the app rather than sitting
-    // on a dead button.
-    void App.exitApp();
   });
 }

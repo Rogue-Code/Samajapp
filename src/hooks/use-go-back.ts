@@ -1,24 +1,26 @@
 import { useCallback } from "react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { HOME_ROUTE, resolveBack } from "@/lib/back-navigation";
 
 /**
- * Back navigation that returns to wherever the member actually came from.
+ * The header back arrow. Resolves to the same destination as the hardware back
+ * button (see setupAndroidBackButton) so both "backs" agree.
  *
- * Screens used to hard-code `navigate({ to: "/home" })` on their back arrow, so
- * opening a member from the family tree and pressing back dumped you on Home
- * instead of the tree. This steps back through history instead, falling back to
- * a sensible screen when there is nothing to step back to — which happens on a
- * cold start straight into a route, where `back()` would otherwise leave the app.
+ * In practice that means a nested screen returns to wherever it was opened from
+ * — opening a member from the family tree and pressing back goes to the tree —
+ * while a bottom-nav tab collapses to Home.
  */
 export function useGoBack(fallback: "/home" | "/" = "/home") {
   const router = useRouter();
   const navigate = useNavigate();
 
   return useCallback(() => {
-    if (router.history.canGoBack()) {
+    const action = resolveBack(router.state.location.pathname, router.history.canGoBack());
+    if (action === "history") {
       router.history.back();
       return;
     }
-    void navigate({ to: fallback });
+    // A header arrow never closes the app, so "exit" lands on the fallback.
+    void navigate({ to: action === "home" ? HOME_ROUTE : fallback });
   }, [router, navigate, fallback]);
 }
