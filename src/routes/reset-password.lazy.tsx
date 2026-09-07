@@ -67,7 +67,8 @@ function ResetPasswordPage() {
 
         {!ready && (
           <p className="mt-4 text-sm text-muted-foreground">
-            Waiting for the reset link from your email. If you opened this page directly, go back to Forgot Password.
+            Waiting for the reset link from your email. If you opened this page directly, go back to
+            Forgot Password.
           </p>
         )}
 
@@ -108,7 +109,10 @@ function ResetPasswordPage() {
           </button>
         </form>
 
-        <button onClick={() => navigate({ to: "/" })} className="mt-4 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          onClick={() => navigate({ to: "/" })}
+          className="mt-4 text-sm text-muted-foreground hover:text-foreground"
+        >
           Back to Login
         </button>
       </div>
@@ -141,7 +145,12 @@ function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           className="flex-1 bg-transparent outline-none text-foreground text-base"
         />
-        <button type="button" onClick={onToggle} className="text-muted-foreground" aria-label={show ? "Hide password" : "Show password"}>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-muted-foreground"
+          aria-label={show ? "Hide password" : "Show password"}
+        >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
       </div>

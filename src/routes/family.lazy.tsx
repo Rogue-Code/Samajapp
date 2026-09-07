@@ -214,7 +214,7 @@ function FamilyPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={goBack}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
               aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -239,15 +239,15 @@ function FamilyPage() {
           <div className="grid grid-cols-3 gap-2 mt-5">
             <div className="bg-success-soft rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-success">{counts.verified}</div>
-              <div className="text-[10px] font-medium text-success/80">Verified</div>
+              <div className="text-[11px] font-medium text-success/80">Verified</div>
             </div>
             <div className="bg-warning-soft rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-warning">{counts.pending}</div>
-              <div className="text-[10px] font-medium text-warning/80">Pending</div>
+              <div className="text-[11px] font-medium text-warning/80">Pending</div>
             </div>
             <div className="bg-destructive/10 rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-destructive">{counts.approval}</div>
-              <div className="text-[10px] font-medium text-destructive/80">Approval</div>
+              <div className="text-[11px] font-medium text-destructive/80">Approval</div>
             </div>
           </div>
 
@@ -292,7 +292,7 @@ function FamilyPage() {
                           {age !== null && ` · ${age} yrs`}
                         </div>
                         <div
-                          className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full ${s.bg} ${s.color} text-[10px] font-semibold`}
+                          className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full ${s.bg} ${s.color} text-[11px] font-semibold`}
                         >
                           <s.icon className="w-3 h-3" /> {s.label}
                         </div>
@@ -447,7 +447,7 @@ function AddMemberSheet({
             <h2 className="font-bold text-foreground text-lg">Add Family Member</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
               aria-label="Close"
             >
               <X className="w-4 h-4 text-foreground" />
@@ -565,7 +565,7 @@ function LinkAccountSheet({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0"
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0"
               aria-label="Close"
             >
               <X className="w-4 h-4 text-foreground" />

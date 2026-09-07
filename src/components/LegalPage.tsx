@@ -25,7 +25,7 @@ export function LegalPage({
       <div className="flex flex-col min-h-screen md:min-h-[860px] px-6 pt-8 pb-10">
         <button
           onClick={() => router.history.back()}
-          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition shrink-0"
+          className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition shrink-0"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />

@@ -39,7 +39,7 @@ function ForgotPasswordPage() {
       <div className="flex flex-col min-h-screen md:min-h-[860px] px-6 pt-8 pb-8">
         <button
           onClick={() => navigate({ to: "/" })}
-          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+          className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -48,14 +48,16 @@ function ForgotPasswordPage() {
         <div className="mt-6 fade-up">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Forgot password</h1>
           <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-            Enter your email and we will send a password reset link. You will set a new password after opening that email.
+            Enter your email and we will send a password reset link. You will set a new password
+            after opening that email.
           </p>
         </div>
 
         {sent ? (
           <div className="mt-10 fade-up">
             <p className="text-base text-foreground leading-relaxed">
-              If an account exists for <span className="font-medium">{email.trim()}</span>, a reset email is on its way.
+              If an account exists for <span className="font-medium">{email.trim()}</span>, a reset
+              email is on its way.
             </p>
             <button
               onClick={() => navigate({ to: "/" })}

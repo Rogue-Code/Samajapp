@@ -86,7 +86,7 @@ export function FamilyTree({
     <div className="rounded-2xl bg-card border border-border shadow-soft p-4">
       {rows.map((row, rowIndex) => (
         <div key={row.gen}>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-2">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-2">
             {GENERATION_LABEL[row.gen]}
           </div>
 
@@ -134,8 +134,8 @@ function SelfCard({ name, avatarUrl }: { name: string; avatarUrl: string | null 
         )}
       </div>
       <div className="min-w-0">
-        <div className="text-[13px] font-semibold text-foreground truncate">{name}</div>
-        <div className="text-[10px] text-primary font-medium">This member</div>
+        <div className="text-sm font-semibold text-foreground truncate">{name}</div>
+        <div className="text-[11px] text-primary font-medium">This member</div>
       </div>
     </div>
   );
@@ -163,14 +163,14 @@ function PersonCard({
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-foreground truncate flex items-center gap-1">
+        <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
           <span className="truncate">{person.full_name}</span>
           <StatusIcon
             className={`w-3 h-3 shrink-0 ${status.className}`}
             aria-label={status.label}
           />
         </div>
-        <div className="text-[10px] text-muted-foreground truncate">
+        <div className="text-[11px] text-muted-foreground truncate">
           {person.relation}
           {age !== null && ` · ${age} yrs`}
         </div>

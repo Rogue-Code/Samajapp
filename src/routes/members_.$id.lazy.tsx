@@ -107,7 +107,7 @@ function MemberProfilePage() {
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
               onClick={goBack}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -180,7 +180,7 @@ function MemberProfilePage() {
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
               </button>
             ) : (
-              <p className="mt-4 flex items-start gap-2 text-[11.5px] text-muted-foreground leading-relaxed">
+              <p className="mt-4 flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                 <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
                 No contact number shown for this member.
               </p>

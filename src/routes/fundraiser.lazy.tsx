@@ -125,7 +125,7 @@ function FundraiserPage() {
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
               onClick={goBack}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
@@ -134,7 +134,7 @@ function FundraiserPage() {
               <div className="text-xs text-muted-foreground">Give Back</div>
               <div className="font-semibold text-foreground truncate">Fundraiser & Donations</div>
             </div>
-            <button className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+            <button className="relative w-11 h-11 rounded-full bg-muted flex items-center justify-center">
               <Bell className="w-5 h-5 text-foreground" />
             </button>
           </div>
@@ -149,11 +149,11 @@ function FundraiserPage() {
                 className={`relative h-40 bg-gradient-to-br ${activeCampaign.bg} flex items-center justify-center`}
               >
                 <span className="text-7xl opacity-90">{activeCampaign.emoji}</span>
-                <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-[10.5px] font-bold uppercase tracking-wider text-success">
+                <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-[11px] font-bold uppercase tracking-wider text-success">
                   <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                   Active Campaign
                 </span>
-                <button className="absolute top-3 right-3 w-9 h-9 rounded-full bg-card/95 flex items-center justify-center">
+                <button className="absolute top-3 right-3 w-11 h-11 rounded-full bg-card/95 flex items-center justify-center">
                   <Share2 className="w-4 h-4 text-foreground" />
                 </button>
               </div>
@@ -161,7 +161,7 @@ function FundraiserPage() {
                 <h2 className="text-lg font-bold text-foreground leading-snug">
                   {activeCampaign.title}
                 </h2>
-                <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                   {activeCampaign.desc}
                 </p>
 
@@ -186,7 +186,7 @@ function FundraiserPage() {
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <div className="mt-2 flex items-center justify-between text-[11.5px] text-muted-foreground">
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1 font-medium text-primary">
                     <TrendingUp className="w-3.5 h-3.5" /> {progress}% funded
                   </span>
@@ -205,11 +205,11 @@ function FundraiserPage() {
                 <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                 <div>
                   <h2 className="text-sm font-bold text-foreground">Donations are not open yet</h2>
-                  <p className="mt-1.5 text-[12.5px] text-muted-foreground leading-relaxed">
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                     This page is still being built. Payment details will be published here once the
                     committee has confirmed the account to collect into.
                   </p>
-                  <p className="mt-2 text-[12.5px] text-muted-foreground leading-relaxed">
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                     Please do not send money based on anything shown on this screen.
                   </p>
                 </div>
@@ -226,7 +226,7 @@ function FundraiserPage() {
                 return (
                   <div key={d.id} className="flex items-center gap-3 p-3.5">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-soft ${
+                      className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold shadow-soft ${
                         d.anonymous
                           ? "bg-muted-foreground"
                           : "bg-gradient-to-br from-primary to-accent-saffron"
@@ -264,11 +264,11 @@ function FundraiserPage() {
                     </div>
                     <div className="flex-1 min-w-0 p-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-foreground text-[13.5px] leading-tight line-clamp-1">
+                        <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
                           {c.title}
                         </h3>
                         <span
-                          className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          className={`shrink-0 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                             c.status === "Completed"
                               ? "bg-success-soft text-success"
                               : "bg-muted text-muted-foreground"
