@@ -25,6 +25,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as FacilitiesIdRouteImport } from './routes/facilities_.$id'
 import { Route as MembersIdRouteImport } from './routes/members_.$id'
+import { Route as SponsorsIdRouteImport } from './routes/sponsors_.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,11 @@ const MembersIdRoute = MembersIdRouteImport.update({
   path: '/members/$id',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/members_.$id.lazy').then((d) => d.Route))
+const SponsorsIdRoute = SponsorsIdRouteImport.update({
+  id: '/sponsors_/$id',
+  path: '/sponsors/$id',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/sponsors_.$id.lazy').then((d) => d.Route))
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/facilities/$id': typeof FacilitiesIdRoute
   '/members/$id': typeof MembersIdRoute
+  '/sponsors/$id': typeof SponsorsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/facilities/$id': typeof FacilitiesIdRoute
   '/members/$id': typeof MembersIdRoute
+  '/sponsors/$id': typeof SponsorsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/facilities_/$id': typeof FacilitiesIdRoute
   '/members_/$id': typeof MembersIdRoute
+  '/sponsors_/$id': typeof SponsorsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/facilities/$id'
     | '/members/$id'
+    | '/sponsors/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/facilities/$id'
     | '/members/$id'
+    | '/sponsors/$id'
   id:
     | '__root__'
     | '/'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/facilities_/$id'
     | '/members_/$id'
+    | '/sponsors_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +254,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   FacilitiesIdRoute: typeof FacilitiesIdRoute
   MembersIdRoute: typeof MembersIdRoute
+  SponsorsIdRoute: typeof SponsorsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sponsors_/$id': {
+      id: '/sponsors_/$id'
+      path: '/sponsors/$id'
+      fullPath: '/sponsors/$id'
+      preLoaderRoute: typeof SponsorsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -378,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   FacilitiesIdRoute: FacilitiesIdRoute,
   MembersIdRoute: MembersIdRoute,
+  SponsorsIdRoute: SponsorsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

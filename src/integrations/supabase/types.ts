@@ -374,8 +374,12 @@ export type Database = {
           emoji: string
           facility_id: string | null
           id: string
+          image_original_url: string | null
+          image_url: string | null
           link_url: string | null
           name: string
+          owner_name: string | null
+          phone: string | null
           sort_order: number
           updated_at: string
         }
@@ -386,8 +390,12 @@ export type Database = {
           emoji?: string
           facility_id?: string | null
           id?: string
+          image_original_url?: string | null
+          image_url?: string | null
           link_url?: string | null
           name: string
+          owner_name?: string | null
+          phone?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -398,8 +406,12 @@ export type Database = {
           emoji?: string
           facility_id?: string | null
           id?: string
+          image_original_url?: string | null
+          image_url?: string | null
           link_url?: string | null
           name?: string
+          owner_name?: string | null
+          phone?: string | null
           sort_order?: number
           updated_at?: string
         }
