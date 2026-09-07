@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { OtpInput } from "@/components/OtpInput";
+import { useT } from "@/lib/i18n";
 import {
   destinationAfterLogin,
   friendlyAuthError,
@@ -20,6 +21,7 @@ const RESEND_DELAY = 45;
 
 function SignupPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -78,8 +80,8 @@ function SignupPage() {
       <div className="flex flex-col min-h-screen md:min-h-[860px] px-6 pt-8 pb-8">
         <button
           onClick={() => (step === "code" ? setStep("email") : navigate({ to: "/" }))}
-          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
-          aria-label="Back"
+          className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+          aria-label={t("common.back")}
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
@@ -88,10 +90,10 @@ function SignupPage() {
           <>
             <div className="mt-6 fade-up">
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                Create your account
+                {t("signup.title")}
               </h1>
               <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                Enter your email and we'll send you a 6-digit code to verify it. No password needed.
+                {t("signup.subtitle")}
               </p>
             </div>
 
@@ -104,7 +106,7 @@ function SignupPage() {
             >
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Email Address
+                  {t("common.emailAddress")}
                 </label>
                 <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                   <Mail className="w-4 h-4 text-muted-foreground" />
@@ -114,13 +116,11 @@ function SignupPage() {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@email.com"
+                    placeholder={t("common.emailPlaceholder")}
                     className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 px-1">
-                  We'll only use this to sign you in and keep your account secure.
-                </p>
+                <p className="text-xs text-muted-foreground mt-2 px-1">{t("signup.emailHelp")}</p>
               </div>
 
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -132,10 +132,10 @@ function SignupPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Sending code...
+                    <Loader2 className="w-5 h-5 animate-spin" /> {t("login.sendingCode")}
                   </>
                 ) : (
-                  "Send verification code"
+                  t("signup.sendCode")
                 )}
               </button>
             </form>
@@ -143,11 +143,12 @@ function SignupPage() {
         ) : (
           <>
             <div className="mt-6 fade-up">
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter the code</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                {t("otp.title")}
+              </h1>
               <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                We sent a 6-digit code to{" "}
-                <span className="font-medium text-foreground">{email}</span>. It expires in a few
-                minutes.
+                {t("otp.sentToPrefix")} <span className="font-medium text-foreground">{email}</span>
+                {t("otp.sentToSuffix")}
               </p>
             </div>
 
@@ -164,24 +165,24 @@ function SignupPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Verifying...
+                    <Loader2 className="w-5 h-5 animate-spin" /> {t("otp.verifying")}
                   </>
                 ) : (
-                  "Verify & continue"
+                  t("otp.verify")
                 )}
               </button>
 
               <div className="mt-5 text-center text-sm text-muted-foreground">
-                Didn't get it?{" "}
+                {t("otp.didntGet")}{" "}
                 {cooldown > 0 ? (
-                  <span>Resend in {cooldown}s</span>
+                  <span>{t("otp.resendIn", { seconds: cooldown })}</span>
                 ) : (
                   <button
                     type="button"
                     onClick={() => void sendCode()}
                     className="font-semibold text-primary"
                   >
-                    Resend code
+                    {t("otp.resend")}
                   </button>
                 )}
               </div>
@@ -190,34 +191,34 @@ function SignupPage() {
         )}
 
         <p className="mt-auto pt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t("signup.haveAccount")}{" "}
           <button
             type="button"
             onClick={() => navigate({ to: "/" })}
             className="font-semibold text-primary"
           >
-            Login
+            {t("signup.login")}
           </button>
         </p>
 
         <p className="mt-4 text-[11px] text-center text-muted-foreground leading-relaxed">
-          By creating an account you agree to our{" "}
+          {t("signup.consentPrefix")}{" "}
           <button
             type="button"
             onClick={() => navigate({ to: "/terms" })}
             className="text-primary font-medium underline underline-offset-2"
           >
-            Terms
+            {t("common.terms")}
           </button>{" "}
-          and confirm you have read our{" "}
+          {t("signup.consentMiddle")}{" "}
           <button
             type="button"
             onClick={() => navigate({ to: "/privacy" })}
             className="text-primary font-medium underline underline-offset-2"
           >
-            Privacy Policy
+            {t("common.privacyPolicy")}
           </button>
-          , including who in the community can see your mobile number.
+          {t("signup.consentSuffix")}
         </p>
       </div>
     </PhoneFrame>

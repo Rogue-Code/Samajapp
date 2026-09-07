@@ -31,6 +31,9 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { useLanguage, useT, type Lang, type TFunction } from "@/lib/i18n";
+import type { StringKey } from "@/lib/translations";
+import { relativeTime } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/news")({
   component: NewsPage,
@@ -75,30 +78,28 @@ function categoryMeta(category: string) {
   return CATEGORY_META[category as Category] ?? FALLBACK_META;
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Administrator",
-  committee: "Committee Member",
-  member: "Member",
+const CATEGORY_KEY: Record<Category, StringKey> = {
+  Announcement: "postCat.Announcement",
+  Event: "postCat.Event",
+  Education: "postCat.Education",
+  Scholarship: "postCat.Scholarship",
+  Achievement: "postCat.Achievement",
+  Obituary: "postCat.Obituary",
+  "Emergency Notice": "postCat.EmergencyNotice",
+  "General Update": "postCat.GeneralUpdate",
 };
 
-/** "2 hours ago" style stamp; falls back to a date once it is over a week old. */
-function relativeTime(iso: string) {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const mins = Math.floor((Date.now() - then) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+/** A category outside the list is shown exactly as it was stored. */
+function categoryLabel(category: string, t: TFunction) {
+  const key = CATEGORY_KEY[category as Category];
+  return key ? t(key) : category;
 }
+
+const ROLE_KEY: Record<string, StringKey> = {
+  admin: "newsRole.admin",
+  committee: "newsRole.committee",
+  member: "newsRole.member",
+};
 
 function initialOf(name: string | null) {
   return (name?.trim()?.[0] ?? "?").toUpperCase();
@@ -122,6 +123,7 @@ const POST_SELECT =
 
 function NewsPage() {
   const navigate = useNavigate();
+  const { lang, t } = useLanguage();
   const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish, isAdmin } = useProfileRole(session);
@@ -303,16 +305,19 @@ function NewsPage() {
             <div className="flex items-center gap-3 mb-3">
               <button
                 onClick={goBack}
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
-                aria-label="Back"
+                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
+                aria-label={t("common.back")}
               >
                 <ChevronLeft className="w-5 h-5 text-foreground" />
               </button>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-muted-foreground">Community</div>
-                <div className="font-semibold text-foreground truncate">News & Announcements</div>
+                <div className="text-xs text-muted-foreground">{t("news.community")}</div>
+                <div className="font-semibold text-foreground truncate">{t("news.title")}</div>
               </div>
-              <button className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <button
+                aria-label={t("home.notifications")}
+                className="relative w-11 h-11 rounded-full bg-muted flex items-center justify-center"
+              >
                 <Bell className="w-5 h-5 text-foreground" />
               </button>
             </div>
@@ -330,16 +335,15 @@ function NewsPage() {
             {posts.length === 0 && (
               <div className="text-center py-16 px-6">
                 <div className="text-4xl mb-3">📰</div>
-                <p className="font-semibold text-foreground">No announcements yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Community news will appear here once the committee posts.
-                </p>
+                <p className="font-semibold text-foreground">{t("news.noPosts")}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("news.noPostsHint")}</p>
               </div>
             )}
             {posts.map((p) => (
               <PostCard
                 key={p.id}
                 post={p}
+                lang={lang}
                 saved={saved.has(p.id)}
                 onSave={() => void toggleSave(p.id)}
                 onShare={() => void sharePost(p)}
@@ -360,7 +364,7 @@ function NewsPage() {
             )}
             {!hasMore && posts.length > 0 && (
               <div className="text-center text-xs text-muted-foreground py-6">
-                You're all caught up ✨
+                {t("common.caughtUp")} ✨
               </div>
             )}
           </div>
@@ -372,7 +376,7 @@ function NewsPage() {
             onClick={() => setShowCreate(true)}
             className="absolute right-5 bottom-24 z-30 h-14 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-elevated flex items-center gap-2 active:scale-95 transition"
           >
-            <Plus className="w-5 h-5" /> Create Post
+            <Plus className="w-5 h-5" /> {t("news.createPost")}
           </button>
         )}
 
@@ -392,6 +396,7 @@ function NewsPage() {
 
 function PostCard({
   post,
+  lang,
   saved,
   onSave,
   onShare,
@@ -401,6 +406,7 @@ function PostCard({
   canDelete,
 }: {
   post: Post;
+  lang: Lang;
   saved: boolean;
   onSave: () => void;
   onShare: () => void;
@@ -409,11 +415,12 @@ function PostCard({
   canPin: boolean;
   canDelete: boolean;
 }) {
+  const t = useT();
   const [menu, setMenu] = useState(false);
   const meta = categoryMeta(post.category);
   const Icon = meta.icon;
-  const authorName = post.author?.full_name ?? "Former member";
-  const authorRole = ROLE_LABEL[post.author?.role ?? "member"] ?? "Member";
+  const authorName = post.author?.full_name ?? t("news.formerMember");
+  const authorRole = t(ROLE_KEY[post.author?.role ?? "member"] ?? "newsRole.member");
 
   return (
     <article
@@ -423,7 +430,7 @@ function PostCard({
     >
       {post.pinned && (
         <div className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-soft text-primary text-[11px] font-bold uppercase tracking-wider">
-          <Pin className="w-3 h-3" /> Pinned Announcement
+          <Pin className="w-3 h-3" /> {t("news.pinnedAnnouncement")}
         </div>
       )}
 
@@ -441,15 +448,15 @@ function PostCard({
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-foreground truncate">{authorName}</div>
           <div className="text-[11px] text-muted-foreground truncate">
-            {authorRole} · {relativeTime(post.created_at)}
+            {authorRole} · {relativeTime(post.created_at, t, lang)}
           </div>
         </div>
         {(canPin || canDelete) && (
           <div className="relative">
             <button
               onClick={() => setMenu((v) => !v)}
-              className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
-              aria-label="Post options"
+              className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center"
+              aria-label={t("news.postOptions")}
             >
               <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -463,7 +470,7 @@ function PostCard({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
                   >
-                    <Pin className="w-4 h-4" /> {post.pinned ? "Unpin" : "Pin"}
+                    <Pin className="w-4 h-4" /> {t(post.pinned ? "news.unpin" : "news.pin")}
                   </button>
                 )}
                 {canDelete && (
@@ -474,7 +481,7 @@ function PostCard({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-muted text-destructive flex items-center gap-2"
                   >
-                    <X className="w-4 h-4" /> Delete
+                    <X className="w-4 h-4" /> {t("news.delete")}
                   </button>
                 )}
               </div>
@@ -486,16 +493,16 @@ function PostCard({
       {/* Category chip */}
       <div className="px-4 pb-2">
         <span
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold text-white bg-gradient-to-r ${meta.color}`}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white bg-gradient-to-r ${meta.color}`}
         >
-          <Icon className="w-3 h-3" /> {post.category}
+          <Icon className="w-3 h-3" /> {categoryLabel(post.category, t)}
         </span>
       </div>
 
       {/* Body */}
       <div className="px-4 pb-3">
         <h3 className="text-base font-bold text-foreground leading-snug">{post.title}</h3>
-        <p className="mt-1.5 text-[13.5px] text-foreground/85 leading-relaxed whitespace-pre-line">
+        <p className="mt-1.5 text-sm text-foreground/85 leading-relaxed whitespace-pre-line">
           {post.content}
         </p>
       </div>
@@ -506,7 +513,7 @@ function PostCard({
           onClick={onShare}
           className="flex-1 h-10 rounded-xl text-sm font-semibold text-foreground hover:bg-muted flex items-center justify-center gap-2 transition"
         >
-          <Share2 className="w-4 h-4" /> Share
+          <Share2 className="w-4 h-4" /> {t("common.share")}
         </button>
         <div className="w-px h-6 bg-border" />
         <button
@@ -516,7 +523,7 @@ function PostCard({
           }`}
         >
           <Bookmark className={`w-4 h-4 ${saved ? "fill-primary" : ""}`} />
-          {saved ? "Saved" : "Save"}
+          {t(saved ? "common.saved" : "common.save")}
         </button>
       </div>
     </article>
@@ -537,6 +544,7 @@ function CreatePostSheet({
   }) => Promise<void>;
   canPin: boolean;
 }) {
+  const t = useT();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<Category>("Announcement");
@@ -557,10 +565,11 @@ function CreatePostSheet({
       <div className="fixed md:absolute inset-0 z-40 bg-foreground/40 backdrop-blur-sm flex items-end md:items-center justify-center">
         <div className="w-full md:max-w-md bg-card rounded-t-3xl md:rounded-3xl shadow-elevated max-h-[90%] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <h3 className="text-base font-bold text-foreground">Create Post</h3>
+            <h3 className="text-base font-bold text-foreground">{t("news.createPost")}</h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
+              aria-label={t("common.close")}
+              className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center"
             >
               <X className="w-4 h-4" />
             </button>
@@ -571,34 +580,40 @@ function CreatePostSheet({
             style={{ scrollbarWidth: "none" }}
           >
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Title</label>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {t("news.titleLabel")}
+              </label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={120}
-                placeholder="Add a clear, descriptive title"
+                placeholder={t("news.titlePlaceholder")}
                 autoComplete="off"
                 className="mt-1 w-full h-11 px-3 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Post Content</label>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {t("news.contentLabel")}
+              </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 maxLength={1500}
                 rows={5}
-                placeholder="Write your announcement, notice or update..."
+                placeholder={t("news.contentPlaceholder")}
                 className="mt-1 w-full px-3 py-2.5 rounded-xl bg-muted border border-border outline-none text-sm focus:ring-2 focus:ring-primary resize-none"
               />
-              <div className="text-[10px] text-muted-foreground text-right mt-1">
+              <div className="text-[11px] text-muted-foreground text-right mt-1">
                 {content.length}/1500
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Category</label>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {t("news.categoryLabel")}
+              </label>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {(Object.keys(CATEGORY_META) as Category[]).map((c) => {
                   const active = category === c;
@@ -613,7 +628,7 @@ function CreatePostSheet({
                           : "bg-card text-foreground border-border"
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" /> {c}
+                      <Icon className="w-3.5 h-3.5" /> {categoryLabel(c, t)}
                     </button>
                   );
                 })}
@@ -631,9 +646,9 @@ function CreatePostSheet({
               />
               <div className="flex-1">
                 <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <Pin className="w-3.5 h-3.5" /> Featured Announcement
+                  <Pin className="w-3.5 h-3.5" /> {t("news.featured")}
                 </div>
-                <div className="text-[11px] text-muted-foreground">Pin to top of the feed</div>
+                <div className="text-[11px] text-muted-foreground">{t("news.featuredHint")}</div>
               </div>
             </label>
           </div>
@@ -643,7 +658,7 @@ function CreatePostSheet({
               onClick={onClose}
               className="flex-1 h-11 rounded-xl bg-muted text-foreground text-sm font-semibold"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               disabled={!canSubmit}
@@ -652,10 +667,10 @@ function CreatePostSheet({
             >
               {publishing ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t("news.publishing")}
                 </>
               ) : (
-                "Publish"
+                t("news.publish")
               )}
             </button>
           </div>

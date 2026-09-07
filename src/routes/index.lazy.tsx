@@ -1,8 +1,11 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Globe, HelpCircle, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useT } from "@/lib/i18n";
+import { CONTACT_EMAIL } from "@/lib/legal";
 import { OtpInput } from "@/components/OtpInput";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -22,6 +25,7 @@ const RESEND_DELAY = 45;
 
 function LoginPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -99,7 +103,7 @@ function LoginPage() {
       <PhoneFrame>
         <div className="flex min-h-screen md:min-h-[860px] flex-col items-center justify-center gap-3 px-6">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading Sangath…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         </div>
       </PhoneFrame>
     );
@@ -115,9 +119,7 @@ function LoginPage() {
             </div>
             <span className="font-semibold text-foreground">Sangath</span>
           </div>
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full bg-muted">
-            <Globe className="w-3.5 h-3.5" /> EN
-          </button>
+          <LanguageToggle />
         </div>
 
         <div className="flex-1 flex flex-col fade-up" style={{ animationDelay: "60ms" }}>
@@ -127,11 +129,10 @@ function LoginPage() {
                 <Logo className="w-16 h-16" />
               </div>
               <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
-                Welcome to Sangath
+                {t("login.welcome")}
               </h1>
               <p className="text-muted-foreground mt-3 text-base leading-relaxed">
-                Connect with your family & community digitally. Trusted by 50,000+ families across
-                India.
+                {t("login.tagline")}
               </p>
 
               <form
@@ -143,7 +144,7 @@ function LoginPage() {
               >
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Email Address
+                    {t("common.emailAddress")}
                   </label>
                   <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                     <Mail className="w-4 h-4 text-muted-foreground" />
@@ -153,13 +154,11 @@ function LoginPage() {
                       autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@email.com"
+                      placeholder={t("common.emailPlaceholder")}
                       className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 px-1">
-                    We'll email you a 6-digit code to sign in. No password needed.
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 px-1">{t("login.emailHelp")}</p>
                 </div>
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
@@ -171,22 +170,22 @@ function LoginPage() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" /> Sending code...
+                      <Loader2 className="w-5 h-5 animate-spin" /> {t("login.sendingCode")}
                     </>
                   ) : (
-                    "Send login code"
+                    t("login.sendCode")
                   )}
                 </button>
               </form>
 
               <p className="mt-6 text-center text-sm text-muted-foreground">
-                New to Sangath?{" "}
+                {t("login.newHere")}{" "}
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/signup" })}
                   className="font-semibold text-primary"
                 >
-                  Sign Up
+                  {t("login.signUp")}
                 </button>
               </p>
             </>
@@ -194,17 +193,18 @@ function LoginPage() {
             <>
               <button
                 onClick={() => setStep("email")}
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition mb-6"
-                aria-label="Back"
+                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition mb-6"
+                aria-label={t("common.back")}
               >
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
 
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter the code</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                {t("otp.title")}
+              </h1>
               <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                We sent a 6-digit code to{" "}
-                <span className="font-medium text-foreground">{email}</span>. It expires in a few
-                minutes.
+                {t("otp.sentToPrefix")} <span className="font-medium text-foreground">{email}</span>
+                {t("otp.sentToSuffix")}
               </p>
 
               <div className="mt-8">
@@ -220,24 +220,24 @@ function LoginPage() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" /> Verifying...
+                      <Loader2 className="w-5 h-5 animate-spin" /> {t("otp.verifying")}
                     </>
                   ) : (
-                    "Verify & continue"
+                    t("otp.verify")
                   )}
                 </button>
 
                 <div className="mt-5 text-center text-sm text-muted-foreground">
-                  Didn't get it?{" "}
+                  {t("otp.didntGet")}{" "}
                   {cooldown > 0 ? (
-                    <span>Resend in {cooldown}s</span>
+                    <span>{t("otp.resendIn", { seconds: cooldown })}</span>
                   ) : (
                     <button
                       type="button"
                       onClick={() => void sendCode()}
                       className="font-semibold text-primary"
                     >
-                      Resend code
+                      {t("otp.resend")}
                     </button>
                   )}
                 </div>
@@ -246,30 +246,38 @@ function LoginPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-6 mt-8 text-xs text-muted-foreground">
-          <button className="flex items-center gap-1 hover:text-foreground transition">
-            <HelpCircle className="w-3.5 h-3.5" /> Help
-          </button>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <button className="hover:text-foreground transition">Contact Support</button>
+        <div className="flex items-center justify-center mt-8 text-xs text-muted-foreground">
+          {/*
+            A real mailto rather than a button: there is no in-app help centre to
+            send anyone to, and a member who taps this wants to reach a person.
+            The address comes from legal.ts so it cannot drift from the Privacy
+            Policy's stated contact.
+          */}
+          <a
+            href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Sangath support")}`}
+            className="flex items-center gap-1.5 hover:text-foreground transition"
+          >
+            <Mail className="w-3.5 h-3.5" /> {t("common.contactSupport")}
+          </a>
         </div>
         <p className="text-[11px] text-center text-muted-foreground mt-4 leading-relaxed">
-          By continuing you agree to our{" "}
+          {t("common.byContinuingPrefix")}{" "}
           <button
             type="button"
             onClick={() => navigate({ to: "/terms" })}
             className="text-primary font-medium underline underline-offset-2"
           >
-            Terms
+            {t("common.terms")}
           </button>{" "}
-          &{" "}
+          {t("common.and")}{" "}
           <button
             type="button"
             onClick={() => navigate({ to: "/privacy" })}
             className="text-primary font-medium underline underline-offset-2"
           >
-            Privacy Policy
-          </button>
+            {t("common.privacyPolicy")}
+          </button>{" "}
+          {t("common.byContinuingSuffix")}
         </p>
       </div>
     </PhoneFrame>

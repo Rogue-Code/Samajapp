@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SheetPortal } from "@/components/PhoneFrame";
 import { Check, MapPin, Search, X } from "lucide-react";
 import { searchPlaces } from "@/data/india-places";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   label: string;
@@ -17,12 +18,9 @@ interface Props {
  * soft keyboard is up. Free text is allowed — the bundled list cannot cover every
  * village in India, so a member can always enter their own.
  */
-export function PlacePicker({
-  label,
-  value,
-  onChange,
-  placeholder = "Search your village or city",
-}: Props) {
+export function PlacePicker({ label, value, onChange, placeholder }: Props) {
+  const t = useT();
+  const shown = placeholder ?? t("place.placeholder");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -59,7 +57,7 @@ export function PlacePicker({
         <span
           className={`flex-1 truncate ${value ? "text-foreground" : "text-muted-foreground/60"}`}
         >
-          {value || placeholder}
+          {value || shown}
         </span>
       </button>
 
@@ -68,7 +66,7 @@ export function PlacePicker({
           <div className="fixed md:absolute inset-0 z-50 flex flex-col justify-end">
             <button
               type="button"
-              aria-label="Close"
+              aria-label={t("common.close")}
               className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
               onClick={() => setOpen(false)}
             />
@@ -80,8 +78,8 @@ export function PlacePicker({
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
-                    aria-label="Close"
+                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+                    aria-label={t("common.close")}
                   >
                     <X className="w-4 h-4 text-foreground" />
                   </button>
@@ -92,12 +90,16 @@ export function PlacePicker({
                     ref={searchRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Type a village, city or state"
+                    placeholder={t("place.searchPlaceholder")}
                     autoComplete="off"
                     className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60"
                   />
                   {query && (
-                    <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      aria-label={t("common.clearSearch")}
+                    >
                       <X className="w-4 h-4 text-muted-foreground" />
                     </button>
                   )}
@@ -111,12 +113,16 @@ export function PlacePicker({
                     onClick={() => choose(trimmed)}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left active:bg-muted transition"
                   >
-                    <span className="w-8 h-8 rounded-full bg-primary-soft flex items-center justify-center shrink-0">
+                    <span className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center shrink-0">
                       <MapPin className="w-4 h-4 text-primary" />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-foreground truncate">Use “{trimmed}”</span>
-                      <span className="block text-xs text-muted-foreground">Not in the list</span>
+                      <span className="block text-foreground truncate">
+                        {t("place.useCustom", { value: trimmed })}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {t("place.notInList")}
+                      </span>
                     </span>
                   </button>
                 )}
@@ -140,7 +146,7 @@ export function PlacePicker({
 
                 {!showCustom && results.length === 0 && (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No places matched. Keep typing to enter your own.
+                    {t("place.noMatch")}
                   </p>
                 )}
               </div>

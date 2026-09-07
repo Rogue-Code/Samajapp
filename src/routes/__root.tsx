@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { LanguageProvider } from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -71,19 +72,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" },
+      {
+        name: "viewport",
+        content:
+          "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+      },
       { title: "Sangath" },
-      { name: "description", content: "Sangath is a mobile app for managing family and community connections." },
+      {
+        name: "description",
+        content: "Sangath is a mobile app for managing family and community connections.",
+      },
       { name: "author", content: "Sangath" },
       { property: "og:title", content: "Sangath" },
-      { property: "og:description", content: "Sangath is a mobile app for managing family and community connections." },
+      {
+        property: "og:description",
+        content: "Sangath is a mobile app for managing family and community connections.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Sangath" },
       { name: "twitter:title", content: "Sangath" },
-      { name: "twitter:description", content: "Sangath is a mobile app for managing family and community connections." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/423ef031-73aa-47cd-96da-aad466ed4cff/id-preview-fc1dfd75--fadfd572-0286-4ba2-9687-88e3e9f13a58.lovable.app-1779697845101.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/423ef031-73aa-47cd-96da-aad466ed4cff/id-preview-fc1dfd75--fadfd572-0286-4ba2-9687-88e3e9f13a58.lovable.app-1779697845101.png" },
+      {
+        name: "twitter:description",
+        content: "Sangath is a mobile app for managing family and community connections.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/423ef031-73aa-47cd-96da-aad466ed4cff/id-preview-fc1dfd75--fadfd572-0286-4ba2-9687-88e3e9f13a58.lovable.app-1779697845101.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/423ef031-73aa-47cd-96da-aad466ed4cff/id-preview-fc1dfd75--fadfd572-0286-4ba2-9687-88e3e9f13a58.lovable.app-1779697845101.png",
+      },
     ],
     links: [
       {
@@ -134,7 +156,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <LanguageProvider>
+        <Outlet />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

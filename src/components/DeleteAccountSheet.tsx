@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SheetPortal } from "@/components/PhoneFrame";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useT } from "@/lib/i18n";
 
 const CONFIRM_WORD = "DELETE";
 
@@ -27,6 +28,7 @@ export function DeleteAccountSheet({
   onClose: () => void;
   onDeleted: () => void;
 }) {
+  const t = useT();
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +49,7 @@ export function DeleteAccountSheet({
 
     const { error: rpcError } = await supabase.rpc("delete_my_account");
     if (rpcError) {
-      setError(rpcError.message || "Could not delete your account. Please try again.");
+      setError(rpcError.message || t("delete.failed"));
       setDeleting(false);
       return;
     }
@@ -64,13 +66,13 @@ export function DeleteAccountSheet({
         <div className="w-full md:max-w-md bg-card rounded-t-3xl md:rounded-3xl shadow-elevated max-h-[90%] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h3 className="text-base font-bold text-destructive flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> Delete Account
+              <AlertTriangle className="w-4 h-4" /> {t("account.deleteAccount")}
             </h3>
             <button
               onClick={onClose}
               disabled={deleting}
-              className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center disabled:opacity-40"
-              aria-label="Close"
+              className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center disabled:opacity-40"
+              aria-label={t("common.close")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -80,25 +82,24 @@ export function DeleteAccountSheet({
             className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
             style={{ scrollbarWidth: "none" }}
           >
-            <p className="text-sm text-foreground leading-relaxed">
-              This cannot be undone. Your login stops working immediately and you would have to sign
-              up again from scratch.
-            </p>
+            <p className="text-sm text-foreground leading-relaxed">{t("delete.warning")}</p>
 
             <div>
               <p className="text-xs font-semibold text-muted-foreground mb-2">
-                Permanently deleted
+                {t("delete.permanentlyDeleted")}
               </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                {[
-                  "Your profile and every detail in it",
-                  "Your family members and their details",
-                  "Your profile photo",
-                  "Your saved posts and saved facilities",
-                ].map((item) => (
-                  <li key={item} className="flex gap-2.5">
+                {(
+                  [
+                    "delete.itemProfile",
+                    "delete.itemFamily",
+                    "delete.itemPhoto",
+                    "delete.itemSaved",
+                  ] as const
+                ).map((key) => (
+                  <li key={key} className="flex gap-2.5">
                     <span className="mt-[0.55rem] w-1 h-1 rounded-full bg-destructive/70 shrink-0" />
-                    <span>{item}</span>
+                    <span>{t(key)}</span>
                   </li>
                 ))}
               </ul>
@@ -106,16 +107,13 @@ export function DeleteAccountSheet({
 
             <div>
               <p className="text-xs font-semibold text-muted-foreground mb-2">
-                Kept, without your name
+                {t("delete.keptTitle")}
               </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                {[
-                  "Community news you published stays in the feed, with the byline removed",
-                  "Events you created stay on the calendar",
-                ].map((item) => (
-                  <li key={item} className="flex gap-2.5">
+                {(["delete.keptNews", "delete.keptEvents"] as const).map((key) => (
+                  <li key={key} className="flex gap-2.5">
                     <span className="mt-[0.55rem] w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
-                    <span>{item}</span>
+                    <span>{t(key)}</span>
                   </li>
                 ))}
               </ul>
@@ -123,7 +121,7 @@ export function DeleteAccountSheet({
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground">
-                Type {CONFIRM_WORD} to confirm
+                {t("delete.confirmLabel", { word: CONFIRM_WORD })}
               </label>
               <input
                 value={confirmText}
@@ -147,10 +145,10 @@ export function DeleteAccountSheet({
             >
               {deleting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Deleting...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t("delete.deleting")}
                 </>
               ) : (
-                "Delete my account permanently"
+                t("delete.confirmButton")
               )}
             </button>
             <button
@@ -158,7 +156,7 @@ export function DeleteAccountSheet({
               disabled={deleting}
               className="w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold active:scale-[0.98] transition disabled:opacity-40"
             >
-              Keep my account
+              {t("delete.keep")}
             </button>
           </div>
         </div>

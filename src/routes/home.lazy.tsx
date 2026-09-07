@@ -4,7 +4,6 @@ import { Avatar } from "@/components/Avatar";
 import { useCallback, useEffect, useState } from "react";
 import {
   Search,
-  Bell,
   Home as HomeIcon,
   Building,
   HandHeart,
@@ -26,6 +25,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage, type TFunction } from "@/lib/i18n";
+import { formatEventDate, relativeTime } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/home")({
   component: HomePage,
@@ -44,6 +45,8 @@ type Sponsor = {
   name: string;
   description: string | null;
   emoji: string;
+  /** Square (1:1) artwork. Falls back to the emoji when a sponsor has no photo. */
+  image_url: string | null;
   link_url: string | null;
   facility_id: string | null;
 };
@@ -81,39 +84,19 @@ function gradientFor(index: number) {
   return CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 }
 
-function greeting() {
+/** How long each sponsor stays on screen before the carousel advances. */
+const AD_ROTATE_MS = 5000;
+
+function greeting(t: TFunction) {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning";
-  if (hour < 17) return "Good Afternoon";
-  return "Good Evening";
-}
-
-function formatEventDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
-
-function relativeTime(iso: string) {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const mins = Math.floor((Date.now() - then) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  if (hour < 12) return t("home.morning");
+  if (hour < 17) return t("home.afternoon");
+  return t("home.evening");
 }
 
 function HomePage() {
   const navigate = useNavigate();
+  const { lang, t } = useLanguage();
   const { checking, session } = useRequireAuth();
   const { isAdmin } = useProfileRole(session);
   const [term, setTerm] = useState("");
@@ -147,7 +130,7 @@ function HomePage() {
       supabase.from("event_rsvps").select("event_id").eq("user_id", session.user.id),
       supabase
         .from("sponsors")
-        .select("id, name, description, emoji, link_url, facility_id")
+        .select("id, name, description, emoji, image_url, link_url, facility_id")
         .order("sort_order", { ascending: true }),
       supabase
         .from("posts")
@@ -179,8 +162,8 @@ function HomePage() {
 
   useEffect(() => {
     if (sponsored.length < 2) return;
-    const t = setInterval(nextAd, 10000);
-    return () => clearInterval(t);
+    const timer = setInterval(nextAd, AD_ROTATE_MS);
+    return () => clearInterval(timer);
   }, [nextAd, sponsored.length]);
 
   // Debounced so typing does not fire a request per keystroke.
@@ -229,7 +212,7 @@ function HomePage() {
   if (checking || loading) return <LoadingScreen />;
 
   const ad = sponsored[adIndex];
-  const displayName = fullName?.trim() || "there";
+  const displayName = fullName?.trim() || t("home.friend");
   const initial = (fullName?.trim()?.[0] ?? "?").toUpperCase();
 
   return (
@@ -241,16 +224,13 @@ function HomePage() {
             <div className="flex items-center gap-3 mb-3">
               <Logo className="w-10 h-10" />
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-muted-foreground">{greeting()} 👋</div>
+                <div className="text-xs text-muted-foreground">{greeting(t)} 👋</div>
                 <div className="font-semibold text-foreground truncate">{displayName}</div>
               </div>
-              <button className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <Bell className="w-5 h-5 text-foreground" />
-              </button>
               <button
                 onClick={() => navigate({ to: "/account" })}
                 className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shadow-card ring-2 ring-background"
-                aria-label="Profile"
+                aria-label={t("home.profileAria")}
               >
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -264,7 +244,7 @@ function HomePage() {
               <input
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
-                placeholder="Search members by name, village or work..."
+                placeholder={t("home.searchPlaceholder")}
                 autoComplete="off"
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
@@ -272,7 +252,7 @@ function HomePage() {
                 <button
                   onClick={() => setTerm("")}
                   className="text-muted-foreground"
-                  aria-label="Clear search"
+                  aria-label={t("common.clearSearch")}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -295,16 +275,16 @@ function HomePage() {
             {!searching && results.length === 0 && (
               <div className="text-center py-16 px-6">
                 <div className="text-4xl mb-3">🔍</div>
-                <p className="font-semibold text-foreground">No members found</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Try a different name, village or occupation.
-                </p>
+                <p className="font-semibold text-foreground">{t("home.noMembers")}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("home.noMembersHint")}</p>
               </div>
             )}
             {!searching && results.length > 0 && (
               <div className="space-y-2.5">
                 <p className="text-[11px] text-muted-foreground px-1">
-                  {results.length} {results.length === 1 ? "member" : "members"}
+                  {t(results.length === 1 ? "common.memberCountOne" : "common.memberCount", {
+                    count: results.length,
+                  })}
                 </p>
                 {results.map((m) => {
                   const place = [m.village, m.city].filter(Boolean).join(", ");
@@ -344,17 +324,16 @@ function HomePage() {
             {/* Upcoming Events */}
             {events.length === 0 && isAdmin && (
               <section className="pt-5">
-                <SectionHeader title="Upcoming Events" />
+                <SectionHeader title={t("home.upcomingEvents")} />
                 <div className="px-5 pt-3">
                   <button
                     onClick={() => navigate({ to: "/admin" })}
                     className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
                   >
                     <div className="text-3xl mb-2">📅</div>
-                    <p className="text-sm font-semibold text-foreground">No events yet</p>
+                    <p className="text-sm font-semibold text-foreground">{t("home.noEvents")}</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Add gatherings or camps in the admin console. Only you can see this prompt —
-                      members see nothing until an event is added.
+                      {t("home.noEventsHint")}
                     </p>
                   </button>
                 </div>
@@ -363,7 +342,7 @@ function HomePage() {
 
             {events.length > 0 && (
               <section className="pt-5">
-                <SectionHeader title="Upcoming Events" />
+                <SectionHeader title={t("home.upcomingEvents")} />
                 <div
                   className="flex gap-3 overflow-x-auto px-5 pb-2 pt-3 snap-x snap-mandatory"
                   style={{ scrollbarWidth: "none" }}
@@ -385,7 +364,7 @@ function HomePage() {
                             {e.title}
                           </h3>
                           <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Calendar className="w-3 h-3" /> {formatEventDate(e.starts_at)}
+                            <Calendar className="w-3 h-3" /> {formatEventDate(e.starts_at, lang)}
                           </div>
                           {e.location && (
                             <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -395,7 +374,7 @@ function HomePage() {
                           )}
                           <button
                             onClick={() => void toggleRsvp(e.id)}
-                            className={`mt-2.5 w-full h-9 rounded-xl text-xs font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1.5 ${
+                            className={`mt-2.5 w-full h-10 rounded-xl text-xs font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1.5 ${
                               going
                                 ? "bg-success-soft text-success"
                                 : "bg-primary text-primary-foreground"
@@ -403,10 +382,10 @@ function HomePage() {
                           >
                             {going ? (
                               <>
-                                <Check className="w-3.5 h-3.5" strokeWidth={3} /> Going
+                                <Check className="w-3.5 h-3.5" strokeWidth={3} /> {t("home.going")}
                               </>
                             ) : (
-                              "Register"
+                              t("home.register")
                             )}
                           </button>
                         </div>
@@ -420,17 +399,16 @@ function HomePage() {
             {/* Sponsored Banner Carousel */}
             {!ad && isAdmin && (
               <section className="pt-6">
-                <SectionHeader title="Sponsored" />
+                <SectionHeader title={t("home.sponsored")} />
                 <div className="px-5 pt-3">
                   <button
                     onClick={() => navigate({ to: "/admin" })}
                     className="w-full rounded-3xl border-2 border-dashed border-border py-10 px-6 text-center active:scale-[0.99] transition"
                   >
                     <div className="text-3xl mb-2">📣</div>
-                    <p className="text-sm font-semibold text-foreground">No sponsors yet</p>
+                    <p className="text-sm font-semibold text-foreground">{t("home.noSponsors")}</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Add local businesses or partners in the admin console. Only you can see this
-                      prompt — members see nothing until a sponsor is added.
+                      {t("home.noSponsorsHint")}
                     </p>
                   </button>
                 </div>
@@ -439,76 +417,63 @@ function HomePage() {
 
             {ad && (
               <section className="pt-6">
-                <SectionHeader title="Sponsored" />
+                <SectionHeader title={t("home.sponsored")} />
                 <div className="px-5 pt-3">
+                  {/*
+                    Nothing overlays the artwork. Sponsors supply finished designs
+                    with their own logo and text, and anything floated on top lands
+                    on it — the "Sponsored" chip sat squarely over the logo. The
+                    section heading above already carries that disclosure, and the
+                    controls live under the image instead.
+                  */}
                   <article
                     onClick={() => openSponsor(ad, navigate)}
                     className="relative rounded-3xl overflow-hidden shadow-card border border-border bg-card cursor-pointer active:scale-[0.99] transition"
                   >
                     <div
-                      className={`relative h-[240px] bg-gradient-to-br ${gradientFor(adIndex)} flex items-center justify-center`}
+                      className={`relative aspect-square w-full bg-gradient-to-br ${gradientFor(adIndex)} flex items-center justify-center`}
                     >
-                      <span className="text-8xl opacity-90 drop-shadow-lg">{ad.emoji}</span>
-                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider">
-                        Sponsored
-                      </span>
-                      {sponsored.length > 1 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              prevAd();
-                            }}
-                            aria-label="Previous"
-                            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
-                          >
-                            <ChevronLeft className="w-5 h-5 text-foreground" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              nextAd();
-                            }}
-                            aria-label="Next"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 backdrop-blur flex items-center justify-center shadow-soft active:scale-95 transition"
-                          >
-                            <ChevronRight className="w-5 h-5 text-foreground" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between gap-3 p-3.5">
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-foreground truncate">{ad.name}</div>
-                        {ad.description && (
-                          <div className="text-[11px] text-muted-foreground truncate">
-                            {ad.description}
-                          </div>
-                        )}
-                      </div>
-                      {(ad.facility_id || ad.link_url) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSponsor(ad, navigate);
-                          }}
-                          className="shrink-0 h-9 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.98] transition"
-                        >
-                          View Details
-                        </button>
+                      {ad.image_url ? (
+                        <img
+                          src={ad.image_url}
+                          alt={ad.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-8xl opacity-90 drop-shadow-lg">{ad.emoji}</span>
                       )}
                     </div>
                   </article>
                   {sponsored.length > 1 && (
-                    <div className="mt-3 flex items-center justify-center gap-1.5">
-                      {sponsored.map((s, i) => (
-                        <button
-                          key={s.id}
-                          onClick={() => setAdIndex(i)}
-                          aria-label={`Go to slide ${i + 1}`}
-                          className={`h-1.5 rounded-full transition-all ${i === adIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
-                        />
-                      ))}
+                    <div className="mt-3 flex items-center justify-center gap-3">
+                      <button
+                        onClick={prevAd}
+                        aria-label={t("home.prevSlide")}
+                        className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-foreground" />
+                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {sponsored.map((s, i) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setAdIndex(i)}
+                            aria-label={t("home.goToSlide", { n: i + 1 })}
+                            className="h-9 flex items-center px-0.5"
+                          >
+                            <span
+                              className={`block h-1.5 rounded-full transition-all ${i === adIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={nextAd}
+                        aria-label={t("home.nextSlide")}
+                        className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+                      >
+                        <ChevronRight className="w-4 h-4 text-foreground" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -517,15 +482,17 @@ function HomePage() {
 
             {/* Latest News */}
             <section className="pt-6">
-              <SectionHeader title="Latest News" onViewAll={() => navigate({ to: "/news" })} />
+              <SectionHeader
+                title={t("home.latestNews")}
+                viewAllLabel={t("home.viewAll")}
+                onViewAll={() => navigate({ to: "/news" })}
+              />
               <div className="px-5 pt-3 space-y-3">
                 {news.length === 0 && (
                   <div className="text-center py-10 px-6 rounded-2xl border-2 border-dashed border-border">
                     <div className="text-3xl mb-2">📰</div>
-                    <p className="text-sm font-semibold text-foreground">No announcements yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Community news will show up here.
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">{t("home.noNews")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("home.noNewsHint")}</p>
                   </div>
                 )}
                 {news.map((n, i) => (
@@ -543,15 +510,15 @@ function HomePage() {
                       <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
                         {n.title}
                       </h3>
-                      <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2 leading-snug">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
                         {n.content}
                       </p>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground">
-                          {relativeTime(n.created_at)}
+                        <span className="text-[11px] text-muted-foreground">
+                          {relativeTime(n.created_at, t, lang)}
                         </span>
                         <span className="text-[11px] font-semibold text-primary flex items-center gap-0.5">
-                          Read More <ArrowRight className="w-3 h-3" />
+                          {t("home.readMore")} <ArrowRight className="w-3 h-3" />
                         </span>
                       </div>
                     </div>
@@ -559,7 +526,7 @@ function HomePage() {
                 ))}
               </div>
               <div className="text-center text-xs text-muted-foreground py-6">
-                You're all caught up ✨
+                {t("common.caughtUp")} ✨
               </div>
             </section>
           </div>
@@ -571,27 +538,34 @@ function HomePage() {
   );
 }
 
-/** A sponsor links either to a facility in the directory or to an external site. */
+/**
+ * The banner always opens the sponsor's own page. It used to jump straight to a
+ * linked facility or an external site, which meant the same tile did different
+ * things for different sponsors; the facility link and website are buttons on
+ * that page instead.
+ */
 function openSponsor(sponsor: Sponsor, navigate: ReturnType<typeof useNavigate>) {
-  if (sponsor.facility_id) {
-    navigate({ to: "/facilities/$id", params: { id: sponsor.facility_id } });
-    return;
-  }
-  if (sponsor.link_url) {
-    window.open(sponsor.link_url, "_blank", "noopener,noreferrer");
-  }
+  navigate({ to: "/sponsors/$id", params: { id: sponsor.id } });
 }
 
-function SectionHeader({ title, onViewAll }: { title: string; onViewAll?: () => void }) {
+function SectionHeader({
+  title,
+  viewAllLabel,
+  onViewAll,
+}: {
+  title: string;
+  viewAllLabel?: string;
+  onViewAll?: () => void;
+}) {
   return (
     <div className="px-5 flex items-center justify-between">
       <h2 className="text-base font-bold text-foreground">{title}</h2>
       {onViewAll && (
         <button
           onClick={onViewAll}
-          className="text-xs font-semibold text-primary flex items-center gap-0.5"
+          className="text-xs font-semibold text-primary flex items-center gap-0.5 -mr-2 px-2 py-2.5"
         >
-          View All <ChevronRight className="w-3.5 h-3.5" />
+          {viewAllLabel} <ChevronRight className="w-3.5 h-3.5" />
         </button>
       )}
     </div>

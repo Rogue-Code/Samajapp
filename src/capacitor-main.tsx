@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
+import { LanguageProvider } from "./lib/i18n";
 import { setupMobileKeyboardViewport } from "./lib/mobile-keyboard";
 import { setupAndroidBackButton } from "./lib/android-back";
 import "./styles.css";
@@ -16,6 +17,8 @@ setupAndroidBackButton(router);
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
   </React.StrictMode>,
 );

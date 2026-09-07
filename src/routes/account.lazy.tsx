@@ -33,6 +33,8 @@ import { AvatarPicker } from "@/components/AvatarPicker";
 import { PlacePicker } from "@/components/PlacePicker";
 import { BottomNav } from "@/components/BottomNav";
 import { DeleteAccountSheet } from "@/components/DeleteAccountSheet";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useT } from "@/lib/i18n";
 
 export const Route = createLazyFileRoute("/account")({
   component: AccountPage,
@@ -54,6 +56,7 @@ const emptyForm = {
 
 function AccountPage() {
   const navigate = useNavigate();
+  const t = useT();
   const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish, role } = useProfileRole(session);
@@ -157,12 +160,15 @@ function AccountPage() {
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
               onClick={goBack}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
-              aria-label="Back"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+              aria-label={t("common.back")}
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            <h1 className="flex-1 font-bold text-foreground text-lg leading-tight">My Profile</h1>
+            <h1 className="flex-1 font-bold text-foreground text-lg leading-tight">
+              {t("account.title")}
+            </h1>
+            <LanguageToggle />
           </div>
         </div>
 
@@ -187,14 +193,14 @@ function AccountPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
-                  {form.name.trim() || "Your profile"}
+                  {form.name.trim() || t("account.yourProfile")}
                 </h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                   {session?.user.email}
                 </p>
                 {role !== "member" && (
-                  <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold capitalize">
-                    <BadgeCheck className="w-3.5 h-3.5" /> {role}
+                  <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                    <BadgeCheck className="w-3.5 h-3.5" /> {t(`role.${role}` as never)}
                   </span>
                 )}
               </div>
@@ -202,17 +208,17 @@ function AccountPage() {
           </section>
 
           {/* Personal Information */}
-          <SectionCard title="Personal Information">
+          <SectionCard title={t("account.personalInfo")}>
             <Field
               icon={User}
-              label="Full Name"
+              label={t("profile.fullName")}
               value={form.name}
               onChange={(v) => set("name", v)}
               autoComplete="name"
             />
             <Field
               icon={Phone}
-              label="Mobile Number"
+              label={t("account.mobile")}
               value={form.mobile}
               onChange={(v) => set("mobile", v)}
               type="tel"
@@ -220,54 +226,58 @@ function AccountPage() {
             />
             <Field
               icon={Mail}
-              label="Email Address"
+              label={t("common.emailAddress")}
               value={session?.user.email ?? ""}
               onChange={() => {}}
               type="email"
               disabled
             />
-            <PlacePicker label="Village" value={form.village} onChange={(v) => set("village", v)} />
+            <PlacePicker
+              label={t("profile.village")}
+              value={form.village}
+              onChange={(v) => set("village", v)}
+            />
             <Field
               icon={Building2}
-              label="City"
+              label={t("account.city")}
               value={form.city}
               onChange={(v) => set("city", v)}
             />
             <Field
               icon={MapPin}
-              label="State"
+              label={t("account.state")}
               value={form.state}
               onChange={(v) => set("state", v)}
             />
             <Field
               icon={Briefcase}
-              label="Occupation"
+              label={t("profile.occupation")}
               value={form.occupation}
               onChange={(v) => set("occupation", v)}
             />
             <Field
               icon={Calendar}
-              label="Date of Birth"
+              label={t("profile.dob")}
               value={form.dob}
               onChange={(v) => set("dob", v)}
             />
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                Gender
+                {t("profile.gender")}
               </label>
               <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
                 {(["male", "female", "other"] as const).map((g) => (
                   <button
                     key={g}
                     onClick={() => set("gender", g)}
-                    className={`h-10 rounded-xl text-sm font-medium capitalize transition-all ${
+                    className={`h-11 rounded-xl text-sm font-medium transition-all ${
                       form.gender === g
                         ? "bg-card text-foreground shadow-soft"
                         : "text-muted-foreground"
                     }`}
                   >
-                    {g}
+                    {t(`profile.gender.${g}` as never)}
                   </button>
                 ))}
               </div>
@@ -278,14 +288,14 @@ function AccountPage() {
               */}
               {form.gender === null && (
                 <p className="text-[11px] text-muted-foreground mt-1.5 px-1 leading-relaxed">
-                  Not set — your mobile number is hidden from other members until you set this.
+                  {t("account.genderUnset")}
                 </p>
               )}
             </div>
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                <Heart className="w-3 h-3 inline mr-1" /> Marital Status
+                <Heart className="w-3 h-3 inline mr-1" /> {t("profile.maritalStatus")}
               </label>
               <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                 <select
@@ -299,11 +309,11 @@ function AccountPage() {
                       retired "Other"); keep it selectable rather than silently
                       rewriting the member's saved answer. */}
                   {!MARITAL_OPTIONS.includes(form.marital as MaritalStatus) && (
-                    <option value="">{form.marital || "Select"}</option>
+                    <option value="">{form.marital || t("account.select")}</option>
                   )}
                   {MARITAL_OPTIONS.map((m) => (
                     <option key={m} value={m}>
-                      {m}
+                      {t(`profile.marital.${m}` as never)}
                     </option>
                   ))}
                 </select>
@@ -312,20 +322,20 @@ function AccountPage() {
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                <ShieldCheck className="w-3 h-3 inline mr-1" /> Family Admin Status
+                <ShieldCheck className="w-3 h-3 inline mr-1" /> {t("account.familyAdminStatus")}
               </label>
               <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-2xl">
                 {(["yes", "no"] as const).map((v) => (
                   <button
                     key={v}
                     onClick={() => set("admin", v)}
-                    className={`h-10 rounded-xl text-sm font-medium transition-all ${
+                    className={`h-11 rounded-xl text-sm font-medium transition-all ${
                       form.admin === v
                         ? "bg-card text-foreground shadow-soft"
                         : "text-muted-foreground"
                     }`}
                   >
-                    {v === "yes" ? "Yes, I am Admin" : "No"}
+                    {v === "yes" ? t("account.familyAdminYes") : t("account.familyAdminNo")}
                   </button>
                 ))}
               </div>
@@ -333,19 +343,21 @@ function AccountPage() {
           </SectionCard>
 
           {/* Family Information */}
-          <SectionCard title="Family Information">
+          <SectionCard title={t("account.familyInfo")}>
             <Row
               icon={<Users className="w-4 h-4" />}
-              label="Family Members"
+              label={t("account.familyMembers")}
               value={
                 family.total === 0
-                  ? "None added yet"
-                  : `${family.total} member${family.total === 1 ? "" : "s"}`
+                  ? t("account.noneAdded")
+                  : t(family.total === 1 ? "common.memberCountOne" : "common.memberCount", {
+                      count: family.total,
+                    })
               }
             />
             <Row
               icon={<BadgeCheck className="w-4 h-4" />}
-              label="Verified"
+              label={t("account.verified")}
               value={
                 family.total === 0 ? (
                   "—"
@@ -357,7 +369,7 @@ function AccountPage() {
                         : "font-semibold"
                     }
                   >
-                    {family.verified} of {family.total}
+                    {t("account.verifiedOf", { done: family.verified, total: family.total })}
                   </span>
                 )
               }
@@ -366,24 +378,26 @@ function AccountPage() {
               onClick={() => navigate({ to: "/family" })}
               className="mt-2 w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
             >
-              <Users className="w-4 h-4" /> Manage Family Members
+              <Users className="w-4 h-4" /> {t("account.manageFamily")}
               <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
             </button>
           </SectionCard>
 
           {/* Admin */}
           {canPublish && (
-            <SectionCard title="Community Management">
+            <SectionCard title={t("account.communityManagement")}>
               <Row
                 icon={<ShieldCheck className="w-4 h-4" />}
-                label="Your role"
-                value={<span className="capitalize font-semibold text-primary">{role}</span>}
+                label={t("account.yourRole")}
+                value={
+                  <span className="font-semibold text-primary">{t(`role.${role}` as never)}</span>
+                }
               />
               <button
                 onClick={() => navigate({ to: "/admin" })}
                 className="mt-2 w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
               >
-                <ShieldCheck className="w-4 h-4" /> Open Admin Console
+                <ShieldCheck className="w-4 h-4" /> {t("account.openAdmin")}
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </button>
             </SectionCard>
@@ -398,29 +412,29 @@ function AccountPage() {
           >
             {saved ? (
               <>
-                <Check className="w-5 h-5" strokeWidth={3} /> Profile Updated
+                <Check className="w-5 h-5" strokeWidth={3} /> {t("account.profileUpdated")}
               </>
             ) : saving ? (
-              "Saving..."
+              t("profile.saving")
             ) : (
-              "Update Profile"
+              t("account.updateProfile")
             )}
           </button>
 
           {/* Legal */}
-          <SectionCard title="Legal">
+          <SectionCard title={t("account.legal")}>
             <button
               onClick={() => navigate({ to: "/privacy" })}
               className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
             >
-              <Shield className="w-4 h-4 text-muted-foreground" /> Privacy Policy
+              <Shield className="w-4 h-4 text-muted-foreground" /> {t("common.privacyPolicy")}
               <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
             </button>
             <button
               onClick={() => navigate({ to: "/terms" })}
               className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
             >
-              <FileText className="w-4 h-4 text-muted-foreground" /> Terms of Use
+              <FileText className="w-4 h-4 text-muted-foreground" /> {t("account.termsOfUse")}
               <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
             </button>
           </SectionCard>
@@ -433,20 +447,19 @@ function AccountPage() {
             }}
             className="w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
           >
-            <LogOut className="w-4 h-4" /> Sign Out
+            <LogOut className="w-4 h-4" /> {t("account.signOut")}
           </button>
 
           {/* Danger zone */}
-          <SectionCard title="Danger Zone">
+          <SectionCard title={t("account.dangerZone")}>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Deleting your account removes your profile, your family members and your photo for
-              good. Community news you published stays in the feed without your name.
+              {t("account.deleteExplain")}
             </p>
             <button
               onClick={() => setShowDelete(true)}
               className="mt-1 w-full h-12 rounded-2xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
             >
-              <Trash2 className="w-4 h-4" /> Delete Account
+              <Trash2 className="w-4 h-4" /> {t("account.deleteAccount")}
             </button>
           </SectionCard>
 

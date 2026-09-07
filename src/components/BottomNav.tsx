@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Home as HomeIcon, Building, HandHeart, User } from "lucide-react";
 import { NavPortal } from "@/components/PhoneFrame";
+import { useT } from "@/lib/i18n";
 
 /**
  * Fixed bottom navigation.
@@ -15,11 +16,12 @@ export function BottomNav({
   active: "home" | "facilities" | "fundraiser" | "profile";
 }) {
   const navigate = useNavigate();
+  const t = useT();
   const items = [
-    { id: "home", icon: HomeIcon, label: "Home", to: "/home" as const },
-    { id: "facilities", icon: Building, label: "Facilities", to: "/facilities" as const },
-    { id: "fundraiser", icon: HandHeart, label: "Fundraiser", to: "/fundraiser" as const },
-    { id: "profile", icon: User, label: "Profile", to: "/account" as const },
+    { id: "home", icon: HomeIcon, label: t("nav.home"), to: "/home" as const },
+    { id: "facilities", icon: Building, label: t("nav.facilities"), to: "/facilities" as const },
+    { id: "fundraiser", icon: HandHeart, label: t("nav.fundraiser"), to: "/fundraiser" as const },
+    { id: "profile", icon: User, label: t("nav.profile"), to: "/account" as const },
   ];
   return (
     <NavPortal>
@@ -47,7 +49,7 @@ export function BottomNav({
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span
-                  className={`text-[10.5px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                  className={`text-[11px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
                 >
                   {n.label}
                 </span>

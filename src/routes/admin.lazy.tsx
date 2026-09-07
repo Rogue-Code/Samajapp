@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { categories } from "@/lib/facilities-data";
 import { AdminField, AdminSelect, AdminSheet } from "@/components/admin/AdminForm";
+import { SponsorImagePicker } from "@/components/admin/SponsorImagePicker";
 
 export const Route = createLazyFileRoute("/admin")({
   component: AdminPage,
@@ -59,6 +60,10 @@ type SponsorRow = {
   name: string;
   description: string | null;
   emoji: string;
+  image_url: string | null;
+  image_original_url: string | null;
+  owner_name: string | null;
+  phone: string | null;
   facility_id: string | null;
   link_url: string | null;
   active: boolean;
@@ -117,7 +122,9 @@ function AdminPage() {
       supabase.from("events").select("id, title, starts_at, location, emoji").order("starts_at"),
       supabase
         .from("sponsors")
-        .select("id, name, description, emoji, facility_id, link_url, active, sort_order")
+        .select(
+          "id, name, description, emoji, image_url, image_original_url, owner_name, phone, facility_id, link_url, active, sort_order",
+        )
         .order("sort_order"),
       supabase
         .from("profiles")
@@ -197,6 +204,10 @@ function AdminPage() {
       name: editSponsor.name,
       description: editSponsor.description || null,
       emoji: editSponsor.emoji || "🏢",
+      image_url: editSponsor.image_url || null,
+      image_original_url: editSponsor.image_original_url || null,
+      owner_name: editSponsor.owner_name || null,
+      phone: editSponsor.phone || null,
       facility_id: editSponsor.facility_id || null,
       link_url: editSponsor.link_url || null,
       active: editSponsor.active ?? true,
@@ -260,7 +271,7 @@ function AdminPage() {
           <div className="px-5 pt-8 pb-3 flex items-center gap-3">
             <button
               onClick={goBack}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
               aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -389,7 +400,7 @@ function AdminPage() {
                         <div className="text-sm font-semibold text-foreground truncate">
                           {m.full_name ?? "Unnamed member"}
                           {isSelf && (
-                            <span className="text-[10px] text-muted-foreground font-normal">
+                            <span className="text-[11px] text-muted-foreground font-normal">
                               {" "}
                               (you)
                             </span>
@@ -400,7 +411,7 @@ function AdminPage() {
                         </div>
                       </div>
                       {m.role !== "member" && (
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase">
                           <BadgeCheck className="w-3 h-3" /> {m.role}
                         </span>
                       )}
@@ -612,7 +623,7 @@ function AdminPage() {
             saving={saving}
             canSave={!!editSponsor.name}
           >
-            <FormNote text="Sponsors rotate in the banner carousel on the Home dashboard. Members see a 'Sponsored' label on each one." />
+            <FormNote text="Sponsors rotate in the banner carousel on the Home dashboard, under a 'Sponsored' heading. The photo is shown on its own — nothing is drawn over it." />
 
             <AdminField
               required
@@ -628,14 +639,33 @@ function AdminPage() {
               onChange={(v) => setEditSponsor({ ...editSponsor, description: v })}
               textarea
               placeholder="e.g. Diwali collection — 25% off making charges."
-              hint="One line under the banner. Keep it short; it truncates."
+              hint="Not shown to members — the banner is the photo alone. Kept as a note for admins, and shown in the list above."
+            />
+            <SponsorImagePicker
+              value={editSponsor.image_url ?? null}
+              onChange={(urls) => setEditSponsor({ ...editSponsor, ...urls })}
             />
             <AdminField
               label="Emoji"
               value={editSponsor.emoji ?? ""}
               onChange={(v) => setEditSponsor({ ...editSponsor, emoji: v })}
               placeholder="💎"
-              hint="A single emoji used as the banner artwork. Defaults to 🏢."
+              hint="Fallback artwork, used only when no photo is set. Defaults to 🏢."
+            />
+            <AdminField
+              label="Owner"
+              value={editSponsor.owner_name ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, owner_name: v })}
+              placeholder="e.g. Rameshbhai Patel"
+              hint="Shown on the sponsor page under Contact."
+            />
+            <AdminField
+              label="Phone"
+              type="tel"
+              value={editSponsor.phone ?? ""}
+              onChange={(v) => setEditSponsor({ ...editSponsor, phone: v })}
+              placeholder="+91 99999 99999"
+              hint="Gives members a Call button on the sponsor page."
             />
             <AdminSelect
               label="Link to a facility"
@@ -646,7 +676,7 @@ function AdminPage() {
               hint={
                 facilities.length === 0
                   ? "No facilities exist yet — add one first, or use an external link below."
-                  : "Sends members to that facility's page when they tap the banner."
+                  : "Adds a link to that facility on the sponsor page."
               }
             />
             <AdminField
@@ -654,7 +684,7 @@ function AdminPage() {
               value={editSponsor.link_url ?? ""}
               onChange={(v) => setEditSponsor({ ...editSponsor, link_url: v })}
               placeholder="https://example.com"
-              hint="Used only when no facility is linked above. Opens in a new tab."
+              hint="Becomes a Visit website button on the sponsor page."
             />
             <AdminField
               label="Sort order"
@@ -697,7 +727,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
 
 function FormNote({ text }: { text: string }) {
   return (
-    <p className="text-[11.5px] text-muted-foreground bg-muted/60 rounded-xl px-3 py-2.5 leading-relaxed">
+    <p className="text-xs text-muted-foreground bg-muted/60 rounded-xl px-3 py-2.5 leading-relaxed">
       {text}
     </p>
   );
@@ -733,7 +763,7 @@ function RowCard({
           <div className="text-sm font-semibold text-foreground truncate">{title}</div>
           <div className="text-[11px] text-muted-foreground line-clamp-2">{subtitle}</div>
           {badge && (
-            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-bold uppercase">
+            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-[11px] font-bold uppercase">
               {badge}
             </span>
           )}

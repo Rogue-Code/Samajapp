@@ -1,16 +1,26 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Search, ArrowLeft, MapPin, Phone, Navigation, Bookmark,
-  BadgeCheck, Home as HomeIcon, Building, HandHeart, User,
+  Search,
+  ArrowLeft,
+  MapPin,
+  Phone,
+  Navigation,
+  Bookmark,
+  BadgeCheck,
+  Home as HomeIcon,
+  Building,
+  HandHeart,
+  User,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { categoryStyle, type Facility } from "@/lib/facilities-data";
+import { categoryLabel, categoryStyle, type Facility } from "@/lib/facilities-data";
 import { BottomNav } from "@/components/BottomNav";
+import { useT } from "@/lib/i18n";
 
 export const Route = createLazyFileRoute("/facilities")({
   component: FacilitiesPage,
@@ -18,6 +28,7 @@ export const Route = createLazyFileRoute("/facilities")({
 
 function FacilitiesPage() {
   const navigate = useNavigate();
+  const t = useT();
   const { checking, session } = useRequireAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +95,9 @@ function FacilitiesPage() {
     return facilities.filter((f) => {
       if (
         term &&
-        ![f.name, f.category, f.city, f.state, f.head ?? ""].some((v) => v.toLowerCase().includes(term))
+        ![f.name, f.category, f.city, f.state, f.head ?? ""].some((v) =>
+          v.toLowerCase().includes(term),
+        )
       )
         return false;
       return true;
@@ -100,12 +113,20 @@ function FacilitiesPage() {
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50">
           <div className="px-5 pt-8 pb-3">
             <div className="flex items-center gap-3 mb-3">
-              <button onClick={() => navigate({ to: "/home" })} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <button
+                onClick={() => navigate({ to: "/home" })}
+                aria-label={t("common.back")}
+                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
+              >
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
               <div className="flex-1 min-w-0">
-                <h1 className="font-bold text-foreground text-lg leading-tight">Facilities</h1>
-                <p className="text-[11px] text-muted-foreground">{filtered.length} of {facilities.length} listings</p>
+                <h1 className="font-bold text-foreground text-lg leading-tight">
+                  {t("nav.facilities")}
+                </h1>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("facilities.countLine", { shown: filtered.length, total: facilities.length })}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
@@ -113,7 +134,7 @@ function FacilitiesPage() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search facilities, schools, hospitals, hostels..."
+                placeholder={t("facilities.searchPlaceholder")}
                 autoComplete="off"
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
@@ -122,18 +143,21 @@ function FacilitiesPage() {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto pb-24 px-5 pt-4 space-y-3" style={{ scrollbarWidth: "none" }}>
+        <div
+          className="flex-1 overflow-y-auto pb-24 px-5 pt-4 space-y-3"
+          style={{ scrollbarWidth: "none" }}
+        >
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center py-16">
-              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-5xl mb-4">🔍</div>
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-5xl mb-4">
+                🔍
+              </div>
               <p className="font-semibold text-foreground">
-                {facilities.length === 0 ? "No facilities listed yet" : "No facilities found"}
+                {t(facilities.length === 0 ? "facilities.noneYet" : "facilities.noMatch")}
               </p>
               <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
-                {facilities.length === 0
-                  ? "The community directory hasn't been set up yet."
-                  : "Try a different search."}
+                {t(facilities.length === 0 ? "facilities.noneYetHint" : "facilities.noMatchHint")}
               </p>
             </div>
           )}
@@ -148,30 +172,63 @@ function FacilitiesPage() {
                 className="block rounded-2xl bg-card border border-border shadow-card overflow-hidden active:scale-[0.99] transition"
               >
                 <div className="flex">
-                  <div className={`w-24 shrink-0 bg-gradient-to-br ${style.bg} flex items-center justify-center text-4xl`}>
+                  <div
+                    className={`w-24 shrink-0 bg-gradient-to-br ${style.bg} flex items-center justify-center text-4xl`}
+                  >
                     {style.emoji}
                   </div>
                   <div className="flex-1 min-w-0 p-3">
                     <div className="flex items-start gap-1.5">
-                      <h3 className="flex-1 font-semibold text-foreground text-sm leading-tight line-clamp-2">{f.name}</h3>
+                      <h3 className="flex-1 font-semibold text-foreground text-sm leading-tight line-clamp-2">
+                        {f.name}
+                      </h3>
                       {f.verified && <BadgeCheck className="w-4 h-4 text-primary shrink-0" />}
                     </div>
                     <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">{f.category}</span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><MapPin className="w-3 h-3" /> {f.city}, {f.state}</span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {categoryLabel(f.category, t)}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+                        <MapPin className="w-3 h-3" /> {f.city}, {f.state}
+                      </span>
                     </div>
-                    <p className="text-[11.5px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">{f.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
+                      {f.description}
+                    </p>
                   </div>
                 </div>
                 <div className="flex border-t border-border/60">
                   {f.phone && (
-                    <ActionBtn icon={<Phone className="w-3.5 h-3.5" />} label="Call" onClick={(e) => { e.preventDefault(); window.location.href = `tel:${f.phone}`; }} />
+                    <ActionBtn
+                      icon={<Phone className="w-3.5 h-3.5" />}
+                      label={t("facilities.call")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = `tel:${f.phone}`;
+                      }}
+                    />
                   )}
-                  <ActionBtn icon={<Navigation className="w-3.5 h-3.5" />} label="Directions" onClick={(e) => { e.preventDefault(); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`); }} />
                   <ActionBtn
-                    icon={<Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-primary text-primary" : ""}`} />}
-                    label={isSaved ? "Saved" : "Save"}
-                    onClick={(e) => { e.preventDefault(); void toggleSaved(f.id); }}
+                    icon={<Navigation className="w-3.5 h-3.5" />}
+                    label={t("facilities.directions")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`,
+                      );
+                    }}
+                  />
+                  <ActionBtn
+                    icon={
+                      <Bookmark
+                        className={`w-3.5 h-3.5 ${isSaved ? "fill-primary text-primary" : ""}`}
+                      />
+                    }
+                    label={t(isSaved ? "common.saved" : "common.save")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void toggleSaved(f.id);
+                    }}
                   />
                 </div>
               </Link>
@@ -186,11 +243,19 @@ function FacilitiesPage() {
   );
 }
 
-function ActionBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: (e: React.MouseEvent) => void }) {
+function ActionBtn({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
   return (
     <button
       onClick={onClick}
-      className="flex-1 h-10 flex items-center justify-center gap-1.5 text-xs font-semibold text-foreground border-r last:border-r-0 border-border/60 active:bg-muted transition"
+      className="flex-1 h-12 flex items-center justify-center gap-1.5 text-xs font-semibold text-foreground border-r last:border-r-0 border-border/60 active:bg-muted transition"
     >
       {icon} {label}
     </button>

@@ -5,6 +5,8 @@ import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { PlacePicker } from "@/components/PlacePicker";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useT } from "@/lib/i18n";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +54,7 @@ function Field({
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const t = useT();
   const { checking, session } = useRequireAuth();
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
@@ -123,12 +126,17 @@ function ProfilePage() {
                 void supabase.auth.signOut();
                 navigate({ to: "/" });
               }}
-              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
-              aria-label="Sign out"
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
+              aria-label={t("profile.signOut")}
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            <span className="text-xs font-semibold text-muted-foreground">Last step</span>
+            <div className="flex items-center gap-2">
+              <LanguageToggle />
+              <span className="text-xs font-semibold text-muted-foreground">
+                {t("profile.lastStep")}
+              </span>
+            </div>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div className="h-full w-full bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all" />
@@ -136,10 +144,10 @@ function ProfilePage() {
         </div>
 
         <div className="flex-1 px-6 py-6 pb-32 fade-up">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Profile Setup</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Tell us about yourself to connect with your community.
-          </p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {t("profile.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("profile.subtitle")}</p>
 
           <div className="my-7">
             {session && (
@@ -150,46 +158,46 @@ function ProfilePage() {
           <div className="space-y-4">
             <Field
               icon={User}
-              label="Full Name"
+              label={t("profile.fullName")}
               value={name}
               onChange={setName}
-              placeholder="Ramesh Patel"
+              placeholder={t("profile.fullNamePlaceholder")}
               autoComplete="name"
             />
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block px-1">
-                Gender
+                {t("profile.gender")}
               </label>
               <div className="grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl">
                 {(["male", "female", "other"] as const).map((g) => (
                   <button
                     key={g}
                     onClick={() => setGender(g)}
-                    className={`h-10 rounded-xl text-sm font-medium capitalize transition-all ${
+                    className={`h-11 rounded-xl text-sm font-medium capitalize transition-all ${
                       gender === g ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"
                     }`}
                   >
-                    {g}
+                    {t(`profile.gender.${g}` as never)}
                   </button>
                 ))}
               </div>
             </div>
 
-            <PlacePicker label="Village / City" value={village} onChange={setVillage} />
+            <PlacePicker label={t("profile.village")} value={village} onChange={setVillage} />
             <Field
               icon={Briefcase}
-              label="Occupation"
+              label={t("profile.occupation")}
               value={occupation}
               onChange={setOccupation}
-              placeholder="Business Owner"
+              placeholder={t("profile.occupationPlaceholder")}
             />
             <Field
               icon={Calendar}
-              label="Date of Birth"
+              label={t("profile.dob")}
               value={dob}
               onChange={setDob}
-              placeholder="DD / MM / YYYY"
+              placeholder={t("profile.dobPlaceholder")}
             />
 
             <div>
@@ -197,7 +205,7 @@ function ProfilePage() {
                 htmlFor="marital"
                 className="text-xs font-medium text-muted-foreground mb-1.5 block px-1"
               >
-                Marital Status
+                {t("profile.maritalStatus")}
               </label>
               <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                 <Heart className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -209,7 +217,7 @@ function ProfilePage() {
                 >
                   {MARITAL_OPTIONS.map((m) => (
                     <option key={m} value={m}>
-                      {m}
+                      {t(`profile.marital.${m}` as never)}
                     </option>
                   ))}
                 </select>
@@ -218,7 +226,7 @@ function ProfilePage() {
 
             <div className="pt-2">
               <label className="text-sm font-semibold text-foreground mb-3 block">
-                Are you the Family Admin?
+                {t("profile.familyAdminQuestion")}
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {(["yes", "no"] as const).map((v) => (
@@ -240,7 +248,7 @@ function ProfilePage() {
                     </div>
                     <div className="text-2xl mb-1">{v === "yes" ? "👨‍👩‍👧" : "🙋"}</div>
                     <div className="font-semibold text-foreground capitalize">
-                      {v === "yes" ? "Yes, I am" : "No, I'm not"}
+                      {v === "yes" ? t("profile.familyAdminYes") : t("profile.familyAdminNo")}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {v === "yes" ? "Manage family members" : "Join existing family"}
@@ -261,10 +269,10 @@ function ProfilePage() {
           >
             {saving ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+                <Loader2 className="w-5 h-5 animate-spin" /> {t("profile.saving")}
               </>
             ) : (
-              "Save & Continue"
+              t("profile.save")
             )}
           </button>
         </div>
