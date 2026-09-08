@@ -1,6 +1,7 @@
 import { createLazyFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ExternalLink, Globe, Phone, UserCircle2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Globe, Phone, UserCircle2 } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -28,6 +29,9 @@ type Sponsor = {
 const SELECT =
   "id, name, description, emoji, image_url, image_original_url, owner_name, phone, link_url, facility_id";
 
+/** The member the owner name resolves to, when it resolves to exactly one. */
+type OwnerMember = { id: string; full_name: string | null; avatar_url: string | null };
+
 function NotFound() {
   const navigate = useNavigate();
   const t = useT();
@@ -53,6 +57,7 @@ function SponsorDetailPage() {
   const t = useT();
   const { checking, session } = useRequireAuth();
   const [sponsor, setSponsor] = useState<Sponsor | null>(null);
+  const [owner, setOwner] = useState<OwnerMember | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,8 +66,21 @@ function SponsorDetailPage() {
     (async () => {
       const { data } = await supabase.from("sponsors").select(SELECT).eq("id", id).maybeSingle();
       if (cancelled) return;
-      setSponsor((data as Sponsor) ?? null);
+      const row = (data as Sponsor) ?? null;
+      setSponsor(row);
       setLoading(false);
+
+      // The owner is free text, so look for a member of that name. Link only on
+      // a single exact match: two members sharing a name, or a near miss, must
+      // not send anyone to the wrong person's family.
+      const typed = row?.owner_name?.trim();
+      if (!typed) return;
+      const { data: matches } = await supabase.rpc("search_members", { term: typed });
+      if (cancelled) return;
+      const exact = ((matches ?? []) as OwnerMember[]).filter(
+        (m) => (m.full_name ?? "").trim().toLowerCase() === typed.toLowerCase(),
+      );
+      if (exact.length === 1) setOwner(exact[0]);
     })();
     return () => {
       cancelled = true;
@@ -116,21 +134,30 @@ function SponsorDetailPage() {
             <p className="text-[11px] text-muted-foreground mt-2 px-1">{t("sponsor.disclosure")}</p>
           </div>
 
-          {sponsor.description && (
-            <Section title={t("common.about")}>
-              <p className="text-sm text-foreground leading-relaxed">{sponsor.description}</p>
-            </Section>
-          )}
-
           {(sponsor.owner_name || sponsor.phone) && (
             <Section title={t("common.contact")}>
-              {sponsor.owner_name && (
-                <Row
-                  icon={<UserCircle2 className="w-4 h-4" />}
-                  label={t("sponsor.owner")}
-                  value={sponsor.owner_name}
-                />
-              )}
+              {sponsor.owner_name &&
+                (owner ? (
+                  <button
+                    onClick={() => navigate({ to: "/members/$id", params: { id: owner.id } })}
+                    className="w-full text-left flex items-center gap-3 py-2 first:pt-0 last:pb-0 border-b last:border-b-0 border-border/60 active:scale-[0.99] transition"
+                  >
+                    <Avatar url={owner.avatar_url} name={owner.full_name} className="w-9 h-9" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] text-muted-foreground">{t("sponsor.owner")}</div>
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {sponsor.owner_name}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
+                ) : (
+                  <Row
+                    icon={<UserCircle2 className="w-4 h-4" />}
+                    label={t("sponsor.owner")}
+                    value={sponsor.owner_name}
+                  />
+                ))}
               {sponsor.phone && (
                 <a
                   href={`tel:${sponsor.phone}`}
