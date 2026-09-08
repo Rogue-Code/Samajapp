@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The launch screen is a window background, so Android stretches whatever it is
+    given to the size of the window. A full-bleed PNG per density therefore
+    distorted the mark on any screen whose aspect ratio differed from the asset's
+    — on a 1080x2246 phone the round logo came out an oval.
+
+    A layer-list keeps the logo at its natural size: flat colour underneath, the
+    mark centred on top, no scaling.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash_logo"
+            android:gravity="center" />
+    </item>
+</layer-list>
