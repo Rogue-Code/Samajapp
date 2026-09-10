@@ -1,15 +1,14 @@
 import { createLazyFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Share2,
-  Bookmark,
+  Check,
   BadgeCheck,
   Phone,
   Mail,
   Globe,
   MapPin,
-  Navigation,
   Calendar,
   Users,
   Clock,
@@ -20,7 +19,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { categoryLabel, categoryStyle, type Facility } from "@/lib/facilities-data";
+import { categoryLabel, categoryStyle, shareFacility, type Facility } from "@/lib/facilities-data";
 import { useT } from "@/lib/i18n";
 
 export const Route = createLazyFileRoute("/facilities_/$id")({
@@ -54,24 +53,25 @@ function FacilityDetailPage() {
   const { checking, session } = useRequireAuth();
   const [f, setF] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSaved, setIsSaved] = useState(false);
+  // Whether the sticky Share button just copied the facility's details to the
+  // clipboard, so the tap has a visible result — see the note on shareFacility.
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [detail, bookmark] = await Promise.all([
-        supabase.from("facilities").select("*").eq("id", id).maybeSingle(),
-        supabase
-          .from("saved_facilities")
-          .select("facility_id")
-          .eq("user_id", session.user.id)
-          .eq("facility_id", id)
-          .maybeSingle(),
-      ]);
+      const detail = await supabase.from("facilities").select("*").eq("id", id).maybeSingle();
       if (cancelled) return;
       setF(detail.data ?? null);
-      setIsSaved(!!bookmark.data);
       setLoading(false);
     })();
     return () => {
@@ -79,27 +79,18 @@ function FacilityDetailPage() {
     };
   }, [id, session]);
 
-  const toggleSaved = async () => {
-    if (!session || !f) return;
-    const wasSaved = isSaved;
-    setIsSaved(!wasSaved);
-    const { error } = wasSaved
-      ? await supabase
-          .from("saved_facilities")
-          .delete()
-          .eq("user_id", session.user.id)
-          .eq("facility_id", f.id)
-      : await supabase
-          .from("saved_facilities")
-          .insert({ user_id: session.user.id, facility_id: f.id });
-    if (error) setIsSaved(wasSaved);
-  };
-
   if (checking || loading) return <LoadingScreen />;
   if (!f) return <NotFound />;
 
   const style = categoryStyle(f.category);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`;
+
+  const handleShare = async () => {
+    const outcome = await shareFacility(f);
+    if (outcome !== "copied") return;
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    setCopied(true);
+    copiedTimer.current = setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <PhoneFrame>
@@ -109,19 +100,12 @@ function FacilityDetailPage() {
           className={`relative h-64 bg-gradient-to-br ${style.bg} flex items-center justify-center`}
         >
           <span className="text-[140px] opacity-90 select-none">{style.emoji}</span>
-          <div className="absolute top-8 left-0 right-0 px-5 flex items-center justify-between">
+          <div className="absolute top-8 left-0 right-0 px-5">
             <button
               onClick={() => navigate({ to: "/facilities" })}
               className="w-11 h-11 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => void toggleSaved()}
-              className="w-11 h-11 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center"
-              aria-label={t(isSaved ? "facility.removeBookmark" : "facility.saveFacility")}
-            >
-              <Bookmark className={`w-5 h-5 ${isSaved ? "fill-white" : ""}`} />
             </button>
           </div>
         </div>
@@ -138,28 +122,44 @@ function FacilityDetailPage() {
                   </span>
                 )}
               </div>
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  {categoryLabel(f.category, t)}
-                </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                  <MapPin className="w-3 h-3" /> {f.city}, {f.state}
-                </span>
-              </div>
+              <span className="mt-2 inline-block text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                {categoryLabel(f.category, t)}
+              </span>
             </div>
           </div>
 
+          {/* Office Details — the practical basics for reaching this facility:
+              where it is, its phone number, and who runs it. Always present,
+              since address is required data; phone and head appear only when
+              the admin set them. This is what a member sees on every listing,
+              not just the ones with a full profile filled in. */}
+          <Section title={t("facility.officeDetails")}>
+            <InfoText
+              icon={<MapPin className="w-4 h-4" />}
+              label={t("facility.address")}
+              value={f.address}
+              wrap
+            />
+            {f.phone && (
+              <InfoRow
+                icon={<Phone className="w-4 h-4" />}
+                label={t("common.phone")}
+                value={f.phone}
+                href={`tel:${f.phone}`}
+              />
+            )}
+            {f.head && (
+              <InfoText
+                icon={<UserCircle2 className="w-4 h-4" />}
+                label={t("facility.head")}
+                value={f.head}
+              />
+            )}
+          </Section>
+
           {/* Contact */}
-          {(f.phone || f.email || f.website) && (
+          {(f.email || f.website) && (
             <Section title={t("common.contact")}>
-              {f.phone && (
-                <InfoRow
-                  icon={<Phone className="w-4 h-4" />}
-                  label={t("common.phone")}
-                  value={f.phone}
-                  href={`tel:${f.phone}`}
-                />
-              )}
               {f.email && (
                 <InfoRow
                   icon={<Mail className="w-4 h-4" />}
@@ -179,19 +179,6 @@ function FacilityDetailPage() {
             </Section>
           )}
 
-          {/* Address */}
-          <Section title={t("facility.address")}>
-            <p className="text-sm text-foreground leading-relaxed">{f.address}</p>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold w-full"
-            >
-              <ExternalLink className="w-4 h-4" /> {t("facility.openInMaps")}
-            </a>
-          </Section>
-
           {/* About */}
           {f.long_description && (
             <Section title={t("common.about")}>
@@ -200,7 +187,7 @@ function FacilityDetailPage() {
           )}
 
           {/* Key Info */}
-          {(f.established !== null || f.capacity || f.timings || f.head) && (
+          {(f.established !== null || f.capacity || f.timings) && (
             <Section title={t("facility.keyInfo")}>
               <div className="grid grid-cols-2 gap-2.5">
                 {f.established !== null && (
@@ -224,95 +211,31 @@ function FacilityDetailPage() {
                     value={f.timings}
                   />
                 )}
-                {f.head && (
-                  <KeyInfo
-                    icon={<UserCircle2 className="w-4 h-4" />}
-                    label={t("facility.head")}
-                    value={f.head}
-                  />
-                )}
               </div>
             </Section>
           )}
-
-          {/* Map preview */}
-          <Section title={t("facility.location")}>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="block rounded-2xl overflow-hidden border border-border shadow-card"
-            >
-              <div className="h-40 bg-[radial-gradient(circle_at_50%_50%,var(--color-primary-soft),var(--color-muted))] relative flex items-center justify-center">
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)",
-                    backgroundSize: "24px 24px",
-                  }}
-                />
-                <div className="relative w-12 h-12 rounded-full bg-destructive text-white flex items-center justify-center shadow-elevated">
-                  <MapPin className="w-6 h-6 fill-white" />
-                </div>
-              </div>
-              <div className="p-3 bg-card flex items-center justify-between">
-                <span className="text-xs text-muted-foreground truncate">{f.address}</span>
-                <ExternalLink className="w-4 h-4 text-primary shrink-0 ml-2" />
-              </div>
-            </a>
-          </Section>
         </div>
 
         {/* Sticky action bar */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 pb-5 flex gap-2">
-          {f.phone && (
-            <a
-              href={`tel:${f.phone}`}
-              className="flex-1 h-12 rounded-xl bg-success text-success-foreground text-sm font-semibold flex items-center justify-center gap-1.5"
-            >
-              <Phone className="w-4 h-4" /> {t("common.callNow")}
-            </a>
-          )}
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-1.5"
-          >
-            <Navigation className="w-4 h-4" /> {t("facilities.directions")}
-          </a>
+        <div className="absolute bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 pb-5">
           <button
-            onClick={() => void shareFacility(f)}
-            className="w-12 h-12 rounded-xl bg-muted text-foreground flex items-center justify-center"
-            aria-label={t("common.share")}
+            onClick={() => void handleShare()}
+            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground text-base font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
           >
-            <Share2 className="w-5 h-5" />
+            {copied ? (
+              <>
+                <Check className="w-5 h-5" /> {t("common.copiedToClipboard")}
+              </>
+            ) : (
+              <>
+                <Share2 className="w-5 h-5" /> {t("common.share")}
+              </>
+            )}
           </button>
         </div>
       </div>
     </PhoneFrame>
   );
-}
-
-/** Native share sheet where available, clipboard otherwise. */
-async function shareFacility(f: Facility) {
-  const text = `${f.name}\n${f.address}${f.phone ? `\n${f.phone}` : ""}`;
-  if (typeof navigator !== "undefined" && navigator.share) {
-    try {
-      await navigator.share({ title: f.name, text });
-      return;
-    } catch {
-      // User dismissed the share sheet — fall through to the clipboard copy.
-    }
-  }
-  if (typeof navigator !== "undefined" && navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // Clipboard blocked; nothing useful left to try.
-    }
-  }
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -349,6 +272,39 @@ function InfoRow({
       </div>
       <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
     </a>
+  );
+}
+
+/**
+ * Same row shape as InfoRow, minus the link — for details a member can read
+ * but there's nothing useful to tap through to (an address with no maps
+ * shortcut, the name of who runs the place).
+ */
+function InfoText({
+  icon,
+  label,
+  value,
+  wrap = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  wrap?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-2 first:pt-0 last:pb-0 border-b last:border-b-0 border-border/60">
+      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] text-muted-foreground">{label}</div>
+        <div
+          className={`text-sm font-medium text-foreground ${wrap ? "leading-relaxed" : "truncate"}`}
+        >
+          {value}
+        </div>
+      </div>
+    </div>
   );
 }
 

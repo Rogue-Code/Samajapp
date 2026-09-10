@@ -1,18 +1,6 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  ArrowLeft,
-  MapPin,
-  Phone,
-  Navigation,
-  Bookmark,
-  BadgeCheck,
-  Home as HomeIcon,
-  Building,
-  HandHeart,
-  User,
-} from "lucide-react";
+import { Search, ArrowLeft, MapPin, Phone, BadgeCheck, UserCircle2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -34,24 +22,17 @@ function FacilitiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
-  const [saved, setSaved] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [list, bookmarks] = await Promise.all([
-        supabase.from("facilities").select("*").order("name"),
-        supabase.from("saved_facilities").select("facility_id").eq("user_id", session.user.id),
-      ]);
+      const list = await supabase.from("facilities").select("*").order("name");
       if (cancelled) return;
       if (list.error) {
         setError(friendlyAuthError(list.error.message));
       } else {
         setFacilities(list.data ?? []);
-      }
-      if (bookmarks.data) {
-        setSaved(new Set(bookmarks.data.map((b) => b.facility_id)));
       }
       setLoading(false);
     })();
@@ -59,36 +40,6 @@ function FacilitiesPage() {
       cancelled = true;
     };
   }, [session]);
-
-  const toggleSaved = async (facilityId: string) => {
-    if (!session) return;
-    const wasSaved = saved.has(facilityId);
-    // Optimistic — the row is tiny and reverting on error keeps the list responsive.
-    setSaved((prev) => {
-      const next = new Set(prev);
-      if (wasSaved) next.delete(facilityId);
-      else next.add(facilityId);
-      return next;
-    });
-    const { error: saveError } = wasSaved
-      ? await supabase
-          .from("saved_facilities")
-          .delete()
-          .eq("user_id", session.user.id)
-          .eq("facility_id", facilityId)
-      : await supabase
-          .from("saved_facilities")
-          .insert({ user_id: session.user.id, facility_id: facilityId });
-    if (saveError) {
-      setSaved((prev) => {
-        const next = new Set(prev);
-        if (wasSaved) next.add(facilityId);
-        else next.delete(facilityId);
-        return next;
-      });
-      setError(friendlyAuthError(saveError.message));
-    }
-  };
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -162,7 +113,6 @@ function FacilitiesPage() {
             </div>
           )}
           {filtered.map((f) => {
-            const isSaved = saved.has(f.id);
             const style = categoryStyle(f.category);
             return (
               <Link
@@ -184,52 +134,34 @@ function FacilitiesPage() {
                       </h3>
                       {f.verified && <BadgeCheck className="w-4 h-4 text-primary shrink-0" />}
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                        {categoryLabel(f.category, t)}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                        <MapPin className="w-3 h-3" /> {f.city}, {f.state}
-                      </span>
-                    </div>
+                    <span className="mt-1.5 inline-block text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {categoryLabel(f.category, t)}
+                    </span>
                     <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
                       {f.description}
                     </p>
+                    {/* Office details — what the previous city/state line was
+                        replaced with: the office's actual address, phone and
+                        the person who runs it, rather than a coarse location. */}
+                    <div className="mt-2 space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="line-clamp-1">{f.address}</span>
+                      </div>
+                      {f.phone && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Phone className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{f.phone}</span>
+                        </div>
+                      )}
+                      {f.head && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <UserCircle2 className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{f.head}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex border-t border-border/60">
-                  {f.phone && (
-                    <ActionBtn
-                      icon={<Phone className="w-3.5 h-3.5" />}
-                      label={t("facilities.call")}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.location.href = `tel:${f.phone}`;
-                      }}
-                    />
-                  )}
-                  <ActionBtn
-                    icon={<Navigation className="w-3.5 h-3.5" />}
-                    label={t("facilities.directions")}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open(
-                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`,
-                      );
-                    }}
-                  />
-                  <ActionBtn
-                    icon={
-                      <Bookmark
-                        className={`w-3.5 h-3.5 ${isSaved ? "fill-primary text-primary" : ""}`}
-                      />
-                    }
-                    label={t(isSaved ? "common.saved" : "common.save")}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      void toggleSaved(f.id);
-                    }}
-                  />
                 </div>
               </Link>
             );
@@ -240,24 +172,5 @@ function FacilitiesPage() {
         <BottomNav active="facilities" />
       </div>
     </PhoneFrame>
-  );
-}
-
-function ActionBtn({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: (e: React.MouseEvent) => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 h-12 flex items-center justify-center gap-1.5 text-xs font-semibold text-foreground border-r last:border-r-0 border-border/60 active:bg-muted transition"
-    >
-      {icon} {label}
-    </button>
   );
 }
