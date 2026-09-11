@@ -86,6 +86,13 @@ function ProfilePage() {
     };
   }, [session]);
 
+  // Drives the progress bar below: one required field = one increment, so the
+  // bar actually tracks completion instead of always reading "done" on a form
+  // that is really a single step.
+  const requiredFields = [name, village, occupation, dob, gender, admin];
+  const filledCount = requiredFields.filter(Boolean).length;
+  const progressPercent = Math.round((filledCount / requiredFields.length) * 100);
+
   const canSubmit = name && village && occupation && dob && gender && admin;
 
   const handleSave = async () => {
@@ -139,7 +146,10 @@ function ProfilePage() {
             </div>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full w-full bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all" />
+            <div
+              className="h-full bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { OtpInput } from "@/components/OtpInput";
+import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 import {
   destinationAfterLogin,
@@ -25,6 +26,7 @@ function SignupPage() {
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -40,9 +42,27 @@ function SignupPage() {
       setError("Please enter a valid email address.");
       return;
     }
+    if (!consent) {
+      setError("Please agree to the Terms and Privacy Policy to continue.");
+      return;
+    }
     if (loading) return;
     setError("");
     setLoading(true);
+    const { data: alreadyRegistered, error: lookupError } = await supabase.rpc(
+      "email_registered",
+      { check_email: email.trim() },
+    );
+    if (lookupError) {
+      setLoading(false);
+      setError(friendlyAuthError(lookupError.message));
+      return;
+    }
+    if (alreadyRegistered) {
+      setLoading(false);
+      setError("This email is already registered. Try logging in instead.");
+      return;
+    }
     const { error: otpError } = await sendEmailOtp(email, true);
     setLoading(false);
     if (otpError) {
@@ -123,11 +143,49 @@ function SignupPage() {
                 <p className="text-xs text-muted-foreground mt-2 px-1">{t("signup.emailHelp")}</p>
               </div>
 
+              <div className="flex items-start gap-3">
+                <input
+                  id="consent"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 border-border accent-primary cursor-pointer"
+                />
+                <label
+                  htmlFor="consent"
+                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                >
+                  {t("signup.consentPrefix")}{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate({ to: "/terms" });
+                    }}
+                    className="text-primary font-medium underline underline-offset-2"
+                  >
+                    {t("common.terms")}
+                  </button>{" "}
+                  {t("signup.consentMiddle")}{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate({ to: "/privacy" });
+                    }}
+                    className="text-primary font-medium underline underline-offset-2"
+                  >
+                    {t("common.privacyPolicy")}
+                  </button>
+                  {t("signup.consentSuffix")}
+                </label>
+              </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
 
               <button
                 type="submit"
-                disabled={!isValidEmail(email) || loading}
+                disabled={!isValidEmail(email) || !consent || loading}
                 className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -199,26 +257,6 @@ function SignupPage() {
           >
             {t("signup.login")}
           </button>
-        </p>
-
-        <p className="mt-4 text-[11px] text-center text-muted-foreground leading-relaxed">
-          {t("signup.consentPrefix")}{" "}
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/terms" })}
-            className="text-primary font-medium underline underline-offset-2"
-          >
-            {t("common.terms")}
-          </button>{" "}
-          {t("signup.consentMiddle")}{" "}
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/privacy" })}
-            className="text-primary font-medium underline underline-offset-2"
-          >
-            {t("common.privacyPolicy")}
-          </button>
-          {t("signup.consentSuffix")}
         </p>
       </div>
     </PhoneFrame>

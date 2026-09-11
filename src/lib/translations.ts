@@ -44,8 +44,7 @@ const en = {
 
   // Login
   "login.welcome": "Welcome to Sangath",
-  "login.tagline":
-    "Connect with your family & community digitally. Trusted by 50,000+ families across India.",
+  "login.tagline": "Connect with your family & community digitally.",
   "login.emailHelp": "We'll email you a 6-digit code to sign in. No password needed.",
   "login.sendCode": "Send login code",
   "login.sendingCode": "Sending code...",
@@ -347,8 +346,7 @@ const gu: Partial<Record<StringKey, string>> = {
 
   // Login
   "login.welcome": "સંગતમાં આપનું સ્વાગત છે",
-  "login.tagline":
-    "તમારા પરિવાર અને સમાજ સાથે ડિજિટલ રીતે જોડાઓ. સમગ્ર ભારતમાં 50,000+ પરિવારોનો વિશ્વાસ.",
+  "login.tagline": "તમારા પરિવાર અને સમાજ સાથે ડિજિટલ રીતે જોડાઓ.",
   "login.emailHelp": "સાઇન ઇન કરવા માટે અમે તમને 6 અંકનો કોડ ઈમેલ કરીશું. પાસવર્ડની જરૂર નથી.",
   "login.sendCode": "લોગિન કોડ મોકલો",
   "login.sendingCode": "કોડ મોકલી રહ્યા છીએ...",

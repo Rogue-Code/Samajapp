@@ -122,13 +122,13 @@ function LoginPage() {
           <LanguageToggle />
         </div>
 
-        <div className="flex-1 flex flex-col fade-up" style={{ animationDelay: "60ms" }}>
+        <div
+          className="flex-1 flex flex-col justify-center fade-up"
+          style={{ animationDelay: "60ms" }}
+        >
           {step === "email" ? (
             <>
-              <div className="w-20 h-20 rounded-3xl bg-card border border-border flex items-center justify-center mb-6 shadow-elevated overflow-hidden">
-                <Logo className="w-16 h-16" />
-              </div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight mt-4">
                 {t("login.welcome")}
               </h1>
               <p className="text-muted-foreground mt-3 text-base leading-relaxed">
