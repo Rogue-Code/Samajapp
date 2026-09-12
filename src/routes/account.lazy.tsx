@@ -230,12 +230,16 @@ function AccountPage() {
 
           {/* Personal Information */}
           <SectionCard title={t("account.personalInfo")}>
+            <p className="text-[11px] text-muted-foreground -mt-1 leading-relaxed">
+              {t("account.lockedFieldHint")}
+            </p>
             <Field
               icon={User}
               label={t("profile.fullName")}
               value={form.name}
-              onChange={(v) => set("name", v)}
+              onChange={() => {}}
               autoComplete="name"
+              disabled
             />
             <Field
               icon={Phone}
@@ -323,9 +327,10 @@ function AccountPage() {
               icon={Calendar}
               label={t("profile.dob")}
               value={form.dob}
-              onChange={(v) => set("dob", v)}
+              onChange={() => {}}
               type="date"
               max={new Date().toISOString().slice(0, 10)}
+              disabled
             />
 
             <div>
@@ -336,8 +341,8 @@ function AccountPage() {
                 {(["male", "female", "other"] as const).map((g) => (
                   <button
                     key={g}
-                    onClick={() => set("gender", g)}
-                    className={`h-11 rounded-xl text-sm font-medium transition-all ${
+                    disabled
+                    className={`h-11 rounded-xl text-sm font-medium transition-all disabled:opacity-60 ${
                       form.gender === g
                         ? "bg-card text-foreground shadow-soft"
                         : "text-muted-foreground"

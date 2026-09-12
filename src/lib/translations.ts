@@ -200,6 +200,8 @@ const en = {
   "account.title": "My Profile",
   "account.yourProfile": "Your profile",
   "account.personalInfo": "Personal Information",
+  "account.lockedFieldHint":
+    "Name, date of birth and gender can't be changed here. Contact an admin if any of these need correcting.",
   "account.mobile": "Mobile Number",
   "account.city": "City",
   "account.state": "State",
@@ -534,6 +536,8 @@ const gu: Partial<Record<StringKey, string>> = {
   "account.title": "મારી પ્રોફાઇલ",
   "account.yourProfile": "તમારી પ્રોફાઇલ",
   "account.personalInfo": "વ્યક્તિગત માહિતી",
+  "account.lockedFieldHint":
+    "નામ, જન્મ તારીખ અને લિંગ અહીંથી બદલી શકાતા નથી. જો કંઈ સુધારવું હોય તો એડમિનનો સંપર્ક કરો.",
   "account.mobile": "મોબાઇલ નંબર",
   "account.city": "શહેર",
   "account.state": "રાજ્ય",
