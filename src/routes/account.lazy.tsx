@@ -78,6 +78,9 @@ function AccountPage() {
   const [error, setError] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  // The last-saved snapshot, so a change to any field can be detected without
+  // the member having to scroll down to the Update Profile button to find out.
+  const [savedForm, setSavedForm] = useState(emptyForm);
   // True once "Other" is explicitly picked, so the custom field stays visible
   // even if occupation is momentarily "" while retyping it.
   const [occupationOther, setOccupationOther] = useState(false);
@@ -109,7 +112,7 @@ function AccountPage() {
         .maybeSingle();
       if (cancelled) return;
       if (data) {
-        setForm({
+        const loaded: typeof emptyForm = {
           name: data.full_name ?? "",
           mobile: data.mobile ?? "",
           village: data.village ?? "",
@@ -123,7 +126,9 @@ function AccountPage() {
               ? data.gender
               : null,
           avatarUrl: data.avatar_url ?? null,
-        });
+        };
+        setForm(loaded);
+        setSavedForm(loaded);
       }
       setLoadingProfile(false);
     })();
@@ -142,6 +147,8 @@ function AccountPage() {
     occupationOther ||
     (form.occupation !== "" &&
       !OCCUPATION_OPTIONS.includes(form.occupation as (typeof OCCUPATION_OPTIONS)[number]));
+
+  const isDirty = JSON.stringify(form) !== JSON.stringify(savedForm);
 
   const handleSave = async () => {
     if (!session || saving) return;
@@ -167,6 +174,7 @@ function AccountPage() {
       setError(friendlyAuthError(saveError.message));
       return;
     }
+    setSavedForm(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   };
@@ -191,6 +199,26 @@ function AccountPage() {
             </h1>
             <LanguageToggle />
           </div>
+
+          {/* Appears the moment any field changes, so updating never requires
+              scrolling down to the button at the bottom of the form. */}
+          {isDirty && (
+            <div className="px-5 pb-3 fade-up">
+              <div className="flex items-center gap-3 bg-primary-soft border border-primary/20 rounded-2xl px-4 py-3">
+                <p className="flex-1 text-xs font-medium text-foreground">
+                  {t("account.unsavedChanges")}
+                </p>
+                <button
+                  onClick={() => void handleSave()}
+                  disabled={saving}
+                  className="h-9 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-60 active:scale-95 transition shrink-0"
+                >
+                  {saving ? t("profile.saving") : t("account.updateProfile")}
+                </button>
+              </div>
+              {error && <p className="text-xs text-destructive mt-2 px-1">{error}</p>}
+            </div>
+          )}
         </div>
 
         {/* Body */}
