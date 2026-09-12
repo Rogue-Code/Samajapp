@@ -22,6 +22,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { RELATIONS } from "@/lib/profile-options";
 
 export const Route = createLazyFileRoute("/family")({
   component: FamilyPage,
@@ -46,18 +47,15 @@ interface MemberSearchResult {
   city: string | null;
 }
 
-const RELATIONS = [
-  "Father",
-  "Mother",
-  "Spouse",
-  "Son",
-  "Daughter",
-  "Brother",
-  "Sister",
-  "Grandfather",
-  "Grandmother",
-  "Other",
-] as const;
+interface JoinRequest {
+  id: string;
+  requester_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  village: string | null;
+  city: string | null;
+  relation: string;
+}
 
 const RELATION_EMOJI: Record<string, string> = {
   Father: "👨",
@@ -116,32 +114,52 @@ function FamilyPage() {
   const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const [members, setMembers] = useState<Member[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
   const [linking, setLinking] = useState<Member | null>(null);
 
   const load = useCallback(async () => {
     if (!session) return;
-    const { data, error: loadError } = await supabase
-      .from("family_members")
-      .select("id, full_name, relation, dob, status, linked_profile_id")
-      .eq("owner_id", session.user.id)
-      .order("created_at", { ascending: true });
+    const [{ data, error: loadError }, { data: requests }] = await Promise.all([
+      supabase
+        .from("family_members")
+        .select("id, full_name, relation, dob, status, linked_profile_id")
+        .eq("owner_id", session.user.id)
+        .order("created_at", { ascending: true }),
+      supabase.rpc("list_family_join_requests"),
+    ]);
     if (loadError) {
       setError(friendlyAuthError(loadError.message));
     } else {
       setMembers(data ?? []);
       setError("");
     }
+    setJoinRequests((requests ?? []) as JoinRequest[]);
     setLoading(false);
   }, [session]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const respondToRequest = async (id: string, approve: boolean) => {
+    setRequestBusyId(id);
+    const { error: respondError } = await supabase.rpc("respond_family_join_request", {
+      request_id: id,
+      approve,
+    });
+    setRequestBusyId(null);
+    if (respondError) {
+      setError(friendlyAuthError(respondError.message));
+      return;
+    }
+    await load();
+  };
 
   const addMember = async (input: { full_name: string; relation: string; dob: string }) => {
     if (!session) return;
@@ -235,6 +253,53 @@ function FamilyPage() {
           </p>
 
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+
+          {joinRequests.length > 0 && (
+            <div className="mt-5 space-y-2">
+              <h2 className="text-sm font-bold text-foreground px-1">
+                Join Requests ({joinRequests.length})
+              </h2>
+              {joinRequests.map((r) => (
+                <div
+                  key={r.id}
+                  className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3"
+                >
+                  <Avatar url={r.avatar_url} name={r.full_name} className="w-11 h-11 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">
+                      {r.full_name ?? "Member"}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      Wants to join as {r.relation}
+                      {r.village && ` · ${r.village}`}
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => void respondToRequest(r.id, true)}
+                      disabled={requestBusyId === r.id}
+                      className="w-9 h-9 rounded-xl bg-success-soft text-success flex items-center justify-center disabled:opacity-50"
+                      aria-label="Approve"
+                    >
+                      {requestBusyId === r.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => void respondToRequest(r.id, false)}
+                      disabled={requestBusyId === r.id}
+                      className="w-9 h-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center disabled:opacity-50"
+                      aria-label="Reject"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2 mt-5">
             <div className="bg-success-soft rounded-2xl p-3 text-center">

@@ -20,15 +20,28 @@ import {
   FileText,
   Shield,
   Trash2,
+  KeyRound,
+  Copy,
+  Clock,
+  Loader2,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { Avatar } from "@/components/Avatar";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { MARITAL_OPTIONS, type MaritalStatus } from "@/lib/profile-options";
+import {
+  MARITAL_OPTIONS,
+  OCCUPATION_OPTIONS,
+  OCCUPATION_OTHER,
+  occupationKeySuffix,
+  RELATIONS,
+  type MaritalStatus,
+} from "@/lib/profile-options";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { PlacePicker } from "@/components/PlacePicker";
 import { BottomNav } from "@/components/BottomNav";
@@ -51,7 +64,6 @@ const emptyForm = {
   marital: "Single",
   gender: null as "male" | "female" | "other" | null,
   avatarUrl: null as string | null,
-  admin: "no" as "yes" | "no",
 };
 
 function AccountPage() {
@@ -66,6 +78,9 @@ function AccountPage() {
   const [error, setError] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  // True once "Other" is explicitly picked, so the custom field stays visible
+  // even if occupation is momentarily "" while retyping it.
+  const [occupationOther, setOccupationOther] = useState(false);
   const [family, setFamily] = useState<{ total: number; verified: number }>({
     total: 0,
     verified: 0,
@@ -88,7 +103,7 @@ function AccountPage() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "full_name, mobile, village, city, state, occupation, dob, marital_status, gender, is_family_admin, avatar_url",
+          "full_name, mobile, village, city, state, occupation, dob, marital_status, gender, avatar_url",
         )
         .eq("id", session.user.id)
         .maybeSingle();
@@ -107,7 +122,6 @@ function AccountPage() {
             data.gender === "male" || data.gender === "female" || data.gender === "other"
               ? data.gender
               : null,
-          admin: data.is_family_admin ? "yes" : "no",
           avatarUrl: data.avatar_url ?? null,
         });
       }
@@ -120,6 +134,14 @@ function AccountPage() {
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // Occupation is free text, so a saved value that predates the preset list
+  // (or was typed as something else entirely) shows up here too — not just
+  // when "Other" was explicitly picked on this visit.
+  const occupationIsCustom =
+    occupationOther ||
+    (form.occupation !== "" &&
+      !OCCUPATION_OPTIONS.includes(form.occupation as (typeof OCCUPATION_OPTIONS)[number]));
 
   const handleSave = async () => {
     if (!session || saving) return;
@@ -137,7 +159,6 @@ function AccountPage() {
         dob: form.dob,
         marital_status: form.marital,
         gender: form.gender,
-        is_family_admin: form.admin === "yes",
         avatar_url: form.avatarUrl,
       })
       .eq("id", session.user.id);
@@ -249,17 +270,62 @@ function AccountPage() {
               value={form.state}
               onChange={(v) => set("state", v)}
             />
-            <Field
-              icon={Briefcase}
-              label={t("profile.occupation")}
-              value={form.occupation}
-              onChange={(v) => set("occupation", v)}
-            />
+            <div>
+              <label
+                htmlFor="occupation"
+                className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1"
+              >
+                {t("profile.occupation")}
+              </label>
+              <div className="flex items-center gap-3 bg-background border border-border rounded-2xl px-4 h-14 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
+                <select
+                  id="occupation"
+                  value={occupationIsCustom ? OCCUPATION_OTHER : form.occupation}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === OCCUPATION_OTHER) {
+                      setOccupationOther(true);
+                      set("occupation", "");
+                    } else {
+                      setOccupationOther(false);
+                      set("occupation", v);
+                    }
+                  }}
+                  className="flex-1 bg-transparent outline-none text-foreground text-sm appearance-none"
+                >
+                  <option value="" disabled>
+                    {t("account.select")}
+                  </option>
+                  {OCCUPATION_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {t(`profile.occupation.${occupationKeySuffix(o)}` as never)}
+                    </option>
+                  ))}
+                  <option value={OCCUPATION_OTHER}>{t("profile.occupationOther")}</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Occupation is free text in the database — an existing member's
+                saved answer may not match any preset, which is exactly when
+                this needs to show rather than silently hide their own words. */}
+            {occupationIsCustom && (
+              <Field
+                icon={Briefcase}
+                label={t("profile.occupationOtherLabel")}
+                value={form.occupation}
+                onChange={(v) => set("occupation", v)}
+              />
+            )}
+
             <Field
               icon={Calendar}
               label={t("profile.dob")}
               value={form.dob}
               onChange={(v) => set("dob", v)}
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
             />
 
             <div>
@@ -319,31 +385,12 @@ function AccountPage() {
                 </select>
               </div>
             </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                <ShieldCheck className="w-3 h-3 inline mr-1" /> {t("account.familyAdminStatus")}
-              </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-2xl">
-                {(["yes", "no"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => set("admin", v)}
-                    className={`h-11 rounded-xl text-sm font-medium transition-all ${
-                      form.admin === v
-                        ? "bg-card text-foreground shadow-soft"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {v === "yes" ? t("account.familyAdminYes") : t("account.familyAdminNo")}
-                  </button>
-                ))}
-              </div>
-            </div>
           </SectionCard>
 
           {/* Family Information */}
           <SectionCard title={t("account.familyInfo")}>
+            {session && <FamilyAdminSection userId={session.user.id} />}
+
             <Row
               icon={<Users className="w-4 h-4" />}
               label={t("account.familyMembers")}
@@ -376,7 +423,7 @@ function AccountPage() {
             />
             <button
               onClick={() => navigate({ to: "/family" })}
-              className="mt-2 w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+              className="mt-2 w-full h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold flex items-center justify-center gap-2 px-4 active:scale-[0.98] transition"
             >
               <Users className="w-4 h-4" /> {t("account.manageFamily")}
               <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
@@ -395,7 +442,7 @@ function AccountPage() {
               />
               <button
                 onClick={() => navigate({ to: "/admin" })}
-                className="mt-2 w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+                className="mt-2 w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 px-4 active:scale-[0.98] transition"
               >
                 <ShieldCheck className="w-4 h-4" /> {t("account.openAdmin")}
                 <ChevronRight className="w-4 h-4 ml-auto" />
@@ -480,6 +527,243 @@ function AccountPage() {
   );
 }
 
+interface FamilyStatus {
+  is_admin: boolean;
+  family_code: string | null;
+  family_id: string | null;
+  admin_id: string | null;
+  admin_name: string | null;
+  admin_avatar_url: string | null;
+  pending_request_id: string | null;
+  pending_admin_name: string | null;
+}
+
+/**
+ * Surfaces and drives the family <-> family-admin mapping from Account: an
+ * admin sees and shares their code, a joined member sees who they belong to,
+ * and anyone else can either enter a code (Scenario: their admin already
+ * exists) or become the admin themselves — covering both directions
+ * regardless of who signed up first.
+ */
+function FamilyAdminSection({ userId }: { userId: string }) {
+  const t = useT();
+  const [status, setStatus] = useState<FamilyStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [code, setCode] = useState("");
+  const [relation, setRelation] = useState<string>(RELATIONS[0]);
+  const [preview, setPreview] = useState<{ admin_name: string | null } | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const load = async () => {
+    const { data } = await supabase.rpc("get_my_family_status");
+    setStatus(((data ?? [])[0] as FamilyStatus) ?? null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void load();
+  }, [userId]);
+
+  useEffect(() => {
+    const trimmed = code.trim();
+    setPreview(null);
+    if (trimmed.length < 6) return;
+    setChecking(true);
+    const handle = setTimeout(async () => {
+      const { data } = await supabase.rpc("preview_family_by_code", { input_code: trimmed });
+      setChecking(false);
+      setPreview((data ?? [])[0] ?? null);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [code]);
+
+  const becomeAdmin = async () => {
+    setBusy(true);
+    setError("");
+    const { error: rpcError } = await supabase.rpc("ensure_family_admin");
+    setBusy(false);
+    if (rpcError) {
+      setError(friendlyAuthError(rpcError.message));
+      return;
+    }
+    await load();
+  };
+
+  const submitJoin = async () => {
+    setBusy(true);
+    setError("");
+    const { error: rpcError } = await supabase.rpc("request_join_family", {
+      input_code: code.trim(),
+      member_relation: relation,
+    });
+    setBusy(false);
+    if (rpcError) {
+      setError(friendlyAuthError(rpcError.message));
+      return;
+    }
+    setCode("");
+    await load();
+  };
+
+  const cancelRequest = async () => {
+    if (!status?.pending_request_id) return;
+    setBusy(true);
+    setError("");
+    const { error: deleteError } = await supabase
+      .from("family_join_requests")
+      .delete()
+      .eq("id", status.pending_request_id);
+    setBusy(false);
+    if (deleteError) {
+      setError(friendlyAuthError(deleteError.message));
+      return;
+    }
+    await load();
+  };
+
+  const leave = async () => {
+    setBusy(true);
+    setError("");
+    const { error: rpcError } = await supabase.rpc("leave_family");
+    setBusy(false);
+    if (rpcError) {
+      setError(friendlyAuthError(rpcError.message));
+      return;
+    }
+    await load();
+  };
+
+  const copyCode = () => {
+    if (!status?.family_code) return;
+    void navigator.clipboard.writeText(status.family_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  if (loading || !status) {
+    return <div className="h-11 rounded-xl bg-muted animate-pulse" />;
+  }
+
+  return (
+    <div className="space-y-3 pb-3.5 border-b border-border/60">
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {status.is_admin ? (
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+            <ShieldCheck className="w-3.5 h-3.5" /> {t("account.familyAdminBadge")}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+            {t("account.familyAdminCodeHelp")}
+          </p>
+          <button
+            onClick={copyCode}
+            className="mt-2 w-full h-11 rounded-xl bg-primary-soft border border-primary/20 flex items-center justify-center gap-2 text-sm font-bold text-primary tracking-widest active:scale-[0.98] transition"
+          >
+            {status.family_code}
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+          {copied && <p className="text-[11px] text-success mt-1">{t("account.copied")}</p>}
+        </div>
+      ) : status.family_id && status.admin_id ? (
+        <div>
+          <div className="flex items-center gap-3">
+            <Avatar
+              url={status.admin_avatar_url}
+              name={status.admin_name}
+              className="w-9 h-9 shrink-0"
+            />
+            <p className="flex-1 text-xs text-foreground leading-snug">
+              {t("account.partOfFamily", { name: status.admin_name ?? "" })}
+            </p>
+          </div>
+          <button
+            onClick={() => void leave()}
+            disabled={busy}
+            className="mt-2 w-full h-10 rounded-xl bg-destructive/10 text-destructive text-xs font-semibold disabled:opacity-50"
+          >
+            {busy ? "…" : t("account.leaveFamily")}
+          </button>
+        </div>
+      ) : status.pending_request_id ? (
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-warning">
+            <Clock className="w-3.5 h-3.5" />
+            {t("account.pendingApproval", { name: status.pending_admin_name ?? "" })}
+          </div>
+          <button
+            onClick={() => void cancelRequest()}
+            disabled={busy}
+            className="mt-2 w-full h-10 rounded-xl bg-muted text-foreground text-xs font-semibold disabled:opacity-50"
+          >
+            {busy ? "…" : t("account.cancelRequest")}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
+              {t("account.joinFamilyCodeLabel")}
+            </label>
+            <div className="flex items-center gap-2 h-11 px-3 bg-muted rounded-xl">
+              <KeyRound className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder={t("profile.familyCodePlaceholder")}
+                maxLength={6}
+                autoComplete="off"
+                className="flex-1 bg-transparent outline-none text-sm tracking-widest uppercase"
+              />
+              {checking && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+              {code && !checking && (
+                <button onClick={() => setCode("")} aria-label={t("common.clear")}>
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </div>
+          {preview && (
+            <>
+              <p className="text-[11px] text-foreground px-1">
+                {t("profile.familyCodeMatch", { name: preview.admin_name ?? "" })}
+              </p>
+              <select
+                value={relation}
+                onChange={(e) => setRelation(e.target.value)}
+                className="w-full bg-muted rounded-xl px-3 h-10 outline-none text-sm appearance-none"
+              >
+                {RELATIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => void submitJoin()}
+                disabled={busy}
+                className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+              >
+                {busy ? "…" : t("account.joinFamilyButton")}
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => void becomeAdmin()}
+            disabled={busy}
+            className="w-full h-10 rounded-xl bg-muted text-foreground text-xs font-semibold disabled:opacity-50"
+          >
+            {busy ? "…" : t("account.becomeFamilyAdmin")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
@@ -499,6 +783,7 @@ function Field({
   type = "text",
   disabled = false,
   autoComplete = "off",
+  max,
 }: {
   icon: LucideIcon;
   label: string;
@@ -507,6 +792,8 @@ function Field({
   type?: string;
   disabled?: boolean;
   autoComplete?: string;
+  /** Passed straight through — used to cap type="date" at today. */
+  max?: string;
 }) {
   return (
     <div>
@@ -521,7 +808,8 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           autoComplete={autoComplete}
-          className="flex-1 bg-transparent outline-none text-foreground text-sm min-w-0 disabled:text-muted-foreground"
+          max={max}
+          className={`flex-1 bg-transparent outline-none text-foreground text-sm min-w-0 disabled:text-muted-foreground ${type === "date" ? "[color-scheme:light]" : ""}`}
         />
       </div>
     </div>

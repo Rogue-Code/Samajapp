@@ -172,6 +172,65 @@ export type Database = {
         }
         Relationships: []
       }
+      families: {
+        Row: {
+          admin_id: string
+          code: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          admin_id: string
+          code: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          admin_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      family_join_requests: {
+        Row: {
+          created_at: string
+          family_id: string
+          id: string
+          relation: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          id?: string
+          relation?: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          id?: string
+          relation?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_join_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_members: {
         Row: {
           created_at: string
@@ -263,6 +322,7 @@ export type Database = {
           city: string | null
           created_at: string
           dob: string | null
+          family_id: string | null
           full_name: string | null
           gender: string | null
           id: string
@@ -281,6 +341,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           dob?: string | null
+          family_id?: string | null
           full_name?: string | null
           gender?: string | null
           id: string
@@ -299,6 +360,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           dob?: string | null
+          family_id?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
@@ -312,7 +374,15 @@ export type Database = {
           updated_at?: string
           village?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_facilities: {
         Row: {
@@ -434,6 +504,8 @@ export type Database = {
       current_role_is: { Args: { required: string[] }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
       email_registered: { Args: { check_email: string }; Returns: boolean }
+      ensure_family_admin: { Args: never; Returns: string }
+      generate_family_code: { Args: never; Returns: string }
       get_family_admin_of: {
         Args: { target_id: string }
         Returns: {
@@ -479,6 +551,50 @@ export type Database = {
           relation: string
           status: string
         }[]
+      }
+      get_my_family_status: {
+        Args: never
+        Returns: {
+          admin_avatar_url: string
+          admin_id: string
+          admin_name: string
+          family_code: string
+          family_id: string
+          is_admin: boolean
+          pending_admin_name: string
+          pending_request_id: string
+        }[]
+      }
+      leave_family: { Args: never; Returns: undefined }
+      list_family_join_requests: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          city: string
+          created_at: string
+          full_name: string
+          id: string
+          relation: string
+          requester_id: string
+          village: string
+        }[]
+      }
+      preview_family_by_code: {
+        Args: { input_code: string }
+        Returns: {
+          admin_avatar_url: string
+          admin_id: string
+          admin_name: string
+          family_id: string
+        }[]
+      }
+      request_join_family: {
+        Args: { input_code: string; member_relation?: string }
+        Returns: undefined
+      }
+      respond_family_join_request: {
+        Args: { approve: boolean; request_id: string }
+        Returns: undefined
       }
       search_members: {
         Args: { term: string }
