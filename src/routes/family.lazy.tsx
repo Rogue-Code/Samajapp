@@ -4,7 +4,6 @@ import { useGoBack } from "@/hooks/use-go-back";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
-  Plus,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -446,14 +445,6 @@ function FamilyPage() {
             <UserPlus className="w-4 h-4" /> Add Family Member
           </button>
         </div>
-
-        <button
-          onClick={() => setShowAdd(true)}
-          className="absolute right-6 bottom-28 w-14 h-14 rounded-full bg-accent-saffron text-white shadow-elevated flex items-center justify-center active:scale-95 transition"
-          aria-label="Add family member"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
 
         <div className="sticky bottom-0 px-6 py-4 bg-background/90 backdrop-blur-xl border-t border-border/50">
           <button
