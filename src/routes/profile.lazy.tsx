@@ -90,7 +90,10 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
-  const [admin, setAdmin] = useState<"yes" | "no" | null>(null);
+  // No "no" state on purpose — everyone must either join with a family code
+  // or confirm they're the admin. A silent skip would leave them mapped to
+  // nothing, which defeats the point of the family mapping entirely.
+  const [admin, setAdmin] = useState<"yes" | null>(null);
   const [familyCode, setFamilyCode] = useState("");
   const [familyRelation, setFamilyRelation] = useState<string>(RELATIONS[0]);
   const [familyPreview, setFamilyPreview] = useState<FamilyPreview | null>(null);
@@ -440,34 +443,30 @@ function ProfilePage() {
                 <label className="text-sm font-semibold text-foreground mb-3 block">
                   {t("profile.familyAdminQuestion")}
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {(["yes", "no"] as const).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setAdmin(v)}
-                      className={`relative p-4 rounded-2xl border-2 text-left transition-all ${
-                        admin === v ? "border-primary bg-primary-soft" : "border-border bg-card"
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
-                          admin === v ? "border-primary bg-primary" : "border-border"
-                        }`}
-                      >
-                        {admin === v && (
-                          <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
-                        )}
-                      </div>
-                      <div className="text-2xl mb-1">{v === "yes" ? "👨‍👩‍👧" : "🙋"}</div>
-                      <div className="font-semibold text-foreground capitalize">
-                        {v === "yes" ? t("profile.familyAdminYes") : t("profile.familyAdminNo")}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {v === "yes" ? "Manage family members" : "Join existing family"}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <button
+                  onClick={() => setAdmin("yes")}
+                  className={`relative w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                    admin === "yes" ? "border-primary bg-primary-soft" : "border-border bg-card"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
+                      admin === "yes" ? "border-primary bg-primary" : "border-border"
+                    }`}
+                  >
+                    {admin === "yes" && (
+                      <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
+                    )}
+                  </div>
+                  <div className="text-2xl mb-1">👨‍👩‍👧</div>
+                  <div className="font-semibold text-foreground">{t("profile.familyAdminYes")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {t("profile.familyAdminYesHelp")}
+                  </div>
+                </button>
+                <p className="text-[11px] text-muted-foreground mt-2 px-1 leading-relaxed">
+                  {t("profile.familyAdminRequiredHint")}
+                </p>
               </div>
             )}
           </div>
