@@ -8,7 +8,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Building2,
   Briefcase,
   Calendar,
   Heart,
@@ -289,12 +288,6 @@ function AccountPage() {
               label={t("profile.village")}
               value={form.village}
               onChange={(v) => set("village", v)}
-            />
-            <Field
-              icon={Building2}
-              label={t("account.city")}
-              value={form.city}
-              onChange={(v) => set("city", v)}
             />
             <Field
               icon={MapPin}
