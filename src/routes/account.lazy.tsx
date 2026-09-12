@@ -19,11 +19,8 @@ import {
   FileText,
   Shield,
   Trash2,
-  KeyRound,
   Copy,
   Clock,
-  Loader2,
-  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -38,7 +35,6 @@ import {
   OCCUPATION_OPTIONS,
   OCCUPATION_OTHER,
   occupationKeySuffix,
-  RELATIONS,
   type MaritalStatus,
 } from "@/lib/profile-options";
 import { AvatarPicker } from "@/components/AvatarPicker";
@@ -565,11 +561,12 @@ interface FamilyStatus {
 }
 
 /**
- * Surfaces and drives the family <-> family-admin mapping from Account: an
- * admin sees and shares their code, a joined member sees who they belong to,
- * and anyone else can either enter a code (Scenario: their admin already
- * exists) or become the admin themselves — covering both directions
- * regardless of who signed up first.
+ * Surfaces the family <-> family-admin mapping from Account, read-only: who
+ * becomes the admin and who joins whom is a one-time choice made during
+ * Profile Setup (only one member per family can be the admin), so nothing
+ * here lets that be picked or changed after the fact. A still-pending join
+ * request is the one exception — it can be cancelled since the admin has not
+ * approved it yet, so nothing has actually been decided.
  */
 function FamilyAdminSection({ userId }: { userId: string }) {
   const t = useT();
@@ -578,10 +575,6 @@ function FamilyAdminSection({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [code, setCode] = useState("");
-  const [relation, setRelation] = useState<string>(RELATIONS[0]);
-  const [preview, setPreview] = useState<{ admin_name: string | null } | null>(null);
-  const [checking, setChecking] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.rpc("get_my_family_status");
@@ -592,47 +585,6 @@ function FamilyAdminSection({ userId }: { userId: string }) {
   useEffect(() => {
     void load();
   }, [userId]);
-
-  useEffect(() => {
-    const trimmed = code.trim();
-    setPreview(null);
-    if (trimmed.length < 6) return;
-    setChecking(true);
-    const handle = setTimeout(async () => {
-      const { data } = await supabase.rpc("preview_family_by_code", { input_code: trimmed });
-      setChecking(false);
-      setPreview((data ?? [])[0] ?? null);
-    }, 400);
-    return () => clearTimeout(handle);
-  }, [code]);
-
-  const becomeAdmin = async () => {
-    setBusy(true);
-    setError("");
-    const { error: rpcError } = await supabase.rpc("ensure_family_admin");
-    setBusy(false);
-    if (rpcError) {
-      setError(friendlyAuthError(rpcError.message));
-      return;
-    }
-    await load();
-  };
-
-  const submitJoin = async () => {
-    setBusy(true);
-    setError("");
-    const { error: rpcError } = await supabase.rpc("request_join_family", {
-      input_code: code.trim(),
-      member_relation: relation,
-    });
-    setBusy(false);
-    if (rpcError) {
-      setError(friendlyAuthError(rpcError.message));
-      return;
-    }
-    setCode("");
-    await load();
-  };
 
   const cancelRequest = async () => {
     if (!status?.pending_request_id) return;
@@ -650,18 +602,6 @@ function FamilyAdminSection({ userId }: { userId: string }) {
     await load();
   };
 
-  const leave = async () => {
-    setBusy(true);
-    setError("");
-    const { error: rpcError } = await supabase.rpc("leave_family");
-    setBusy(false);
-    if (rpcError) {
-      setError(friendlyAuthError(rpcError.message));
-      return;
-    }
-    await load();
-  };
-
   const copyCode = () => {
     if (!status?.family_code) return;
     void navigator.clipboard.writeText(status.family_code);
@@ -671,6 +611,11 @@ function FamilyAdminSection({ userId }: { userId: string }) {
 
   if (loading || !status) {
     return <div className="h-11 rounded-xl bg-muted animate-pulse" />;
+  }
+
+  if (!status.is_admin && !(status.family_id && status.admin_id) && !status.pending_request_id) {
+    // Chose neither at setup — a stable, final state, not something to fix here.
+    return null;
   }
 
   return (
@@ -695,26 +640,17 @@ function FamilyAdminSection({ userId }: { userId: string }) {
           {copied && <p className="text-[11px] text-success mt-1">{t("account.copied")}</p>}
         </div>
       ) : status.family_id && status.admin_id ? (
-        <div>
-          <div className="flex items-center gap-3">
-            <Avatar
-              url={status.admin_avatar_url}
-              name={status.admin_name}
-              className="w-9 h-9 shrink-0"
-            />
-            <p className="flex-1 text-xs text-foreground leading-snug">
-              {t("account.partOfFamily", { name: status.admin_name ?? "" })}
-            </p>
-          </div>
-          <button
-            onClick={() => void leave()}
-            disabled={busy}
-            className="mt-2 w-full h-10 rounded-xl bg-destructive/10 text-destructive text-xs font-semibold disabled:opacity-50"
-          >
-            {busy ? "…" : t("account.leaveFamily")}
-          </button>
+        <div className="flex items-center gap-3">
+          <Avatar
+            url={status.admin_avatar_url}
+            name={status.admin_name}
+            className="w-9 h-9 shrink-0"
+          />
+          <p className="flex-1 text-xs text-foreground leading-snug">
+            {t("account.partOfFamily", { name: status.admin_name ?? "" })}
+          </p>
         </div>
-      ) : status.pending_request_id ? (
+      ) : (
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-warning">
             <Clock className="w-3.5 h-3.5" />
@@ -726,63 +662,6 @@ function FamilyAdminSection({ userId }: { userId: string }) {
             className="mt-2 w-full h-10 rounded-xl bg-muted text-foreground text-xs font-semibold disabled:opacity-50"
           >
             {busy ? "…" : t("account.cancelRequest")}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
-              {t("account.joinFamilyCodeLabel")}
-            </label>
-            <div className="flex items-center gap-2 h-11 px-3 bg-muted rounded-xl">
-              <KeyRound className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder={t("profile.familyCodePlaceholder")}
-                maxLength={6}
-                autoComplete="off"
-                className="flex-1 bg-transparent outline-none text-sm tracking-widest uppercase"
-              />
-              {checking && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-              {code && !checking && (
-                <button onClick={() => setCode("")} aria-label={t("common.clear")}>
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-            </div>
-          </div>
-          {preview && (
-            <>
-              <p className="text-[11px] text-foreground px-1">
-                {t("profile.familyCodeMatch", { name: preview.admin_name ?? "" })}
-              </p>
-              <select
-                value={relation}
-                onChange={(e) => setRelation(e.target.value)}
-                className="w-full bg-muted rounded-xl px-3 h-10 outline-none text-sm appearance-none"
-              >
-                {RELATIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => void submitJoin()}
-                disabled={busy}
-                className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
-              >
-                {busy ? "…" : t("account.joinFamilyButton")}
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => void becomeAdmin()}
-            disabled={busy}
-            className="w-full h-10 rounded-xl bg-muted text-foreground text-xs font-semibold disabled:opacity-50"
-          >
-            {busy ? "…" : t("account.becomeFamilyAdmin")}
           </button>
         </div>
       )}
