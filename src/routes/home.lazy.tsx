@@ -227,17 +227,13 @@ function HomePage() {
                 <div className="text-xs text-muted-foreground">{greeting(t)} 👋</div>
                 <div className="font-semibold text-foreground truncate">{displayName}</div>
               </div>
-              <button
-                onClick={() => navigate({ to: "/account" })}
-                className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shadow-card ring-2 ring-background"
-                aria-label={t("home.profileAria")}
-              >
+              <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent-saffron flex items-center justify-center text-white font-bold shadow-card ring-2 ring-background shrink-0">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   initial
                 )}
-              </button>
+              </div>
             </div>
             <div className="flex items-center gap-2 h-12 px-4 bg-muted rounded-2xl shadow-soft">
               <Search className="w-5 h-5 text-muted-foreground shrink-0" />
