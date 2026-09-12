@@ -86,7 +86,7 @@ function ProfilePage() {
   // True once "Other" is picked, so the custom field appears even before
   // anything is typed into it (occupation itself stays "" until they do).
   const [occupationOther, setOccupationOther] = useState(false);
-  const [marital, setMarital] = useState<MaritalStatus>("Single");
+  const [marital, setMarital] = useState<MaritalStatus | "">("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
@@ -143,19 +143,11 @@ function ProfilePage() {
   }, [session]);
 
   // Entering a valid family code answers the family-admin question by
-  // itself (you can't be the admin of a family you're asking to join), so it
-  // counts toward the same progress slot as picking Yes/No does.
+  // itself (you can't be the admin of a family you're asking to join).
   const joiningFamily = familyPreview !== null;
   const familyAnswered = joiningFamily || admin !== null;
 
-  // Drives the progress bar below: one required field = one increment, so the
-  // bar actually tracks completion instead of always reading "done" on a form
-  // that is really a single step.
-  const requiredFields = [name, village, occupation, dob, gender, familyAnswered];
-  const filledCount = requiredFields.filter(Boolean).length;
-  const progressPercent = Math.round((filledCount / requiredFields.length) * 100);
-
-  const canSubmit = name && village && occupation && dob && gender && familyAnswered;
+  const canSubmit = name && village && occupation && dob && gender && marital && familyAnswered;
 
   const handleSave = async () => {
     if (!canSubmit || saving || !session) return;
@@ -209,7 +201,7 @@ function ProfilePage() {
     <PhoneFrame>
       <div className="flex flex-col min-h-screen md:min-h-[860px]">
         <div className="px-6 pt-8 pb-4 sticky top-0 bg-background/80 backdrop-blur-xl z-10 border-b border-border/50">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => {
                 void supabase.auth.signOut();
@@ -220,18 +212,7 @@ function ProfilePage() {
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            <div className="flex items-center gap-2">
-              <LanguageToggle />
-              <span className="text-xs font-semibold text-muted-foreground">
-                {t("profile.lastStep")}
-              </span>
-            </div>
-          </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-accent-saffron rounded-full transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
+            <LanguageToggle />
           </div>
         </div>
 
@@ -431,6 +412,9 @@ function ProfilePage() {
                   onChange={(e) => setMarital(e.target.value as MaritalStatus)}
                   className="flex-1 bg-transparent outline-none text-foreground appearance-none"
                 >
+                  <option value="" disabled>
+                    {t("account.select")}
+                  </option>
                   {MARITAL_OPTIONS.map((m) => (
                     <option key={m} value={m}>
                       {t(`profile.marital.${m}` as never)}
