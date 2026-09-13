@@ -290,6 +290,47 @@ function ProfilePage() {
                 </select>
               </div>
             )}
+
+            {joiningFamily ? (
+              <div className="mt-3 rounded-2xl border-2 border-primary bg-primary-soft p-4">
+                <div className="font-semibold text-foreground text-sm">
+                  {t("profile.familyAdminSkipped")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {t("profile.familyCodeMatch", { name: familyPreview.admin_name ?? "" })}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <label className="text-sm font-semibold text-foreground mb-3 block">
+                  {t("profile.familyAdminQuestion")}
+                </label>
+                <button
+                  onClick={() => setAdmin((prev) => (prev === "yes" ? null : "yes"))}
+                  className={`relative w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                    admin === "yes" ? "border-primary bg-primary-soft" : "border-border bg-card"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
+                      admin === "yes" ? "border-primary bg-primary" : "border-border"
+                    }`}
+                  >
+                    {admin === "yes" && (
+                      <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
+                    )}
+                  </div>
+                  <div className="text-2xl mb-1">👨‍👩‍👧</div>
+                  <div className="font-semibold text-foreground">{t("profile.familyAdminYes")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {t("profile.familyAdminYesHelp")}
+                  </div>
+                </button>
+                <p className="text-[11px] text-muted-foreground mt-2 px-1 leading-relaxed">
+                  {t("profile.familyAdminRequiredHint")}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="my-7">
@@ -426,49 +467,6 @@ function ProfilePage() {
                 </select>
               </div>
             </div>
-
-            {joiningFamily ? (
-              <div className="pt-2">
-                <div className="rounded-2xl border-2 border-primary bg-primary-soft p-4">
-                  <div className="font-semibold text-foreground text-sm">
-                    {t("profile.familyAdminSkipped")}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {t("profile.familyCodeMatch", { name: familyPreview.admin_name ?? "" })}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="pt-2">
-                <label className="text-sm font-semibold text-foreground mb-3 block">
-                  {t("profile.familyAdminQuestion")}
-                </label>
-                <button
-                  onClick={() => setAdmin("yes")}
-                  className={`relative w-full p-4 rounded-2xl border-2 text-left transition-all ${
-                    admin === "yes" ? "border-primary bg-primary-soft" : "border-border bg-card"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center absolute top-3 right-3 ${
-                      admin === "yes" ? "border-primary bg-primary" : "border-border"
-                    }`}
-                  >
-                    {admin === "yes" && (
-                      <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
-                    )}
-                  </div>
-                  <div className="text-2xl mb-1">👨‍👩‍👧</div>
-                  <div className="font-semibold text-foreground">{t("profile.familyAdminYes")}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {t("profile.familyAdminYesHelp")}
-                  </div>
-                </button>
-                <p className="text-[11px] text-muted-foreground mt-2 px-1 leading-relaxed">
-                  {t("profile.familyAdminRequiredHint")}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
