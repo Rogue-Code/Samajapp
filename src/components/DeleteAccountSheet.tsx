@@ -12,8 +12,13 @@ const CONFIRM_WORD = "DELETE";
  * 1. Avatar files live in a *public* storage bucket and have no foreign key to
  *    auth.users, so nothing cascades them. They are removed through the storage
  *    API here — which reclaims the actual object — before the row is deleted.
- *    delete_my_account() also clears any leftover rows as a backstop, so a
- *    failure here degrades to an orphaned file rather than a readable photo.
+ *    This is the only cleanup path: delete_my_account() cannot carry a SQL-level
+ *    backstop, because Supabase rejects any raw DELETE against storage.objects
+ *    outright ("Use storage API instead") — it isn't conditional on a matching
+ *    row, so an unconditional backstop statement there previously broke every
+ *    deletion, not just ones with a leftover file. If this call fails, the file
+ *    is left behind under a login that no longer exists rather than a readable
+ *    photo — an acceptable trade next to the RPC never running at all.
  *
  * 2. The session outlives the user. A JWT stays cryptographically valid until
  *    it expires, so the local session has to be torn down explicitly once the
