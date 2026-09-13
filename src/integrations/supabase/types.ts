@@ -39,6 +39,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_places: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       event_rsvps: {
         Row: {
           created_at: string
@@ -500,6 +521,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_custom_place: { Args: { place_name: string }; Returns: undefined }
       birth_year_of: { Args: { dob_text: string }; Returns: number }
       current_role_is: { Args: { required: string[] }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SheetPortal } from "@/components/PhoneFrame";
 import { Check, MapPin, Search, X } from "lucide-react";
-import { searchPlaces } from "@/data/india-places";
+import { searchPlaces, type Place } from "@/data/india-places";
+import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 
 interface Props {
@@ -23,9 +24,27 @@ export function PlacePicker({ label, value, onChange, placeholder }: Props) {
   const shown = placeholder ?? t("place.placeholder");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [customPlaces, setCustomPlaces] = useState<Place[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const results = useMemo(() => searchPlaces(query, 60), [query]);
+  // Places other members have already typed in and added — merged into the
+  // search pool so nobody has to re-add the same missing village twice.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    supabase
+      .from("custom_places")
+      .select("name")
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setCustomPlaces(data.map((row): Place => ({ name: row.name, state: "", label: row.name })));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const results = useMemo(() => searchPlaces(query, 60, customPlaces), [query, customPlaces]);
   const trimmed = query.trim();
   // Offer the typed text when it is not already an exact match in the list.
   const showCustom =
@@ -43,6 +62,17 @@ export function PlacePicker({ label, value, onChange, placeholder }: Props) {
     onChange(next);
     setOpen(false);
     setQuery("");
+  };
+
+  // The typed value isn't in the bundled list or in anyone else's previous
+  // additions — save it so the next member who types the same thing finds it
+  // instead of adding it all over again. Best-effort: a failure here (e.g.
+  // offline) shouldn't block the member from using the place they typed.
+  const chooseCustom = (next: string) => {
+    choose(next);
+    // supabase-js query builders are thenables that only fire once awaited/
+    // `.then()`-ed — a bare `void supabase.rpc(...)` never sends the request.
+    void supabase.rpc("add_custom_place", { place_name: next }).then(() => {});
   };
 
   return (
@@ -110,7 +140,7 @@ export function PlacePicker({ label, value, onChange, placeholder }: Props) {
                 {showCustom && (
                   <button
                     type="button"
-                    onClick={() => choose(trimmed)}
+                    onClick={() => chooseCustom(trimmed)}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left active:bg-muted transition"
                   >
                     <span className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center shrink-0">
@@ -127,22 +157,33 @@ export function PlacePicker({ label, value, onChange, placeholder }: Props) {
                   </button>
                 )}
 
-                {results.map((place) => (
-                  <button
-                    key={place.label}
-                    type="button"
-                    onClick={() => choose(place.label)}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left active:bg-muted transition"
-                  >
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-foreground truncate">{place.name}</span>
-                      <span className="block text-xs text-muted-foreground truncate">
-                        {place.state}
+                {results.map((place) => {
+                  // A village's state ("Gujarat") is the same for every one of
+                  // them — taluka + district is what actually tells same-named
+                  // villages apart, so show that instead when it's there.
+                  const secondary =
+                    place.taluka && place.district
+                      ? `${place.taluka}, ${place.district}`
+                      : place.state;
+                  return (
+                    <button
+                      key={place.label}
+                      type="button"
+                      onClick={() => choose(place.label)}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left active:bg-muted transition"
+                    >
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-foreground truncate">{place.name}</span>
+                        {secondary && (
+                          <span className="block text-xs text-muted-foreground truncate">
+                            {secondary}
+                          </span>
+                        )}
                       </span>
-                    </span>
-                    {value === place.label && <Check className="w-4 h-4 text-primary shrink-0" />}
-                  </button>
-                ))}
+                      {value === place.label && <Check className="w-4 h-4 text-primary shrink-0" />}
+                    </button>
+                  );
+                })}
 
                 {!showCustom && results.length === 0 && (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">

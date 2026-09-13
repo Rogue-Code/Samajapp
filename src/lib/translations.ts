@@ -147,7 +147,7 @@ const en = {
   "place.placeholder": "Search your village or city",
   "place.searchPlaceholder": "Type a village, city or state",
   "place.useCustom": "Use “{value}”",
-  "place.notInList": "Not in the list",
+  "place.notInList": "Not in the list — adds it for everyone",
   "place.noMatch": "No places matched. Keep typing to enter your own.",
 
   // Auth errors
@@ -483,7 +483,7 @@ const gu: Partial<Record<StringKey, string>> = {
   "place.placeholder": "તમારું ગામ કે શહેર શોધો",
   "place.searchPlaceholder": "ગામ, શહેર કે રાજ્ય લખો",
   "place.useCustom": "“{value}” વાપરો",
-  "place.notInList": "યાદીમાં નથી",
+  "place.notInList": "યાદીમાં નથી — બધા માટે ઉમેરાશે",
   "place.noMatch": "કોઈ સ્થળ મળ્યું નથી. તમારું પોતાનું લખવા માટે લખતા રહો.",
 
   // Auth errors

@@ -1,15 +1,18 @@
 /**
- * Curated list of real Indian cities, towns and district headquarters for the
- * village/city picker.
+ * Places offered by the village/city picker: a curated list of cities, towns
+ * and district headquarters nationwide, plus the full official list of
+ * Gujarat's ~18,225 revenue villages (see gujarat-villages.ts) — that's where
+ * the community is concentrated, so it gets exact coverage rather than a
+ * hand-picked sample. Other states stay curated; India has ~640,000 villages
+ * nationwide, too many to bundle into an APK.
  *
- * India has roughly 640,000 villages; bundling all of them is not practical for an
- * APK, and inventing place names would put fake data in front of members. This is a
- * hand-checked list of real places, weighted towards Gujarat and Rajasthan where the
- * community is concentrated, with national coverage for members living elsewhere.
- *
- * The picker also accepts free text, so a member from a village that is not listed
- * can still type it in. To extend coverage, add names under the relevant state.
+ * The picker also accepts free text, so a member whose place is still missing
+ * can type it in — and that addition is saved to the `custom_places` table so
+ * it shows up for every member from then on (see PlacePicker's use of the
+ * add_custom_place RPC).
  */
+
+import { GUJARAT_VILLAGES } from "@/data/gujarat-villages";
 
 const BY_STATE: Record<string, string[]> = {
   Gujarat: [
@@ -537,33 +540,71 @@ const BY_STATE: Record<string, string[]> = {
 };
 
 export interface Place {
-  /** Town/city name on its own, e.g. "Anand". */
+  /** Town/city/village name on its own, e.g. "Anand". */
   name: string;
   /** State it belongs to, e.g. "Gujarat". */
   state: string;
+  /** Taluka, for a Gujarat village — lets same-named villages be told apart. */
+  taluka?: string;
+  /** District, for a Gujarat village. */
+  district?: string;
   /** What gets stored and displayed, e.g. "Anand, Gujarat". */
   label: string;
 }
 
-export const INDIA_PLACES: Place[] = Object.entries(BY_STATE)
-  .flatMap(([state, names]) => names.map((name) => ({ name, state, label: `${name}, ${state}` })))
-  .sort((a, b) => a.name.localeCompare(b.name));
+const CURATED_PLACES: Place[] = Object.entries(BY_STATE).flatMap(([state, names]) =>
+  names.map((name) => ({ name, state, label: `${name}, ${state}` })),
+);
+
+// Villages get taluka + district in the label — plain "Gujarat" would not tell
+// apart the ~1,900 village names that recur across the state (some over 30 times).
+const VILLAGE_PLACES: Place[] = GUJARAT_VILLAGES.map(({ village, taluka, district }) => ({
+  name: village,
+  state: "Gujarat",
+  taluka,
+  district,
+  label: `${village}, ${taluka}, ${district}`,
+}));
+
+export const INDIA_PLACES: Place[] = [...CURATED_PLACES, ...VILLAGE_PLACES].sort((a, b) =>
+  a.name.localeCompare(b.name),
+);
+
+// Precomputed once so a keystroke over the ~19k-place list doesn't re-lowercase
+// every name on every search.
+const SEARCHABLE = INDIA_PLACES.map((place) => ({
+  place,
+  name: place.name.toLowerCase(),
+  state: place.state.toLowerCase(),
+}));
 
 /**
- * Substring search over the list. Names that *start* with the query rank above
- * names that merely contain it, so typing "and" surfaces Anand before Chandigarh.
+ * Substring search over the list, plus any member-contributed places (from the
+ * `custom_places` table) passed in via `extra`. Names that *start* with the
+ * query rank above names that merely contain it, so typing "and" surfaces
+ * Anand before Chandigarh.
  */
-export function searchPlaces(query: string, limit = 50): Place[] {
+export function searchPlaces(query: string, limit = 50, extra: Place[] = []): Place[] {
   const q = query.trim().toLowerCase();
-  if (!q) return INDIA_PLACES.slice(0, limit);
+  const pool = extra.length
+    ? [
+        ...SEARCHABLE,
+        ...extra.map((place) => ({
+          place,
+          name: place.name.toLowerCase(),
+          state: place.state.toLowerCase(),
+        })),
+      ]
+    : SEARCHABLE;
+
+  if (!q) return pool.slice(0, limit).map((entry) => entry.place);
 
   const starts: Place[] = [];
   const contains: Place[] = [];
 
-  for (const place of INDIA_PLACES) {
-    const name = place.name.toLowerCase();
-    if (name.startsWith(q)) starts.push(place);
-    else if (name.includes(q) || place.state.toLowerCase().startsWith(q)) contains.push(place);
+  for (const entry of pool) {
+    if (entry.name.startsWith(q)) starts.push(entry.place);
+    else if (entry.name.includes(q) || entry.state.startsWith(q)) contains.push(entry.place);
     if (starts.length >= limit) break;
   }
 
