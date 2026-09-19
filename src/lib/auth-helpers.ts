@@ -68,6 +68,13 @@ export async function destinationAfterLogin(): Promise<"/home" | "/profile"> {
 /** Human-friendly copy for auth errors; never surfaces raw provider internals. */
 export function friendlyAuthError(message: string | undefined): string {
   const m = (message ?? "").toLowerCase();
+  // Firebase Phone Auth error codes (e.g. "Firebase: Error (auth/invalid-verification-code).")
+  // reach here too, since the phone-login path reuses this same helper.
+  if (m.includes("invalid-phone-number")) return "Please enter a valid mobile number.";
+  if (m.includes("invalid-verification-code"))
+    return "Incorrect verification code. Please try again.";
+  if (m.includes("too-many-requests") || m.includes("quota-exceeded"))
+    return "Too many attempts. Please wait a moment before trying again.";
   if (m.includes("invalid login credentials"))
     return "Incorrect email or password. Please try again.";
   if (m.includes("signups not allowed") || m.includes("user not found"))

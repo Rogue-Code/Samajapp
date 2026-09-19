@@ -42,11 +42,16 @@ const en = {
   "common.loading": "Loading Sangath…",
   "common.emailAddress": "Email Address",
   "common.emailPlaceholder": "you@email.com",
+  "common.mobileNumber": "Mobile Number",
+  "common.mobilePlaceholder": "98765 43210",
 
   // Login
   "login.welcome": "Welcome to Sangath",
   "login.tagline": "Connect with your family & community digitally.",
   "login.emailHelp": "We'll email you a 6-digit code to sign in. No password needed.",
+  "login.mobileHelp": "We'll text you a 6-digit code to sign in. No password needed.",
+  "login.useMobile": "Use mobile number instead",
+  "login.useEmail": "Use email instead",
   "login.sendCode": "Send login code",
   "login.sendingCode": "Sending code...",
   "login.newHere": "New to Sangath?",
@@ -57,6 +62,7 @@ const en = {
   "signup.subtitle":
     "Enter your email and we'll send you a 6-digit code to verify it. No password needed.",
   "signup.emailHelp": "We'll only use this to sign you in and keep your account secure.",
+  "signup.mobileHelp": "We'll only use this to sign you in and keep your account secure.",
   "signup.sendCode": "Send verification code",
   // Split around the two links it wraps, like the login consent line.
   "signup.consentPrefix": "By creating an account you agree to our",
@@ -376,11 +382,16 @@ const gu: Partial<Record<StringKey, string>> = {
   "common.loading": "સંગત લોડ થઈ રહ્યું છે…",
   "common.emailAddress": "ઈમેલ સરનામું",
   "common.emailPlaceholder": "you@email.com",
+  "common.mobileNumber": "મોબાઇલ નંબર",
+  "common.mobilePlaceholder": "98765 43210",
 
   // Login
   "login.welcome": "સંગતમાં આપનું સ્વાગત છે",
   "login.tagline": "તમારા પરિવાર અને સમાજ સાથે ડિજિટલ રીતે જોડાઓ.",
   "login.emailHelp": "સાઇન ઇન કરવા માટે અમે તમને 6 અંકનો કોડ ઈમેલ કરીશું. પાસવર્ડની જરૂર નથી.",
+  "login.mobileHelp": "સાઇન ઇન કરવા માટે અમે તમને 6 અંકનો કોડ SMS કરીશું. પાસવર્ડની જરૂર નથી.",
+  "login.useMobile": "તેના બદલે મોબાઇલ નંબરનો ઉપયોગ કરો",
+  "login.useEmail": "તેના બદલે ઈમેલનો ઉપયોગ કરો",
   "login.sendCode": "લોગિન કોડ મોકલો",
   "login.sendingCode": "કોડ મોકલી રહ્યા છીએ...",
   "login.newHere": "સંગતમાં નવા છો?",
@@ -391,6 +402,8 @@ const gu: Partial<Record<StringKey, string>> = {
   "signup.subtitle":
     "તમારું ઈમેલ દાખલ કરો, અમે તેની ચકાસણી માટે 6 અંકનો કોડ મોકલીશું. પાસવર્ડની જરૂર નથી.",
   "signup.emailHelp":
+    "અમે આનો ઉપયોગ ફક્ત તમને સાઇન ઇન કરવા અને એકાઉન્ટ સુરક્ષિત રાખવા માટે કરીશું.",
+  "signup.mobileHelp":
     "અમે આનો ઉપયોગ ફક્ત તમને સાઇન ઇન કરવા અને એકાઉન્ટ સુરક્ષિત રાખવા માટે કરીશું.",
   "signup.sendCode": "ચકાસણી કોડ મોકલો",
   "signup.consentPrefix": "એકાઉન્ટ બનાવીને તમે અમારી",
