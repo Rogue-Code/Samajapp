@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -10,11 +11,16 @@ export default defineConfig({
     __CAPACITOR_SPA__: "true",
   },
 
-  plugins: [
-    react(),
-    tsconfigPaths(),
-    tailwindcss(),
-  ],
+  plugins: [react(), tsconfigPaths(), tailwindcss()],
+
+  resolve: {
+    alias: {
+      // No TanStack Start Vite plugin in this config (see async-hooks-shim.ts) means
+      // createServerFn's module graph reaches node:async_hooks as plain code — swap
+      // in a browser-safe stand-in instead of letting Vite externalize it to nothing.
+      "node:async_hooks": path.resolve(__dirname, "src/lib/async-hooks-shim.ts"),
+    },
+  },
 
   build: {
     outDir: "dist",
