@@ -26,5 +26,10 @@ export const GRIEVANCE_OFFICER = "Chaudhary Devarsh";
  */
 export const DATA_REGION = "Singapore (ap-southeast-1)";
 
-/** Bump whenever either document changes in substance. */
-export const LAST_UPDATED = "25 August 2026";
+/**
+ * Bump whenever either document changes in substance.
+ *
+ * ISO rather than prose so the date can be formatted in the reader's language;
+ * `LegalPage` renders it through Intl with the active locale.
+ */
+export const LAST_UPDATED_ISO = "2026-09-21";

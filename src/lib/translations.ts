@@ -237,6 +237,10 @@ const en = {
   "account.profileUpdated": "Profile Updated",
   "account.legal": "Legal",
   "account.termsOfUse": "Terms of Use",
+
+  // Legal documents. The bodies live in legal-content.*.ts, not here — see
+  // the note there on why long-form legal text is kept out of this table.
+  "legal.lastUpdated": "Last updated {date}",
   "account.signOut": "Sign Out",
   "account.dangerZone": "Danger Zone",
   "account.deleteExplain":
@@ -579,6 +583,8 @@ const gu: Partial<Record<StringKey, string>> = {
   "account.profileUpdated": "પ્રોફાઇલ અપડેટ થઈ",
   "account.legal": "કાનૂની",
   "account.termsOfUse": "વપરાશની શરતો",
+
+  "legal.lastUpdated": "છેલ્લે અદ્યતન {date}",
   "account.signOut": "સાઇન આઉટ",
   "account.dangerZone": "જોખમી વિભાગ",
   "account.deleteExplain":

@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { bridgePhoneLoginCore, type BridgeInput } from "./lib/phone-auth.functions";
+import { deleteAccountCore, type DeleteAccountInput } from "./lib/account-deletion.functions";
 
 // The APK has no server of its own (see android/app/src/main/java/.../async-hooks
 // shim and vite.capacitor.config.ts), so it can't use bridgeFirebasePhoneLogin's
@@ -15,6 +16,12 @@ import { bridgePhoneLoginCore, type BridgeInput } from "./lib/phone-auth.functio
 // ID token itself is what's actually verified, this endpoint has no other secret to
 // protect from a wider origin.
 const PHONE_AUTH_BRIDGE_PATH = "/api/phone-auth-bridge";
+// Same reason as the bridge above: the APK cannot call a server function, and
+// this one has to run on a server because deleting the member's Firebase user
+// needs service-account credentials that must never reach a WebView. The
+// request carries the member's own Supabase access token and the handler
+// verifies it, so the fixed CORS origin is defence in depth, not the control.
+const ACCOUNT_DELETION_PATH = "/api/account-deletion";
 const CAPACITOR_ORIGIN = "https://localhost";
 
 function withCors(response: Response): Response {
@@ -47,6 +54,29 @@ async function handlePhoneAuthBridge(request: Request): Promise<Response> {
         headers: { "content-type": "application/json; charset=utf-8" },
       }),
     );
+  }
+}
+
+async function handleAccountDeletion(request: Request): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return withCors(new Response(null, { status: 204 }));
+  }
+  if (request.method !== "POST") {
+    return withCors(new Response("Method Not Allowed", { status: 405 }));
+  }
+  const json = (body: unknown, status = 200) =>
+    withCors(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+  try {
+    const body = (await request.json()) as DeleteAccountInput;
+    return json(await deleteAccountCore(body));
+  } catch (error) {
+    console.error(error);
+    return json({ ok: false, reason: "refused", message: "Account deletion failed." }, 500);
   }
 }
 
@@ -115,8 +145,12 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    if (new URL(request.url).pathname === PHONE_AUTH_BRIDGE_PATH) {
+    const { pathname } = new URL(request.url);
+    if (pathname === PHONE_AUTH_BRIDGE_PATH) {
       return handlePhoneAuthBridge(request);
+    }
+    if (pathname === ACCOUNT_DELETION_PATH) {
+      return handleAccountDeletion(request);
     }
     try {
       const handler = await getServerEntry();
