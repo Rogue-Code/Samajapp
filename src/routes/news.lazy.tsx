@@ -31,6 +31,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { DEPLOYED_ORIGIN } from "@/lib/deployed-origin";
 import { useLanguage, useT, type Lang, type TFunction } from "@/lib/i18n";
 import type { StringKey } from "@/lib/translations";
 import { relativeTime } from "@/lib/format";
@@ -55,11 +56,23 @@ type Post = {
   author_id: string | null;
   title: string;
   content: string;
+  // Machine-translated by /api/translate-post right after creation — null until
+  // that finishes (or if it failed), in which case postText() falls back to English.
+  title_gu: string | null;
+  content_gu: string | null;
   category: string;
   pinned: boolean;
   created_at: string;
   author: { full_name: string | null; avatar_url: string | null; role: string } | null;
 };
+
+/** What to actually show for a post in the current language. */
+function postText(post: Post, lang: Lang) {
+  if (lang === "gu" && post.title_gu && post.content_gu) {
+    return { title: post.title_gu, content: post.content_gu };
+  }
+  return { title: post.title, content: post.content };
+}
 
 const CATEGORY_META: Record<Category, { icon: typeof Megaphone; color: string }> = {
   Announcement: { icon: Megaphone, color: "from-primary to-accent-saffron" },
@@ -119,7 +132,34 @@ function sortFeed(rows: Post[]) {
 }
 
 const POST_SELECT =
-  "id, author_id, title, content, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, avatar_url, role)";
+  "id, author_id, title, content, title_gu, content_gu, category, pinned, created_at, author:profiles!posts_author_id_fkey(full_name, avatar_url, role)";
+
+/**
+ * Fires the machine translation for a newly-created post and reports back the
+ * result — never throws, since a failed/slow translation shouldn't block
+ * publishing; the post just shows English until this succeeds (if ever).
+ */
+async function translatePost(
+  postId: string,
+): Promise<{ title_gu: string; content_gu: string } | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return null;
+  try {
+    const response = await fetch(`${DEPLOYED_ORIGIN}/api/translate-post`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ postId, accessToken: session.access_token }),
+    });
+    if (!response.ok) return null;
+    const result = (await response.json()) as
+      { ok: true; title_gu: string; content_gu: string } | { ok: false };
+    return result.ok ? { title_gu: result.title_gu, content_gu: result.content_gu } : null;
+  } catch {
+    return null;
+  }
+}
 
 function NewsPage() {
   const navigate = useNavigate();
@@ -271,15 +311,25 @@ function NewsPage() {
     }
     setShowCreate(false);
     // Sort rather than prepend: an unpinned post belongs below any pinned ones.
-    if (data) setPosts((prev) => sortFeed([data as Post, ...prev]));
+    if (data) {
+      const newPost = data as Post;
+      setPosts((prev) => sortFeed([newPost, ...prev]));
+      // Fire-and-forget: publishing shouldn't wait on the translation, and a
+      // failed/slow one just leaves the post showing English for now.
+      void translatePost(newPost.id).then((translated) => {
+        if (!translated) return;
+        setPosts((prev) => prev.map((p) => (p.id === newPost.id ? { ...p, ...translated } : p)));
+      });
+    }
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const sharePost = async (p: Post) => {
-    const text = `${p.title}\n\n${p.content}`;
+    const { title, content } = postText(p, lang);
+    const text = `${title}\n\n${content}`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: p.title, text });
+        await navigator.share({ title, text });
         return;
       } catch {
         // Share sheet dismissed - fall through to the clipboard copy.
@@ -421,6 +471,7 @@ function PostCard({
   const Icon = meta.icon;
   const authorName = post.author?.full_name ?? t("news.formerMember");
   const authorRole = t(ROLE_KEY[post.author?.role ?? "member"] ?? "newsRole.member");
+  const { title, content } = postText(post, lang);
 
   return (
     <article
@@ -501,9 +552,9 @@ function PostCard({
 
       {/* Body */}
       <div className="px-4 pb-3">
-        <h3 className="text-base font-bold text-foreground leading-snug">{post.title}</h3>
+        <h3 className="text-base font-bold text-foreground leading-snug">{title}</h3>
         <p className="mt-1.5 text-sm text-foreground/85 leading-relaxed whitespace-pre-line">
-          {post.content}
+          {content}
         </p>
       </div>
 

@@ -22,6 +22,9 @@ const PHONE_AUTH_BRIDGE_PATH = "/api/phone-auth-bridge";
 // request carries the member's own Supabase access token and the handler
 // verifies it, so the fixed CORS origin is defence in depth, not the control.
 const ACCOUNT_DELETION_PATH = "/api/account-deletion";
+// Same reason again: the APK can't call a server function, and Workers AI's
+// binding is only reachable from server-side Worker code, never a WebView.
+const TRANSLATE_POST_PATH = "/api/translate-post";
 const CAPACITOR_ORIGIN = "https://localhost";
 
 function withCors(response: Response): Response {
@@ -77,6 +80,111 @@ async function handleAccountDeletion(request: Request): Promise<Response> {
   } catch (error) {
     console.error(error);
     return json({ ok: false, reason: "refused", message: "Account deletion failed." }, 500);
+  }
+}
+
+interface Ai {
+  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+}
+
+/**
+ * Fills in a post's title_gu/content_gu with a machine translation right after
+ * it's created, via Cloudflare Workers AI — see news.lazy.tsx's addPost.
+ *
+ * Uses a general chat model (llama-3.3-70b) with a translate-only system
+ * prompt rather than the dedicated translation model (@cf/meta/m2m100-1.2b):
+ * tried that first, and for real post-length English it produced fluent but
+ * completely hallucinated Gujarati — unrelated sentences about Indian
+ * politicians, and once a token stuck in a repeating loop — not just rough
+ * phrasing but content that didn't correspond to the input at all. The larger
+ * instruction-tuned model translated the same text correctly.
+ *
+ * Takes only a postId, not the text to translate:
+ * fetching the real row server-side (rather than trusting client-supplied
+ * text) means a caller can't make an arbitrary real post display translated
+ * text that doesn't match what it actually says.
+ *
+ * The access token proves the caller is a genuine signed-in member — cheap
+ * insurance against an anonymous script hammering this and burning Workers AI
+ * usage, not a content-permission check (the post already exists; RLS already
+ * gated who could create it).
+ */
+async function handleTranslatePost(request: Request): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return withCors(new Response(null, { status: 204 }));
+  }
+  if (request.method !== "POST") {
+    return withCors(new Response("Method Not Allowed", { status: 405 }));
+  }
+  const json = (body: unknown, status = 200) =>
+    withCors(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+  // Nitro's own SSR-service dispatch (node_modules/nitro/dist/_build/common's
+  // lazyService wrapper, invoked from the generated .output/server/index.mjs)
+  // only forwards the Request to this module's exported fetch — env and ctx
+  // are silently dropped, confirmed live via `wrangler tail` showing "Cannot
+  // read properties of undefined (reading 'AI')". Nitro works around this
+  // itself by stashing the real bindings on globalThis before dispatching
+  // (see createHandler's `globalThis.__env__ = env` in that same file), so we
+  // read it from there instead of trusting the fetch parameter.
+  const ai = (globalThis as unknown as { __env__?: { AI?: Ai } }).__env__?.AI;
+  if (!ai) return json({ ok: false }, 500);
+  try {
+    const { postId, accessToken } = (await request.json()) as {
+      postId: string;
+      accessToken: string;
+    };
+    if (!postId || !accessToken) throw new Error("Missing postId or accessToken");
+
+    const { supabaseAdmin } = await import("./integrations/supabase/client.server");
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (userError || !userData.user) throw new Error("Invalid session");
+
+    const { data: post, error: postError } = await supabaseAdmin
+      .from("posts")
+      .select("title, content")
+      .eq("id", postId)
+      .single();
+    if (postError || !post) throw new Error("Post not found");
+
+    const translate = async (text: string) => {
+      const result = (await ai.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional English to Gujarati translator. Translate the " +
+              "user's text to Gujarati. Output ONLY the Gujarati translation, with no " +
+              "preamble, explanation, or quotation marks.",
+          },
+          { role: "user", content: text },
+        ],
+      })) as { choices?: { message?: { content?: string } }[] };
+      const translated = result.choices?.[0]?.message?.content?.trim();
+      if (!translated) throw new Error("Translation failed");
+      return translated;
+    };
+
+    const [title_gu, content_gu] = await Promise.all([
+      translate(post.title),
+      translate(post.content),
+    ]);
+
+    const { error: updateError } = await supabaseAdmin
+      .from("posts")
+      .update({ title_gu, content_gu })
+      .eq("id", postId);
+    if (updateError) throw updateError;
+
+    return json({ ok: true, title_gu, content_gu });
+  } catch (error) {
+    console.error(error);
+    return json({ ok: false }, 400);
   }
 }
 
@@ -151,6 +259,9 @@ export default {
     }
     if (pathname === ACCOUNT_DELETION_PATH) {
       return handleAccountDeletion(request);
+    }
+    if (pathname === TRANSLATE_POST_PATH) {
+      return handleTranslatePost(request);
     }
     try {
       const handler = await getServerEntry();
