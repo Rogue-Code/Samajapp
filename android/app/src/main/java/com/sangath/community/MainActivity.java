@@ -14,6 +14,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(FirebasePhoneAuthPlugin.class);
         super.onCreate(savedInstanceState);
 
         // targetSdk 35+ enforces edge-to-edge, so on Android 15 and newer the

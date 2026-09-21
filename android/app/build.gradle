@@ -40,6 +40,14 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Native Firebase Auth for phone sign-in: the Firebase JS SDK's invisible reCAPTCHA
+    // can't get storage access inside our embedded WebView (Android's storage-partitioning
+    // blocks the third-party recaptcha.google.com iframe, with no browser chrome to grant
+    // it) — see FirebasePhoneAuthPlugin.java. The native SDK verifies via Play Integrity
+    // instead, and only falls back to reCAPTCHA through a real Custom Tab.
+    implementation platform('com.google.firebase:firebase-bom:34.17.0')
+    implementation 'com.google.firebase:firebase-auth'
 }
 
 apply from: 'capacitor.build.gradle'

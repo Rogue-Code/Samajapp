@@ -296,35 +296,59 @@ export type Database = {
           },
         ]
       }
+      phone_auth_identities: {
+        Row: {
+          created_at: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string | null
           category: string
           content: string
+          content_gu: string | null
           created_at: string
           id: string
           pinned: boolean
           title: string
+          title_gu: string | null
           updated_at: string
         }
         Insert: {
           author_id?: string | null
           category?: string
           content: string
+          content_gu?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
           title: string
+          title_gu?: string | null
           updated_at?: string
         }
         Update: {
           author_id?: string | null
           category?: string
           content?: string
+          content_gu?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
           title?: string
+          title_gu?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -518,7 +542,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_behaviour_daily: {
+        Row: {
+          day: string | null
+          new_users: number | null
+          tracked_actions: number | null
+        }
+        Relationships: []
+      }
+      user_behaviour_dashboard: {
+        Row: {
+          metric: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_custom_place: { Args: { place_name: string }; Returns: undefined }
@@ -601,6 +639,7 @@ export type Database = {
           village: string
         }[]
       }
+      phone_registered: { Args: { check_phone: string }; Returns: boolean }
       preview_family_by_code: {
         Args: { input_code: string }
         Returns: {

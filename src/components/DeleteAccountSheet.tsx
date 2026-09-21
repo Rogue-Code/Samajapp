@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SheetPortal } from "@/components/PhoneFrame";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { requestAccountDeletion } from "@/lib/account-deletion-helpers";
 import { useT } from "@/lib/i18n";
 
 const CONFIRM_WORD = "DELETE";
@@ -23,6 +24,12 @@ const CONFIRM_WORD = "DELETE";
  * 2. The session outlives the user. A JWT stays cryptographically valid until
  *    it expires, so the local session has to be torn down explicitly once the
  *    row is gone, and signOut() itself may fail against a deleted user.
+ *
+ * 3. Deletion no longer stops at Supabase. A member who signs in by mobile also
+ *    has a Firebase user holding that number, and removing it needs
+ *    service-account credentials — so the delete runs server-side, through
+ *    requestAccountDeletion(), rather than calling the RPC from here. See
+ *    account-deletion.functions.ts for why Supabase is deleted first.
  */
 export function DeleteAccountSheet({
   userId,
@@ -52,9 +59,11 @@ export function DeleteAccountSheet({
       await supabase.storage.from("avatars").remove(files.map((f) => `${userId}/${f.name}`));
     }
 
-    const { error: rpcError } = await supabase.rpc("delete_my_account");
-    if (rpcError) {
-      setError(rpcError.message || t("delete.failed"));
+    const result = await requestAccountDeletion();
+    if (!result.ok) {
+      // "refused" carries the database guard's own message (for example, being
+      // the only admin left), which the member needs in order to act on it.
+      setError(result.reason === "refused" ? result.message : t("delete.failed"));
       setDeleting(false);
       return;
     }

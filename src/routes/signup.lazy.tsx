@@ -1,7 +1,7 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Mail, Smartphone } from "lucide-react";
-import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
+import type { RecaptchaVerifier } from "firebase/auth";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { OtpInput } from "@/components/OtpInput";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ import {
   sendPhoneOtp,
   toE164India,
   verifyPhoneOtpAndSignIn,
+  type PhoneAuthSession,
 } from "@/lib/phone-auth-helpers";
 
 export const Route = createLazyFileRoute("/signup")({
@@ -41,7 +42,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
-  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const phoneSessionRef = useRef<PhoneAuthSession | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
@@ -95,6 +96,7 @@ function SignupPage() {
       }
     } else {
       const e164 = toE164India(mobile);
+      let session: PhoneAuthSession;
       try {
         if (await isPhoneRegistered(e164)) {
           setLoading(false);
@@ -104,10 +106,26 @@ function SignupPage() {
         if (!recaptchaRef.current) {
           recaptchaRef.current = createRecaptchaVerifier("recaptcha-container");
         }
-        confirmationRef.current = await sendPhoneOtp(e164, recaptchaRef.current);
+        session = await sendPhoneOtp(e164, recaptchaRef.current);
       } catch (err) {
         setLoading(false);
         setError(friendlyAuthError(err instanceof Error ? err.message : undefined));
+        return;
+      }
+      phoneSessionRef.current = session;
+
+      if (session.kind === "native-auto") {
+        // Play Integrity verified the device instantly — there's no code for
+        // the member to enter, so finish signing up instead of showing the
+        // code step at all.
+        const { data, error: verifyError } = await verifyPhoneOtpAndSignIn(session, "", true);
+        setLoading(false);
+        if (verifyError || !data.session) {
+          setError(friendlyAuthError(verifyError?.message));
+          return;
+        }
+        const dest = await destinationAfterLogin();
+        navigate({ to: dest });
         return;
       }
       setLoading(false);
@@ -124,7 +142,7 @@ function SignupPage() {
     const { data, error: verifyError } =
       method === "email"
         ? await verifyEmailOtp(email, code)
-        : await verifyPhoneOtpAndSignIn(confirmationRef.current!, code, true);
+        : await verifyPhoneOtpAndSignIn(phoneSessionRef.current!, code, true);
     if (verifyError || !data.session) {
       setError(friendlyAuthError(verifyError?.message));
       setCode("");
