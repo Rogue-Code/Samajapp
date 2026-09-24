@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { categoryLabel, categoryStyle, type Facility } from "@/lib/facilities-data";
 import { BottomNav } from "@/components/BottomNav";
-import { useT } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
+import { pickLang } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/facilities")({
   component: FacilitiesPage,
@@ -16,7 +17,7 @@ export const Route = createLazyFileRoute("/facilities")({
 
 function FacilitiesPage() {
   const navigate = useNavigate();
-  const t = useT();
+  const { lang, t } = useLanguage();
   const { checking, session } = useRequireAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,16 +131,18 @@ function FacilitiesPage() {
                   <div className="flex-1 min-w-0 p-3">
                     <div className="flex items-start gap-1.5">
                       <h3 className="flex-1 font-semibold text-foreground text-sm leading-tight line-clamp-2">
-                        {f.name}
+                        {pickLang(f.name, f.name_gu, lang)}
                       </h3>
                       {f.verified && <BadgeCheck className="w-4 h-4 text-primary shrink-0" />}
                     </div>
                     <span className="mt-1.5 inline-block text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                       {categoryLabel(f.category, t)}
                     </span>
-                    <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
-                      {f.description}
-                    </p>
+                    {f.description && (
+                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
+                        {pickLang(f.description, f.description_gu, lang)}
+                      </p>
+                    )}
                     {/* Office details — what the previous city/state line was
                         replaced with: the office's actual address, phone and
                         the person who runs it, rather than a coarse location. */}

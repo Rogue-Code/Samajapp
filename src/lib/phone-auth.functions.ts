@@ -13,6 +13,16 @@ function syntheticEmailFor(phone: string) {
   return `${phone.replace("+", "")}@${SYNTHETIC_EMAIL_DOMAIN}`;
 }
 
+/**
+ * True for the placeholder address a phone-only account has on `auth.users`.
+ * Exported so client screens (Account) can tell "this is a real email" from
+ * "this is bookkeeping the login system needed" and avoid showing the
+ * internal placeholder to a member as if it were their email address.
+ */
+export function isSyntheticPhoneEmail(email: string | null | undefined): boolean {
+  return !!email && email.endsWith(`@${SYNTHETIC_EMAIL_DOMAIN}`);
+}
+
 export interface BridgeInput {
   idToken: string;
   createUser: boolean;

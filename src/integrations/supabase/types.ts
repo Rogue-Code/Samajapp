@@ -96,6 +96,7 @@ export type Database = {
           location: string | null
           starts_at: string
           title: string
+          title_gu: string | null
           updated_at: string
         }
         Insert: {
@@ -107,6 +108,7 @@ export type Database = {
           location?: string | null
           starts_at: string
           title: string
+          title_gu?: string | null
           updated_at?: string
         }
         Update: {
@@ -118,6 +120,7 @@ export type Database = {
           location?: string | null
           starts_at?: string
           title?: string
+          title_gu?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -138,12 +141,15 @@ export type Database = {
           city: string
           created_at: string
           description: string | null
+          description_gu: string | null
           email: string | null
           established: number | null
           head: string | null
           id: string
           long_description: string | null
+          long_description_gu: string | null
           name: string
+          name_gu: string | null
           phone: string | null
           state: string
           timings: string | null
@@ -158,12 +164,15 @@ export type Database = {
           city: string
           created_at?: string
           description?: string | null
+          description_gu?: string | null
           email?: string | null
           established?: number | null
           head?: string | null
           id: string
           long_description?: string | null
+          long_description_gu?: string | null
           name: string
+          name_gu?: string | null
           phone?: string | null
           state: string
           timings?: string | null
@@ -178,12 +187,15 @@ export type Database = {
           city?: string
           created_at?: string
           description?: string | null
+          description_gu?: string | null
           email?: string | null
           established?: number | null
           head?: string | null
           id?: string
           long_description?: string | null
+          long_description_gu?: string | null
           name?: string
+          name_gu?: string | null
           phone?: string | null
           state?: string
           timings?: string | null

@@ -1,4 +1,7 @@
 import { ChevronRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { useT } from "@/lib/i18n";
+import type { TFunction } from "@/lib/i18n";
+import { relationLabel } from "@/lib/profile-options";
 
 export type FamilyNode = {
   id: string;
@@ -39,20 +42,27 @@ const GENERATION: Record<string, number> = {
   Daughter: 3,
 };
 
-const GENERATION_LABEL: Record<number, string> = {
-  0: "Grandparents",
-  1: "Parents",
-  2: "Same generation",
-  3: "Children",
-  4: "Other relatives",
+const GENERATION_KEY: Record<number, "grandparents" | "parents" | "same" | "children" | "other"> = {
+  0: "grandparents",
+  1: "parents",
+  2: "same",
+  3: "children",
+  4: "other",
 };
 
-const STATUS_META: Record<string, { icon: typeof CheckCircle2; className: string; label: string }> =
-  {
-    verified: { icon: CheckCircle2, className: "text-success", label: "Verified" },
-    pending: { icon: Clock, className: "text-warning", label: "Pending" },
-    approval: { icon: AlertCircle, className: "text-destructive", label: "Needs approval" },
-  };
+function generationLabel(gen: number, t: TFunction): string {
+  return t(`familyTree.generation.${GENERATION_KEY[gen] ?? "other"}`);
+}
+
+const STATUS_META: Record<string, { icon: typeof CheckCircle2; className: string }> = {
+  verified: { icon: CheckCircle2, className: "text-success" },
+  pending: { icon: Clock, className: "text-warning" },
+  approval: { icon: AlertCircle, className: "text-destructive" },
+};
+
+function statusLabel(status: string, t: TFunction): string {
+  return t(`familyStatus.${status in STATUS_META ? status : "pending"}` as never);
+}
 
 function ageFromYear(year: number | null) {
   return year ? new Date().getFullYear() - year : null;
@@ -77,6 +87,7 @@ export function FamilyTree({
   selfAvatarUrl: string | null;
   onOpen: (profileId: string) => void;
 }) {
+  const t = useT();
   const rows = [0, 1, 2, 3, 4]
     .map((gen) => ({ gen, people: members.filter((m) => generationOf(m.relation) === gen) }))
     // Generation 2 always renders, since the member themself sits there.
@@ -87,7 +98,7 @@ export function FamilyTree({
       {rows.map((row, rowIndex) => (
         <div key={row.gen}>
           <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-2">
-            {GENERATION_LABEL[row.gen]}
+            {generationLabel(row.gen, t)}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -124,6 +135,7 @@ function Connector() {
 }
 
 function SelfCard({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-2.5 rounded-2xl border-2 border-primary bg-primary-soft px-3 py-2.5 min-w-[46%] flex-1">
       <div className="w-9 h-9 rounded-xl overflow-hidden bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
@@ -135,7 +147,7 @@ function SelfCard({ name, avatarUrl }: { name: string; avatarUrl: string | null 
       </div>
       <div className="min-w-0">
         <div className="text-sm font-semibold text-foreground truncate">{name}</div>
-        <div className="text-[11px] text-primary font-medium">This member</div>
+        <div className="text-[11px] text-primary font-medium">{t("familyTree.thisMember")}</div>
       </div>
     </div>
   );
@@ -148,6 +160,7 @@ function PersonCard({
   person: FamilyNode;
   onOpen: (profileId: string) => void;
 }) {
+  const t = useT();
   const age = ageFromYear(person.birth_year);
   const status = STATUS_META[person.status] ?? STATUS_META.pending;
   const StatusIcon = status.icon;
@@ -167,12 +180,12 @@ function PersonCard({
           <span className="truncate">{person.full_name}</span>
           <StatusIcon
             className={`w-3 h-3 shrink-0 ${status.className}`}
-            aria-label={status.label}
+            aria-label={statusLabel(person.status, t)}
           />
         </div>
         <div className="text-[11px] text-muted-foreground truncate">
-          {person.relation}
-          {age !== null && ` · ${age} yrs`}
+          {relationLabel(person.relation, t)}
+          {age !== null && ` · ${t("family.yearsOld", { count: age })}`}
         </div>
       </div>
       {linked && <ChevronRight className="w-4 h-4 text-primary shrink-0" />}

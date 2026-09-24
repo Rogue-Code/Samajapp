@@ -9,13 +9,7 @@ import { useT } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/legal";
 import { OtpInput } from "@/components/OtpInput";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  destinationAfterLogin,
-  friendlyAuthError,
-  isValidEmail,
-  sendEmailOtp,
-  verifyEmailOtp,
-} from "@/lib/auth-helpers";
+import { destinationAfterLogin, friendlyAuthError } from "@/lib/auth-helpers";
 import {
   createRecaptchaVerifier,
   isPhoneRegistered,
@@ -33,12 +27,14 @@ export const Route = createLazyFileRoute("/")({
 /** Seconds before the member may ask for another code. */
 const RESEND_DELAY = 45;
 
+// Mobile-only sign-in: Sangath no longer offers email as a login method (see
+// signup.lazy.tsx for the matching removal). Existing members who originally
+// registered by email — before phone sign-in existed — have no self-serve way
+// back in under this change; that gap is deliberate and known, not an oversight.
 function LoginPage() {
   const navigate = useNavigate();
   const t = useT();
-  const [method, setMethod] = useState<"email" | "phone">("email");
-  const [step, setStep] = useState<"email" | "code">("email");
-  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<"mobile" | "code">("mobile");
   const [mobile, setMobile] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,12 +72,7 @@ function LoginPage() {
   }, [cooldown]);
 
   const sendCode = async () => {
-    if (method === "email") {
-      if (!isValidEmail(email)) {
-        setError("Please enter a valid email address.");
-        return;
-      }
-    } else if (!isValidIndianMobile(mobile)) {
+    if (!isValidIndianMobile(mobile)) {
       setError("Please enter a valid 10-digit mobile number.");
       return;
     }
@@ -89,53 +80,48 @@ function LoginPage() {
     setError("");
     setLoading(true);
 
-    if (method === "email") {
-      // createUser stays false here: an unknown address should say so rather than
-      // quietly create an account from the login screen.
-      const { error: otpError } = await sendEmailOtp(email, false);
-      setLoading(false);
-      if (otpError) {
-        setError(friendlyAuthError(otpError.message));
-        return;
-      }
-    } else {
-      const e164 = toE164India(mobile);
-      let session: PhoneAuthSession;
-      try {
-        // Firebase has no notion of "registered in our app" — check ourselves
-        // first so an unknown number never burns an SMS.
-        if (!(await isPhoneRegistered(e164))) {
-          setLoading(false);
-          setError("No account found for this number. Please sign up first.");
-          return;
-        }
-        if (!recaptchaRef.current) {
-          recaptchaRef.current = createRecaptchaVerifier("recaptcha-container");
-        }
-        session = await sendPhoneOtp(e164, recaptchaRef.current);
-      } catch (err) {
+    const e164 = toE164India(mobile);
+    let session: PhoneAuthSession;
+    try {
+      // Firebase has no notion of "registered in our app" — check ourselves
+      // first so an unknown number never burns an SMS.
+      if (!(await isPhoneRegistered(e164))) {
         setLoading(false);
-        setError(friendlyAuthError(err instanceof Error ? err.message : undefined));
+        setError("No account found for this number. Please sign up first.");
         return;
       }
-      phoneSessionRef.current = session;
-
-      if (session.kind === "native-auto") {
-        // Play Integrity verified the device instantly — there's no code for
-        // the member to enter, so finish signing in instead of showing the
-        // code step at all.
-        const { data, error: verifyError } = await verifyPhoneOtpAndSignIn(session, "", false);
-        setLoading(false);
-        if (verifyError || !data.session) {
-          setError(friendlyAuthError(verifyError?.message));
-          return;
-        }
-        const dest = await destinationAfterLogin();
-        navigate({ to: dest });
-        return;
-      }
+      // A fresh verifier every attempt, not just the first: Firebase's
+      // invisible reCAPTCHA token is single-use, consumed the moment
+      // signInWithPhoneNumber sends it — whether that call succeeds or
+      // fails. Reusing recaptchaRef.current on a retry (a typo'd number,
+      // "Resend code", or any other second attempt on the same mount) hands
+      // Firebase an already-spent token, which it rejects as
+      // auth/invalid-app-credential rather than re-checking it.
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = createRecaptchaVerifier("recaptcha-container");
+      session = await sendPhoneOtp(e164, recaptchaRef.current);
+    } catch (err) {
       setLoading(false);
+      setError(friendlyAuthError(err instanceof Error ? err.message : undefined));
+      return;
     }
+    phoneSessionRef.current = session;
+
+    if (session.kind === "native-auto") {
+      // Play Integrity verified the device instantly — there's no code for
+      // the member to enter, so finish signing in instead of showing the
+      // code step at all.
+      const { data, error: verifyError } = await verifyPhoneOtpAndSignIn(session, "", false);
+      setLoading(false);
+      if (verifyError || !data.session) {
+        setError(friendlyAuthError(verifyError?.message));
+        return;
+      }
+      const dest = await destinationAfterLogin();
+      navigate({ to: dest });
+      return;
+    }
+    setLoading(false);
     setCode("");
     setStep("code");
     setCooldown(RESEND_DELAY);
@@ -145,10 +131,11 @@ function LoginPage() {
     if (code.length !== 6 || loading) return;
     setError("");
     setLoading(true);
-    const { data, error: verifyError } =
-      method === "email"
-        ? await verifyEmailOtp(email, code)
-        : await verifyPhoneOtpAndSignIn(phoneSessionRef.current!, code, false);
+    const { data, error: verifyError } = await verifyPhoneOtpAndSignIn(
+      phoneSessionRef.current!,
+      code,
+      false,
+    );
     if (verifyError || !data.session) {
       setError(friendlyAuthError(verifyError?.message));
       setCode("");
@@ -192,7 +179,7 @@ function LoginPage() {
           className="flex-1 flex flex-col justify-center fade-up"
           style={{ animationDelay: "60ms" }}
         >
-          {step === "email" ? (
+          {step === "mobile" ? (
             <>
               <h1 className="text-3xl font-bold text-foreground tracking-tight leading-tight mt-4">
                 {t("login.welcome")}
@@ -208,60 +195,32 @@ function LoginPage() {
                   void sendCode();
                 }}
               >
-                {method === "email" ? (
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      {t("common.emailAddress")}
-                    </label>
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <input
-                        type="email"
-                        inputMode="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder={t("common.emailPlaceholder")}
-                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 px-1">
-                      {t("login.emailHelp")}
-                    </p>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    {t("common.mobileNumber")}
+                  </label>
+                  <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                    <Smartphone className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-foreground text-base">+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      maxLength={10}
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      placeholder={t("common.mobilePlaceholder")}
+                      className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
+                    />
                   </div>
-                ) : (
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      {t("common.mobileNumber")}
-                    </label>
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-14 shadow-soft focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                      <Smartphone className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-foreground text-base">+91</span>
-                      <input
-                        type="tel"
-                        inputMode="numeric"
-                        autoComplete="tel-national"
-                        maxLength={10}
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                        placeholder={t("common.mobilePlaceholder")}
-                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-base"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 px-1">
-                      {t("login.mobileHelp")}
-                    </p>
-                  </div>
-                )}
+                  <p className="text-xs text-muted-foreground mt-2 px-1">{t("login.mobileHelp")}</p>
+                </div>
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <button
                   type="submit"
-                  disabled={
-                    (method === "email" ? !isValidEmail(email) : !isValidIndianMobile(mobile)) ||
-                    loading
-                  }
+                  disabled={!isValidIndianMobile(mobile) || loading}
                   className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated transition-all disabled:opacity-40 disabled:shadow-none active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {loading ? (
@@ -271,17 +230,6 @@ function LoginPage() {
                   ) : (
                     t("login.sendCode")
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError("");
-                    setMethod((m) => (m === "email" ? "phone" : "email"));
-                  }}
-                  className="w-full text-center text-sm font-semibold text-primary"
-                >
-                  {method === "email" ? t("login.useMobile") : t("login.useEmail")}
                 </button>
               </form>
 
@@ -299,7 +247,7 @@ function LoginPage() {
           ) : (
             <>
               <button
-                onClick={() => setStep("email")}
+                onClick={() => setStep("mobile")}
                 className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition mb-6"
                 aria-label={t("common.back")}
               >
@@ -311,9 +259,7 @@ function LoginPage() {
               </h1>
               <p className="text-muted-foreground mt-2 text-base leading-relaxed">
                 {t("otp.sentToPrefix")}{" "}
-                <span className="font-medium text-foreground">
-                  {method === "email" ? email : toE164India(mobile)}
-                </span>
+                <span className="font-medium text-foreground">{toE164India(mobile)}</span>
                 {t("otp.sentToSuffix")}
               </p>
 

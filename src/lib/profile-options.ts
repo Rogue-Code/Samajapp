@@ -1,3 +1,6 @@
+import type { TFunction } from "@/lib/i18n";
+import type { StringKey } from "@/lib/translations";
+
 /**
  * Choices shared by Profile Setup and the Account editor.
  *
@@ -45,6 +48,28 @@ export function occupationKeySuffix(option: OccupationOption): string {
 }
 
 /**
+ * A member's occupation is free text (see the note above OCCUPATION_OPTIONS),
+ * so a stored value outside the preset list is real and shown exactly as
+ * typed — same fallback shape as facilities-data.ts's categoryLabel.
+ */
+export function occupationLabel(occupation: string, t: TFunction): string {
+  const preset = OCCUPATION_OPTIONS.find((o) => o === occupation);
+  if (!preset) return occupation;
+  return t(`profile.occupation.${occupationKeySuffix(preset)}` as StringKey);
+}
+
+/**
+ * The column is plain text with no CHECK constraint, so — same as occupation —
+ * a value outside MARITAL_OPTIONS is shown exactly as stored rather than
+ * silently dropped.
+ */
+export function maritalLabel(status: string, t: TFunction): string {
+  const known = MARITAL_OPTIONS.find((o) => o === status);
+  if (!known) return status;
+  return t(`profile.marital.${known}` as StringKey);
+}
+
+/**
  * Relation-to-admin choices, shared by Manage Family (adding a free-text
  * member) and the family-code join flow (declaring how the requester relates
  * to the admin they are asking to join).
@@ -63,3 +88,15 @@ export const RELATIONS = [
 ] as const;
 
 export type Relation = (typeof RELATIONS)[number];
+
+/**
+ * `family_members.relation` and `family_join_requests.relation` are both
+ * plain text, so — same reasoning as occupation/marital — a relation typed
+ * before this list existed, or one that otherwise doesn't match a preset,
+ * is shown exactly as stored rather than silently dropped.
+ */
+export function relationLabel(relation: string, t: TFunction): string {
+  const known = RELATIONS.find((r) => r === relation);
+  if (!known) return relation;
+  return t(`relation.${known}` as StringKey);
+}
