@@ -59,7 +59,7 @@ export const EN_LEGAL: LegalBundle = {
           {
             kind: "highlight",
             title: "There is no password — the code is the key",
-            text: "You sign in with a 6-digit code sent to your email or your phone, so whoever can read that inbox or receive that SMS can sign in as you. **Never share a login code with anyone**, including someone claiming to be from Sangath or from the samaj — we will never ask you for one. If you lose access to the number or address on your account, or think someone else has used it, tell us at {email}.",
+            text: "You sign in with a 6-digit code sent by SMS, so whoever can receive that text can sign in as you. **Never share a login code with anyone**, including someone claiming to be from Sangath or from the samaj — we will never ask you for one. If you lose access to the number on your account, or think someone else has used it, tell us at {email}.",
           },
         ],
       },
@@ -209,15 +209,16 @@ export const EN_LEGAL: LegalBundle = {
           {
             kind: "bullets",
             items: [
-              "Your name, and either your email address or your Indian mobile number — whichever you choose to sign in with.",
-              "There is no password. Signing in means receiving a 6-digit code, by email or by SMS, which stops working after about ten minutes.",
-              "If you sign up with your mobile number, we record that number as a verified sign-in identity and place an internal address on the account, because the login system needs one field of that shape. Nothing is ever sent to it and no one can write to it.",
+              "Your Indian mobile number, which is how you sign in.",
+              "There is no password. Signing in means receiving a 6-digit SMS code, which stops working after about ten minutes.",
+              "We record your mobile number as a verified sign-in identity, and place an internal placeholder address on the account because the login system needs one field of that shape. Nothing is ever sent to it and no one can write to it — it is bookkeeping, not a real inbox.",
             ],
           },
           { kind: "p", text: "When you fill in your profile:" },
           {
             kind: "bullets",
             items: [
+              "Your full name.",
               "Mobile number, date of birth, gender and marital status.",
               "Village, city and state.",
               "Occupation.",
@@ -234,7 +235,7 @@ export const EN_LEGAL: LegalBundle = {
           },
           {
             kind: "p",
-            text: "Every profile field beyond your name and email is optional. Leaving one blank means it is not collected and not shown to anyone.",
+            text: "Every profile field beyond your name is optional. Leaving one blank means it is not collected and not shown to anyone.",
           },
         ],
       },
@@ -279,10 +280,7 @@ export const EN_LEGAL: LegalBundle = {
           { kind: "p", text: "Visible only to you:" },
           {
             kind: "bullets",
-            items: [
-              "Your email address and your exact date of birth.",
-              "The facilities you have saved.",
-            ],
+            items: ["Your exact date of birth.", "The facilities you have saved."],
           },
           {
             kind: "p",
@@ -322,14 +320,13 @@ export const EN_LEGAL: LegalBundle = {
           {
             kind: "bullets",
             items: [
-              "**Google**, through Firebase, handles mobile sign-in. Your number is sent to Firebase, which delivers the SMS and checks the request is not automated — with a reCAPTCHA check in the browser, or a Google Play integrity check in the Android app. Google processes this on its own servers, which are outside India.",
-              "**Google**, again, carries the email codes: they are sent through a Gmail account, so your address and the code pass through Google's mail servers.",
-              "**Cloudflare** runs Sangath's own server. When you sign in by mobile it briefly handles your number to exchange Google's proof for a Sangath session. It does not store the number.",
+              "**Google**, through Firebase, handles sign-in. Your number is sent to Firebase, which delivers the SMS and checks the request is not automated — with a reCAPTCHA check in the browser, or a Google Play integrity check in the Android app. Google processes this on its own servers, which are outside India.",
+              "**Cloudflare** runs Sangath's own server. When you sign in it briefly handles your number to exchange Google's proof for a Sangath session. It does not store the number.",
             ],
           },
           {
             kind: "p",
-            text: "None of these companies are permitted to use your data for their own purposes. We use them because sending SMS and email reliably is not something a community app can do on its own.",
+            text: "Neither company is permitted to use your data for their own purposes. We use them because sending SMS reliably is not something a community app can do on its own.",
           },
           {
             kind: "highlight",
@@ -338,7 +335,7 @@ export const EN_LEGAL: LegalBundle = {
           },
           {
             kind: "p",
-            text: "Because signing in means receiving a code, the email address or mobile number on an account has been proven to belong to whoever signed in with it — you cannot get into an account without receiving its code. A mobile number typed into your **profile** is different: that is ordinary contact information you can edit freely, it is not checked by anyone, and it need not be the number you sign in with.",
+            text: "Because signing in means receiving a code, the mobile number on an account has been proven to belong to whoever signed in with it — you cannot get into an account without receiving its code. That number is also the one shown on your **profile**; you cannot change it yourself, so it always matches the number you actually sign in with. If it needs correcting — a lost or reassigned number, for instance — write to {email} and we will fix it directly.",
           },
         ],
       },
@@ -360,11 +357,11 @@ export const EN_LEGAL: LegalBundle = {
           },
           {
             kind: "p",
-            text: "One thing deletion does not yet reach on its own: if you signed in by mobile, Google still holds the record that proved you own that number. Deleting your Sangath account does not automatically remove it there. Ask us at {email} and we will delete it, and we intend to make this automatic.",
+            text: "One thing deletion does not yet reach on its own: Google still holds the record that proved you own your sign-in number. Deleting your Sangath account does not automatically remove it there. Ask us at {email} and we will delete it, and we intend to make this automatic.",
           },
           {
             kind: "p",
-            text: "If you would rather we did the whole thing for you, or you cannot sign in, email {email} from the address or number on your account and we will delete it within 30 days.",
+            text: "If you would rather we did the whole thing for you, or you cannot sign in, email {email} with the mobile number on your account and we will delete it within 30 days.",
           },
         ],
       },

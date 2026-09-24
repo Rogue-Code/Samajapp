@@ -21,6 +21,8 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
+import { useT } from "@/lib/i18n";
+import type { StringKey } from "@/lib/translations";
 
 export const Route = createLazyFileRoute("/fundraiser")({
   component: FundraiserPage,
@@ -28,8 +30,8 @@ export const Route = createLazyFileRoute("/fundraiser")({
 
 type Campaign = {
   id: number;
-  title: string;
-  desc: string;
+  titleKey: StringKey;
+  descKey: StringKey | null;
   target: number;
   raised: number;
   donors: number;
@@ -38,10 +40,14 @@ type Campaign = {
   bg: string;
 };
 
+// Everything on this page is placeholder content — see the note further down
+// by the "Donations are not open yet" notice. Translated the same as any
+// other UI copy on this page (a StringKey, not a machine-translated DB
+// field), since none of it is real data yet.
 const activeCampaign: Campaign = {
   id: 1,
-  title: "Education Scholarship Fund 2026",
-  desc: "Supporting 200+ meritorious students of the community with tuition, books, and exam fees for the 2026-27 academic year.",
+  titleKey: "fundraiser.mock.activeCampaignTitle",
+  descKey: "fundraiser.mock.activeCampaignDesc",
   target: 2500000,
   raised: 1250000,
   donors: 542,
@@ -53,8 +59,8 @@ const activeCampaign: Campaign = {
 const pastCampaigns: Campaign[] = [
   {
     id: 2,
-    title: "Scholarship Fund 2025",
-    desc: "",
+    titleKey: "fundraiser.mock.pastCampaign1Title",
+    descKey: null,
     target: 2000000,
     raised: 2400000,
     donors: 612,
@@ -64,8 +70,8 @@ const pastCampaigns: Campaign[] = [
   },
   {
     id: 3,
-    title: "Community Hall Renovation",
-    desc: "",
+    titleKey: "fundraiser.mock.pastCampaign2Title",
+    descKey: null,
     target: 5000000,
     raised: 5300000,
     donors: 1024,
@@ -75,8 +81,8 @@ const pastCampaigns: Campaign[] = [
   },
   {
     id: 4,
-    title: "Medical Assistance Drive",
-    desc: "",
+    titleKey: "fundraiser.mock.pastCampaign3Title",
+    descKey: null,
     target: 500000,
     raised: 480000,
     donors: 287,
@@ -86,12 +92,50 @@ const pastCampaigns: Campaign[] = [
   },
 ];
 
-const recentDonations = [
-  { id: 1, name: "Ramesh Patel", amount: 1001, time: "2 hours ago", anonymous: false },
-  { id: 2, name: "Mahesh Shah", amount: 5001, time: "Yesterday", anonymous: false },
-  { id: 3, name: "Anonymous Donor", amount: 2501, time: "Yesterday", anonymous: true },
-  { id: 4, name: "Nirav Mehta", amount: 501, time: "2 days ago", anonymous: false },
-  { id: 5, name: "Priya Joshi", amount: 11000, time: "3 days ago", anonymous: false },
+type MockDonation = {
+  id: number;
+  nameKey: StringKey;
+  amount: number;
+  timeKey: StringKey;
+  anonymous: boolean;
+};
+
+const recentDonations: MockDonation[] = [
+  {
+    id: 1,
+    nameKey: "fundraiser.mock.donor1Name",
+    amount: 1001,
+    timeKey: "fundraiser.mock.time2HoursAgo",
+    anonymous: false,
+  },
+  {
+    id: 2,
+    nameKey: "fundraiser.mock.donor2Name",
+    amount: 5001,
+    timeKey: "fundraiser.mock.timeYesterday",
+    anonymous: false,
+  },
+  {
+    id: 3,
+    nameKey: "fundraiser.mock.donor3Name",
+    amount: 2501,
+    timeKey: "fundraiser.mock.timeYesterday",
+    anonymous: true,
+  },
+  {
+    id: 4,
+    nameKey: "fundraiser.mock.donor4Name",
+    amount: 501,
+    timeKey: "fundraiser.mock.time2DaysAgo",
+    anonymous: false,
+  },
+  {
+    id: 5,
+    nameKey: "fundraiser.mock.donor5Name",
+    amount: 11000,
+    timeKey: "fundraiser.mock.time3DaysAgo",
+    anonymous: false,
+  },
 ];
 
 function formatINR(n: number) {
@@ -107,6 +151,7 @@ function shortINR(n: number) {
 function FundraiserPage() {
   const navigate = useNavigate();
   const goBack = useGoBack();
+  const t = useT();
   const { checking, session } = useRequireAuth();
   const { canPublish } = useProfileRole(session);
 
@@ -126,13 +171,13 @@ function FundraiserPage() {
             <button
               onClick={goBack}
               className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
-              aria-label="Back"
+              aria-label={t("common.back")}
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-muted-foreground">Give Back</div>
-              <div className="font-semibold text-foreground truncate">Fundraiser & Donations</div>
+              <div className="text-xs text-muted-foreground">{t("fundraiser.eyebrow")}</div>
+              <div className="font-semibold text-foreground truncate">{t("fundraiser.header")}</div>
             </div>
             <button className="relative w-11 h-11 rounded-full bg-muted flex items-center justify-center">
               <Bell className="w-5 h-5 text-foreground" />
@@ -151,7 +196,7 @@ function FundraiserPage() {
                 <span className="text-7xl opacity-90">{activeCampaign.emoji}</span>
                 <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-[11px] font-bold uppercase tracking-wider text-success">
                   <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  Active Campaign
+                  {t("fundraiser.activeCampaignBadge")}
                 </span>
                 <button className="absolute top-3 right-3 w-11 h-11 rounded-full bg-card/95 flex items-center justify-center">
                   <Share2 className="w-4 h-4 text-foreground" />
@@ -159,21 +204,25 @@ function FundraiserPage() {
               </div>
               <div className="p-4">
                 <h2 className="text-lg font-bold text-foreground leading-snug">
-                  {activeCampaign.title}
+                  {t(activeCampaign.titleKey)}
                 </h2>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                  {activeCampaign.desc}
-                </p>
+                {activeCampaign.descKey && (
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                    {t(activeCampaign.descKey)}
+                  </p>
+                )}
 
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="text-[11px] text-muted-foreground">Raised</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {t("fundraiser.raised")}
+                    </div>
                     <div className="text-xl font-bold text-foreground">
                       {shortINR(activeCampaign.raised)}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-muted-foreground">Goal</div>
+                    <div className="text-[11px] text-muted-foreground">{t("fundraiser.goal")}</div>
                     <div className="text-sm font-semibold text-foreground">
                       {shortINR(activeCampaign.target)}
                     </div>
@@ -188,10 +237,12 @@ function FundraiserPage() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1 font-medium text-primary">
-                    <TrendingUp className="w-3.5 h-3.5" /> {progress}% funded
+                    <TrendingUp className="w-3.5 h-3.5" />{" "}
+                    {t("fundraiser.percentFunded", { percent: progress })}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" /> {activeCampaign.donors} contributors
+                    <Users className="w-3.5 h-3.5" />{" "}
+                    {t("fundraiser.contributors", { count: activeCampaign.donors })}
                   </span>
                 </div>
               </div>
@@ -204,13 +255,14 @@ function FundraiserPage() {
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                 <div>
-                  <h2 className="text-sm font-bold text-foreground">Donations are not open yet</h2>
+                  <h2 className="text-sm font-bold text-foreground">
+                    {t("fundraiser.notOpenTitle")}
+                  </h2>
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                    This page is still being built. Payment details will be published here once the
-                    committee has confirmed the account to collect into.
+                    {t("fundraiser.notOpenBody1")}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    Please do not send money based on anything shown on this screen.
+                    {t("fundraiser.notOpenBody2")}
                   </p>
                 </div>
               </div>
@@ -219,10 +271,11 @@ function FundraiserPage() {
 
           {/* Recent contributions */}
           <section className="px-5 pt-6">
-            <SectionHeader title="Recent Contributions" />
+            <SectionHeader title={t("fundraiser.recentContributions")} />
             <div className="mt-3 rounded-2xl bg-card border border-border shadow-card divide-y divide-border overflow-hidden">
               {recentDonations.map((d) => {
-                const initial = d.anonymous ? "?" : d.name.charAt(0);
+                const name = t(d.nameKey);
+                const initial = d.anonymous ? "?" : name.charAt(0);
                 return (
                   <div key={d.id} className="flex items-center gap-3 p-3.5">
                     <div
@@ -235,8 +288,8 @@ function FundraiserPage() {
                       {initial}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground truncate">{d.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{d.time}</div>
+                      <div className="text-sm font-semibold text-foreground truncate">{name}</div>
+                      <div className="text-[11px] text-muted-foreground">{t(d.timeKey)}</div>
                     </div>
                     <div className="text-sm font-bold text-success">+{formatINR(d.amount)}</div>
                   </div>
@@ -247,7 +300,7 @@ function FundraiserPage() {
 
           {/* Past campaigns */}
           <section className="px-5 pt-6">
-            <SectionHeader title="Past Campaigns" />
+            <SectionHeader title={t("fundraiser.pastCampaigns")} />
             <div className="mt-3 space-y-3">
               {pastCampaigns.map((c) => {
                 const pct = Math.min(100, Math.round((c.raised / c.target) * 100));
@@ -265,7 +318,7 @@ function FundraiserPage() {
                     <div className="flex-1 min-w-0 p-3">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
-                          {c.title}
+                          {t(c.titleKey)}
                         </h3>
                         <span
                           className={`shrink-0 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
@@ -274,17 +327,19 @@ function FundraiserPage() {
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {c.status}
+                          {t(`fundraiser.status.${c.status}`)}
                         </span>
                       </div>
                       <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
                         <span>
-                          Raised{" "}
+                          {t("fundraiser.raised")}{" "}
                           <span className="text-foreground font-semibold">
                             {shortINR(c.raised)}
                           </span>
                         </span>
-                        <span>Goal {shortINR(c.target)}</span>
+                        <span>
+                          {t("fundraiser.goal")} {shortINR(c.target)}
+                        </span>
                       </div>
                       <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
                         <div
@@ -301,28 +356,30 @@ function FundraiserPage() {
 
           {/* Impact */}
           <section className="px-5 pt-6">
-            <SectionHeader title="Our Impact" />
+            <SectionHeader title={t("fundraiser.ourImpact")} />
             <div className="mt-3 rounded-2xl bg-gradient-to-br from-primary to-accent-saffron text-primary-foreground p-4 shadow-elevated">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider opacity-90">
-                <Sparkles className="w-3.5 h-3.5" /> Together we have raised
+                <Sparkles className="w-3.5 h-3.5" /> {t("fundraiser.togetherRaised")}
               </div>
-              <div className="mt-1 text-3xl font-bold">₹2.4 Crore</div>
+              <div className="mt-1 text-3xl font-bold">
+                {t("fundraiser.mock.totalRaisedDisplay")}
+              </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <ImpactStat icon={Award} label="Campaigns" value="35" />
-                <ImpactStat icon={Users} label="Beneficiaries" value="2,100" />
+                <ImpactStat icon={Award} label={t("fundraiser.campaigns")} value="35" />
+                <ImpactStat icon={Users} label={t("fundraiser.beneficiaries")} value="2,100" />
               </div>
             </div>
           </section>
 
           <div className="text-center text-xs text-muted-foreground py-6">
-            Thank you for your generosity 🙏
+            {t("fundraiser.thankYou")}
           </div>
         </div>
 
         {/* Admin FAB */}
         {canPublish && (
           <button className="absolute right-5 bottom-24 z-30 h-14 px-5 rounded-full bg-foreground text-background font-semibold shadow-elevated flex items-center gap-2 active:scale-95 transition">
-            <Plus className="w-5 h-5" /> Campaign
+            <Plus className="w-5 h-5" /> {t("fundraiser.campaignFab")}
           </button>
         )}
 

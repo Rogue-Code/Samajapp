@@ -1,5 +1,18 @@
 import { localeFor, type Lang, type TFunction } from "@/lib/i18n";
 
+/**
+ * Picks the Gujarati variant of admin/member-authored content when the
+ * reader's language is Gujarati and a translation exists, otherwise the
+ * English original. For content that gets machine-translated once,
+ * asynchronously, after creation — post title/content, facility
+ * name/description, event title. See news.lazy.tsx's postText() for the
+ * first place this pattern was built; this is the same rule shared with
+ * newer call sites so they don't each reimplement it slightly differently.
+ */
+export function pickLang(en: string, gu: string | null | undefined, lang: Lang): string {
+  return lang === "gu" && gu ? gu : en;
+}
+
 /** "2 hours ago" style stamp; falls back to a date once it is over a week old. */
 export function relativeTime(iso: string, t: TFunction, lang: Lang) {
   const then = new Date(iso).getTime();

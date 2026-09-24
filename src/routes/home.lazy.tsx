@@ -26,7 +26,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, type TFunction } from "@/lib/i18n";
-import { formatEventDate, relativeTime } from "@/lib/format";
+import { formatEventDate, pickLang, relativeTime } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/home")({
   component: HomePage,
@@ -35,6 +35,7 @@ export const Route = createLazyFileRoute("/home")({
 type EventRow = {
   id: string;
   title: string;
+  title_gu: string | null;
   starts_at: string;
   location: string | null;
   emoji: string;
@@ -66,7 +67,9 @@ type MemberResult = {
 type NewsRow = {
   id: string;
   title: string;
+  title_gu: string | null;
   content: string;
+  content_gu: string | null;
   category: string;
   created_at: string;
 };
@@ -123,7 +126,7 @@ function HomePage() {
         .maybeSingle(),
       supabase
         .from("events")
-        .select("id, title, starts_at, location, emoji")
+        .select("id, title, title_gu, starts_at, location, emoji")
         .gte("starts_at", nowIso)
         .order("starts_at", { ascending: true })
         .limit(10),
@@ -134,7 +137,7 @@ function HomePage() {
         .order("sort_order", { ascending: true }),
       supabase
         .from("posts")
-        .select("id, title, content, category, created_at")
+        .select("id, title, title_gu, content, content_gu, category, created_at")
         .order("created_at", { ascending: false })
         .limit(3),
     ]);
@@ -357,7 +360,7 @@ function HomePage() {
                         </div>
                         <div className="p-3">
                           <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
-                            {e.title}
+                            {pickLang(e.title, e.title_gu, lang)}
                           </h3>
                           <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                             <Calendar className="w-3 h-3" /> {formatEventDate(e.starts_at, lang)}
@@ -504,10 +507,10 @@ function HomePage() {
                     </div>
                     <div className="flex-1 min-w-0 p-3">
                       <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
-                        {n.title}
+                        {pickLang(n.title, n.title_gu, lang)}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
-                        {n.content}
+                        {pickLang(n.content, n.content_gu, lang)}
                       </p>
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground">

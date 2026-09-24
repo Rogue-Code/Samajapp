@@ -1,6 +1,7 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useGoBack } from "@/hooks/use-go-back";
-import { useEffect, useState } from "react";
+import { isSyntheticPhoneEmail } from "@/lib/phone-auth.functions";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -23,7 +24,7 @@ import {
   Clock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { PhoneFrame } from "@/components/PhoneFrame";
+import { PhoneFrame, SheetPortal } from "@/components/PhoneFrame";
 import { Avatar } from "@/components/Avatar";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -76,6 +77,11 @@ function AccountPage() {
   // The last-saved snapshot, so a change to any field can be detected without
   // the member having to scroll down to the Update Profile button to find out.
   const [savedForm, setSavedForm] = useState(emptyForm);
+  // Set each time a field edit is finished (a picker/select choice, or leaving
+  // a text field with a changed value). The "Update your profile?" dialog shows
+  // while this is set and the form differs from savedForm; "Not now" clears it
+  // until the next finished edit.
+  const [askToSave, setAskToSave] = useState(false);
   // True once "Other" is explicitly picked, so the custom field stays visible
   // even if occupation is momentarily "" while retyping it.
   const [occupationOther, setOccupationOther] = useState(false);
@@ -135,6 +141,12 @@ function AccountPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // For controls where a single change is the whole edit (pickers, selects).
+  const commit = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
+    set(k, v);
+    setAskToSave(true);
+  };
+
   // Occupation is free text, so a saved value that predates the preset list
   // (or was typed as something else entirely) shows up here too — not just
   // when "Other" was explicitly picked on this visit.
@@ -171,6 +183,7 @@ function AccountPage() {
     }
     setSavedForm(form);
     setSaved(true);
+    setTimeout(() => setAskToSave(false), 1000);
     setTimeout(() => setSaved(false), 2200);
   };
 
@@ -195,25 +208,6 @@ function AccountPage() {
             <LanguageToggle />
           </div>
 
-          {/* Appears the moment any field changes, so updating never requires
-              scrolling down to the button at the bottom of the form. */}
-          {isDirty && (
-            <div className="px-5 pb-3 fade-up">
-              <div className="flex items-center gap-3 bg-primary-soft border border-primary/20 rounded-2xl px-4 py-3">
-                <p className="flex-1 text-xs font-medium text-foreground">
-                  {t("account.unsavedChanges")}
-                </p>
-                <button
-                  onClick={() => void handleSave()}
-                  disabled={saving}
-                  className="h-9 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-60 active:scale-95 transition shrink-0"
-                >
-                  {saving ? t("profile.saving") : t("account.updateProfile")}
-                </button>
-              </div>
-              {error && <p className="text-xs text-destructive mt-2 px-1">{error}</p>}
-            </div>
-          )}
         </div>
 
         {/* Body */}
@@ -226,7 +220,7 @@ function AccountPage() {
                   <AvatarPicker
                     userId={session.user.id}
                     value={form.avatarUrl}
-                    onChange={(url) => set("avatarUrl", url)}
+                    onChange={(url) => commit("avatarUrl", url)}
                     compact
                   />
                 ) : (
@@ -239,9 +233,11 @@ function AccountPage() {
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
                   {form.name.trim() || t("account.yourProfile")}
                 </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                  {session?.user.email}
-                </p>
+                {!isSyntheticPhoneEmail(session?.user.email) && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                    {session?.user.email}
+                  </p>
+                )}
                 {role !== "member" && (
                   <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
                     <BadgeCheck className="w-3.5 h-3.5" /> {t(`role.${role}` as never)}
@@ -268,28 +264,41 @@ function AccountPage() {
               icon={Phone}
               label={t("account.mobile")}
               value={form.mobile}
-              onChange={(v) => set("mobile", v)}
+              onChange={() => {}}
               type="tel"
               autoComplete="tel"
-            />
-            <Field
-              icon={Mail}
-              label={t("common.emailAddress")}
-              value={session?.user.email ?? ""}
-              onChange={() => {}}
-              type="email"
               disabled
             />
+            {/*
+              Every account created after mobile-only sign-up has a synthetic
+              placeholder address here (see isSyntheticPhoneEmail) rather than
+              a real one — showing that to a member as "their email" would be
+              a confusing leak of an internal implementation detail. A member
+              who signed up before that change still has a real address, and
+              still sees it here.
+            */}
+            {!isSyntheticPhoneEmail(session?.user.email) && (
+              <Field
+                icon={Mail}
+                label={t("common.emailAddress")}
+                value={session?.user.email ?? ""}
+                onChange={() => {}}
+                type="email"
+                disabled
+              />
+            )}
             <PlacePicker
               label={t("profile.village")}
               value={form.village}
-              onChange={(v) => set("village", v)}
+              onChange={(v) => commit("village", v)}
             />
             <Field
               icon={MapPin}
-              label={t("account.state")}
-              value={form.state}
-              onChange={(v) => set("state", v)}
+              label={t("account.city")}
+              value={form.city}
+              onChange={(v) => set("city", v)}
+              onCommit={() => setAskToSave(true)}
+              autoComplete="address-level2"
             />
             <div>
               <label
@@ -310,7 +319,7 @@ function AccountPage() {
                       set("occupation", "");
                     } else {
                       setOccupationOther(false);
-                      set("occupation", v);
+                      commit("occupation", v);
                     }
                   }}
                   className="flex-1 bg-transparent outline-none text-foreground text-sm appearance-none"
@@ -337,6 +346,7 @@ function AccountPage() {
                 label={t("profile.occupationOtherLabel")}
                 value={form.occupation}
                 onChange={(v) => set("occupation", v)}
+                onCommit={() => setAskToSave(true)}
               />
             )}
 
@@ -390,7 +400,7 @@ function AccountPage() {
                   value={
                     MARITAL_OPTIONS.includes(form.marital as MaritalStatus) ? form.marital : ""
                   }
-                  onChange={(e) => set("marital", e.target.value)}
+                  onChange={(e) => commit("marital", e.target.value)}
                   className="flex-1 bg-transparent outline-none text-foreground appearance-none"
                 >
                   {/* Older rows may hold a value no longer offered (e.g. the
@@ -534,6 +544,52 @@ function AccountPage() {
 
           <div className="pb-4" />
         </div>
+
+        {askToSave && (isDirty || saved) && (
+          <SheetPortal>
+            <div className="fixed md:absolute inset-0 z-40 bg-foreground/40 backdrop-blur-sm flex items-center justify-center px-6">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="save-dialog-title"
+                className="w-full max-w-sm bg-card rounded-3xl shadow-elevated p-5 fade-up"
+              >
+                {saved ? (
+                  <p className="flex items-center justify-center gap-2 py-3 text-base font-bold text-foreground">
+                    <Check className="w-5 h-5 text-primary" strokeWidth={3} />{" "}
+                    {t("account.profileUpdated")}
+                  </p>
+                ) : (
+                  <>
+                    <h3 id="save-dialog-title" className="text-base font-bold text-foreground">
+                      {t("account.saveDialogTitle")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      {t("account.saveDialogBody")}
+                    </p>
+                    {error && <p className="text-xs text-destructive mt-3">{error}</p>}
+                    <div className="grid grid-cols-2 gap-3 mt-5">
+                      <button
+                        onClick={() => setAskToSave(false)}
+                        disabled={saving}
+                        className="h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold active:scale-[0.98] transition disabled:opacity-60"
+                      >
+                        {t("account.notNow")}
+                      </button>
+                      <button
+                        onClick={() => void handleSave()}
+                        disabled={saving}
+                        className="h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.98] transition disabled:opacity-60"
+                      >
+                        {saving ? t("profile.saving") : t("account.update")}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </SheetPortal>
+        )}
 
         {showDelete && session && (
           <DeleteAccountSheet
@@ -689,6 +745,7 @@ function Field({
   disabled = false,
   autoComplete = "off",
   max,
+  onCommit,
 }: {
   icon: LucideIcon;
   label: string;
@@ -699,7 +756,10 @@ function Field({
   autoComplete?: string;
   /** Passed straight through — used to cap type="date" at today. */
   max?: string;
+  /** Called on leaving the field, only if its value changed while focused. */
+  onCommit?: () => void;
 }) {
+  const valueOnFocus = useRef(value);
   return (
     <div>
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
@@ -711,6 +771,14 @@ function Field({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={() => (valueOnFocus.current = value)}
+          onBlur={() => {
+            if (value !== valueOnFocus.current) onCommit?.();
+          }}
+          // The keyboard's Done/Enter finishes the edit, same as tapping away.
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
           disabled={disabled}
           autoComplete={autoComplete}
           max={max}

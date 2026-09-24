@@ -21,6 +21,7 @@ import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { categories } from "@/lib/facilities-data";
+import { DEPLOYED_ORIGIN } from "@/lib/deployed-origin";
 import { AdminField, AdminSelect, AdminSheet } from "@/components/admin/AdminForm";
 import { SponsorImagePicker } from "@/components/admin/SponsorImagePicker";
 
@@ -94,6 +95,30 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
+}
+
+/**
+ * Fires the machine translation for a saved facility/event and forgets the
+ * result — same reasoning as news.lazy.tsx's translatePost, but this console
+ * never shows the Gujarati text itself (translation isn't in scope for the
+ * admin UI), so unlike translatePost there's no local state to merge it
+ * into: the member-facing pages just pick it up next time they load.
+ */
+async function fireTranslate(path: "translate-facility" | "translate-event", body: object) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  try {
+    await fetch(`${DEPLOYED_ORIGIN}/api/${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...body, accessToken: session.access_token }),
+    });
+  } catch {
+    // Best effort — a failed/slow translation just leaves the record
+    // showing English in Gujarati mode, same as an untranslated post.
+  }
 }
 
 function AdminPage() {
@@ -178,7 +203,14 @@ function AdminPage() {
       verified: editFacility.verified ?? false,
     };
     const ok = await run(() => supabase.from("facilities").upsert(payload));
-    if (ok) setEditFacility(null);
+    if (ok) {
+      setEditFacility(null);
+      // Re-translated on every save, not just creation: unlike a post, a
+      // facility is expected to be edited repeatedly by admins, and stale
+      // Gujarati text describing an old name/description would be worse
+      // than a brief delay before the new translation lands.
+      void fireTranslate("translate-facility", { facilityId: id });
+    }
   };
 
   const saveEvent = async () => {
@@ -190,12 +222,19 @@ function AdminPage() {
       emoji: editEvent.emoji || "📅",
       created_by: session?.user.id ?? null,
     };
-    const ok = await run(() =>
-      editEvent.id
-        ? supabase.from("events").update(payload).eq("id", editEvent.id)
-        : supabase.from("events").insert(payload),
-    );
-    if (ok) setEditEvent(null);
+    let savedId = editEvent.id ?? null;
+    const ok = await run(async () => {
+      if (editEvent.id) {
+        return supabase.from("events").update(payload).eq("id", editEvent.id);
+      }
+      const { data, error } = await supabase.from("events").insert(payload).select("id").single();
+      savedId = data?.id ?? null;
+      return { error };
+    });
+    if (ok) {
+      setEditEvent(null);
+      if (savedId) void fireTranslate("translate-event", { eventId: savedId });
+    }
   };
 
   const saveSponsor = async () => {

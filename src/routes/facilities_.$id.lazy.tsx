@@ -20,7 +20,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { categoryLabel, categoryStyle, shareFacility, type Facility } from "@/lib/facilities-data";
-import { useT } from "@/lib/i18n";
+import { useLanguage, useT } from "@/lib/i18n";
+import { pickLang } from "@/lib/format";
 
 export const Route = createLazyFileRoute("/facilities_/$id")({
   component: FacilityDetailPage,
@@ -49,7 +50,7 @@ function NotFound() {
 function FacilityDetailPage() {
   const { id } = useParams({ from: "/facilities_/$id" });
   const navigate = useNavigate();
-  const t = useT();
+  const { lang, t } = useLanguage();
   const { checking, session } = useRequireAuth();
   const [f, setF] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ function FacilityDetailPage() {
   const style = categoryStyle(f.category);
 
   const handleShare = async () => {
-    const outcome = await shareFacility(f);
+    const outcome = await shareFacility(f, lang);
     if (outcome !== "copied") return;
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
     setCopied(true);
@@ -115,7 +116,9 @@ function FacilityDetailPage() {
           <div className="px-5 pt-4 relative">
             <div className="rounded-2xl bg-card border border-border shadow-card p-4">
               <div className="flex items-start gap-2">
-                <h1 className="flex-1 font-bold text-foreground text-lg leading-tight">{f.name}</h1>
+                <h1 className="flex-1 font-bold text-foreground text-lg leading-tight">
+                  {pickLang(f.name, f.name_gu, lang)}
+                </h1>
                 {f.verified && (
                   <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-success/10 text-success px-2 py-1 rounded-full">
                     <BadgeCheck className="w-3 h-3" /> {t("facility.verified")}
@@ -182,7 +185,9 @@ function FacilityDetailPage() {
           {/* About */}
           {f.long_description && (
             <Section title={t("common.about")}>
-              <p className="text-sm text-foreground leading-relaxed">{f.long_description}</p>
+              <p className="text-sm text-foreground leading-relaxed">
+                {pickLang(f.long_description, f.long_description_gu, lang)}
+              </p>
             </Section>
           )}
 

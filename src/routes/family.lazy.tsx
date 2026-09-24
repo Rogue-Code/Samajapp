@@ -21,7 +21,9 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { RELATIONS } from "@/lib/profile-options";
+import { useT } from "@/lib/i18n";
+import type { TFunction } from "@/lib/i18n";
+import { RELATIONS, relationLabel } from "@/lib/profile-options";
 
 export const Route = createLazyFileRoute("/family")({
   component: FamilyPage,
@@ -69,19 +71,15 @@ const RELATION_EMOJI: Record<string, string> = {
   Other: "🧑",
 };
 
-const statusMap: Record<
-  Status,
-  { label: string; icon: typeof CheckCircle2; color: string; bg: string }
-> = {
-  verified: { label: "Verified", icon: CheckCircle2, color: "text-success", bg: "bg-success-soft" },
-  pending: { label: "Pending", icon: Clock, color: "text-warning", bg: "bg-warning-soft" },
-  approval: {
-    label: "Needs Approval",
-    icon: AlertCircle,
-    color: "text-destructive",
-    bg: "bg-destructive/10",
-  },
+const statusMap: Record<Status, { icon: typeof CheckCircle2; color: string; bg: string }> = {
+  verified: { icon: CheckCircle2, color: "text-success", bg: "bg-success-soft" },
+  pending: { icon: Clock, color: "text-warning", bg: "bg-warning-soft" },
+  approval: { icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/10" },
 };
+
+function statusLabel(status: Status, t: TFunction): string {
+  return t(`familyStatus.${status}` as never);
+}
 
 function statusOf(value: string): Status {
   return value === "verified" || value === "approval" ? value : "pending";
@@ -111,6 +109,7 @@ function formatDob(dob: string | null) {
 function FamilyPage() {
   const navigate = useNavigate();
   const goBack = useGoBack();
+  const t = useT();
   const { checking, session } = useRequireAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
@@ -232,12 +231,14 @@ function FamilyPage() {
             <button
               onClick={goBack}
               className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition"
-              aria-label="Back"
+              aria-label={t("common.back")}
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <span className="text-xs font-semibold text-muted-foreground">
-              {members.length} {members.length === 1 ? "member" : "members"}
+              {t(members.length === 1 ? "family.memberCountOne" : "family.memberCount", {
+                count: members.length,
+              })}
             </span>
           </div>
         </div>
@@ -246,17 +247,15 @@ function FamilyPage() {
           className="flex-1 overflow-y-auto px-6 py-6 pb-32 fade-up"
           style={{ scrollbarWidth: "none" }}
         >
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Family Members</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Verify and manage your family connections.
-          </p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("family.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("family.subtitle")}</p>
 
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
           {joinRequests.length > 0 && (
             <div className="mt-5 space-y-2">
               <h2 className="text-sm font-bold text-foreground px-1">
-                Join Requests ({joinRequests.length})
+                {t("family.joinRequests", { count: joinRequests.length })}
               </h2>
               {joinRequests.map((r) => (
                 <div
@@ -266,10 +265,10 @@ function FamilyPage() {
                   <Avatar url={r.avatar_url} name={r.full_name} className="w-11 h-11 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-foreground truncate">
-                      {r.full_name ?? "Member"}
+                      {r.full_name ?? t("family.unnamedMember")}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
-                      Wants to join as {r.relation}
+                      {t("family.wantsToJoinAs", { relation: relationLabel(r.relation, t) })}
                       {r.village && ` · ${r.village}`}
                     </div>
                   </div>
@@ -278,7 +277,7 @@ function FamilyPage() {
                       onClick={() => void respondToRequest(r.id, true)}
                       disabled={requestBusyId === r.id}
                       className="w-9 h-9 rounded-xl bg-success-soft text-success flex items-center justify-center disabled:opacity-50"
-                      aria-label="Approve"
+                      aria-label={t("family.approve")}
                     >
                       {requestBusyId === r.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -290,7 +289,7 @@ function FamilyPage() {
                       onClick={() => void respondToRequest(r.id, false)}
                       disabled={requestBusyId === r.id}
                       className="w-9 h-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center disabled:opacity-50"
-                      aria-label="Reject"
+                      aria-label={t("family.reject")}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -303,25 +302,29 @@ function FamilyPage() {
           <div className="grid grid-cols-3 gap-2 mt-5">
             <div className="bg-success-soft rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-success">{counts.verified}</div>
-              <div className="text-[11px] font-medium text-success/80">Verified</div>
+              <div className="text-[11px] font-medium text-success/80">
+                {t("family.statVerified")}
+              </div>
             </div>
             <div className="bg-warning-soft rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-warning">{counts.pending}</div>
-              <div className="text-[11px] font-medium text-warning/80">Pending</div>
+              <div className="text-[11px] font-medium text-warning/80">
+                {t("family.statPending")}
+              </div>
             </div>
             <div className="bg-destructive/10 rounded-2xl p-3 text-center">
               <div className="text-xl font-bold text-destructive">{counts.approval}</div>
-              <div className="text-[11px] font-medium text-destructive/80">Approval</div>
+              <div className="text-[11px] font-medium text-destructive/80">
+                {t("family.statApproval")}
+              </div>
             </div>
           </div>
 
           {members.length === 0 ? (
             <div className="mt-8 text-center py-10 px-6 rounded-3xl border-2 border-dashed border-border">
               <div className="text-4xl mb-3">👨‍👩‍👧</div>
-              <p className="font-semibold text-foreground">No family members yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add your family to connect them with the community.
-              </p>
+              <p className="font-semibold text-foreground">{t("family.emptyTitle")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("family.emptyHint")}</p>
             </div>
           ) : (
             <div className="mt-6 space-y-3">
@@ -352,13 +355,13 @@ function FamilyPage() {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {m.relation}
-                          {age !== null && ` · ${age} yrs`}
+                          {relationLabel(m.relation, t)}
+                          {age !== null && ` · ${t("family.yearsOld", { count: age })}`}
                         </div>
                         <div
                           className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full ${s.bg} ${s.color} text-[11px] font-semibold`}
                         >
-                          <s.icon className="w-3 h-3" /> {s.label}
+                          <s.icon className="w-3 h-3" /> {statusLabel(status, t)}
                         </div>
                       </div>
                       <ChevronDown
@@ -369,11 +372,13 @@ function FamilyPage() {
                       <div className="px-4 pb-4 pt-1 border-t border-border/50 fade-up">
                         <div className="grid grid-cols-2 gap-3 text-xs mt-3">
                           <div>
-                            <div className="text-muted-foreground">Relation</div>
-                            <div className="font-medium text-foreground mt-0.5">{m.relation}</div>
+                            <div className="text-muted-foreground">{t("family.relationLabel")}</div>
+                            <div className="font-medium text-foreground mt-0.5">
+                              {relationLabel(m.relation, t)}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Date of Birth</div>
+                            <div className="text-muted-foreground">{t("family.dobLabel")}</div>
                             <div className="font-medium text-foreground mt-0.5">
                               {formatDob(m.dob)}
                             </div>
@@ -391,7 +396,7 @@ function FamilyPage() {
                               ) : (
                                 <CheckCircle2 className="w-4 h-4" />
                               )}
-                              Mark Verified
+                              {t("family.markVerified")}
                             </button>
                           )}
                           <button
@@ -399,26 +404,25 @@ function FamilyPage() {
                             disabled={busyId === m.id}
                             className="px-4 h-10 rounded-xl bg-destructive/10 text-destructive text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
                           >
-                            <Trash2 className="w-4 h-4" /> Remove
+                            <Trash2 className="w-4 h-4" /> {t("family.remove")}
                           </button>
                         </div>
 
                         <div className="mt-3 pt-3 border-t border-border/50">
                           <div className="text-[11px] text-muted-foreground mb-1.5">
-                            Sangath account
+                            {t("family.sangathAccount")}
                           </div>
                           {m.linked_profile_id ? (
                             <div className="flex items-center gap-2">
                               <span className="flex-1 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
-                                <LinkIcon className="w-3.5 h-3.5" /> Linked — their card opens this
-                                profile
+                                <LinkIcon className="w-3.5 h-3.5" /> {t("family.linkedHint")}
                               </span>
                               <button
                                 onClick={() => void setLink(m.id, null)}
                                 disabled={busyId === m.id}
                                 className="px-3 h-8 rounded-lg bg-muted text-foreground text-[11px] font-semibold disabled:opacity-50"
                               >
-                                Unlink
+                                {t("family.unlink")}
                               </button>
                             </div>
                           ) : (
@@ -426,7 +430,7 @@ function FamilyPage() {
                               onClick={() => setLinking(m)}
                               className="w-full h-10 rounded-xl bg-muted text-foreground text-sm font-medium flex items-center justify-center gap-1.5 active:scale-[0.98] transition"
                             >
-                              <LinkIcon className="w-4 h-4" /> Link to a Sangath account
+                              <LinkIcon className="w-4 h-4" /> {t("family.linkToAccount")}
                             </button>
                           )}
                         </div>
@@ -442,7 +446,7 @@ function FamilyPage() {
             onClick={() => setShowAdd(true)}
             className="mt-4 w-full h-14 rounded-2xl border-2 border-dashed border-border text-muted-foreground font-medium flex items-center justify-center gap-2 active:bg-muted transition"
           >
-            <UserPlus className="w-4 h-4" /> Add Family Member
+            <UserPlus className="w-4 h-4" /> {t("family.addMember")}
           </button>
         </div>
 
@@ -451,7 +455,7 @@ function FamilyPage() {
             onClick={goBack}
             className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition"
           >
-            Done
+            {t("family.done")}
           </button>
         </div>
 
@@ -476,6 +480,7 @@ function AddMemberSheet({
   onClose: () => void;
   onSave: (input: { full_name: string; relation: string; dob: string }) => Promise<void>;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [relation, setRelation] = useState<string>(RELATIONS[0]);
   const [dob, setDob] = useState("");
@@ -496,15 +501,15 @@ function AddMemberSheet({
         <button
           className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("common.close")}
         />
         <div className="relative w-full bg-card rounded-t-3xl border-t border-border p-6 pb-8 fade-up">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-bold text-foreground text-lg">Add Family Member</h2>
+            <h2 className="font-bold text-foreground text-lg">{t("family.addSheetTitle")}</h2>
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="w-4 h-4 text-foreground" />
             </button>
@@ -513,12 +518,12 @@ function AddMemberSheet({
           <div className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                Full Name
+                {t("family.fullName")}
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Suresh Patel"
+                placeholder={t("family.fullNamePlaceholder")}
                 autoComplete="off"
                 className="w-full bg-background border border-border rounded-2xl px-4 h-12 outline-none text-foreground text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
               />
@@ -526,7 +531,7 @@ function AddMemberSheet({
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                Relation
+                {t("family.relationLabel")}
               </label>
               <select
                 value={relation}
@@ -535,7 +540,7 @@ function AddMemberSheet({
               >
                 {RELATIONS.map((r) => (
                   <option key={r} value={r}>
-                    {r}
+                    {relationLabel(r, t)}
                   </option>
                 ))}
               </select>
@@ -543,7 +548,7 @@ function AddMemberSheet({
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block px-1">
-                Date of Birth
+                {t("family.dobLabel")}
               </label>
               <input
                 type="date"
@@ -561,10 +566,10 @@ function AddMemberSheet({
           >
             {saving ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" /> Adding...
+                <Loader2 className="w-5 h-5 animate-spin" /> {t("family.adding")}
               </>
             ) : (
-              "Add Member"
+              t("family.addMemberButton")
             )}
           </button>
         </div>
@@ -586,6 +591,7 @@ function LinkAccountSheet({
   onClose: () => void;
   onPick: (profileId: string) => void;
 }) {
+  const t = useT();
   const [term, setTerm] = useState(member.full_name);
   const [results, setResults] = useState<MemberSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -611,18 +617,20 @@ function LinkAccountSheet({
         <button
           className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("common.close")}
         />
         <div className="relative w-full bg-card rounded-t-3xl border-t border-border max-h-[85%] flex flex-col fade-up">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="min-w-0">
-              <h2 className="font-bold text-foreground">Link {member.full_name}</h2>
-              <p className="text-[11px] text-muted-foreground">Find their Sangath account</p>
+              <h2 className="font-bold text-foreground">
+                {t("family.linkSheetTitle", { name: member.full_name })}
+              </h2>
+              <p className="text-[11px] text-muted-foreground">{t("family.linkSheetSubtitle")}</p>
             </div>
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0"
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="w-4 h-4 text-foreground" />
             </button>
@@ -634,7 +642,7 @@ function LinkAccountSheet({
               <input
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
-                placeholder="Search by name or village"
+                placeholder={t("family.searchByNameOrVillage")}
                 autoComplete="off"
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground/70"
               />
@@ -652,7 +660,7 @@ function LinkAccountSheet({
             )}
             {!searching && term.trim().length >= 2 && results.length === 0 && (
               <p className="text-center text-sm text-muted-foreground py-8">
-                No matching account. They may not have signed up yet.
+                {t("family.noMatchingAccount")}
               </p>
             )}
             {!searching &&

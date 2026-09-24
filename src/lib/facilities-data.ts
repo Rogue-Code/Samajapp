@@ -1,7 +1,8 @@
 import { Share } from "@capacitor/share";
 import type { Database } from "@/integrations/supabase/types";
-import type { TFunction } from "@/lib/i18n";
+import type { Lang, TFunction } from "@/lib/i18n";
 import type { StringKey } from "@/lib/translations";
+import { pickLang } from "@/lib/format";
 
 export type Facility = Database["public"]["Tables"]["facilities"]["Row"];
 
@@ -92,8 +93,9 @@ export type ShareOutcome = "shared" | "copied" | "failed";
  * Shared by the directory list and the facility detail page rather than each
  * carrying its own copy.
  */
-export async function shareFacility(f: Facility): Promise<ShareOutcome> {
-  const text = `${f.name}\n${f.address}${f.phone ? `\n${f.phone}` : ""}`;
+export async function shareFacility(f: Facility, lang: Lang): Promise<ShareOutcome> {
+  const name = pickLang(f.name, f.name_gu, lang);
+  const text = `${name}\n${f.address}${f.phone ? `\n${f.phone}` : ""}`;
 
   let canNativeShare = false;
   try {
@@ -104,7 +106,7 @@ export async function shareFacility(f: Facility): Promise<ShareOutcome> {
 
   if (canNativeShare) {
     try {
-      await Share.share({ title: f.name, text, dialogTitle: f.name });
+      await Share.share({ title: name, text, dialogTitle: name });
     } catch {
       // The sheet opened and the member dismissed it — a complete interaction.
       // Don't also copy to the clipboard behind their back.

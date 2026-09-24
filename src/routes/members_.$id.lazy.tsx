@@ -19,6 +19,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { FamilyTree, type FamilyNode } from "@/components/FamilyTree";
+import { useT } from "@/lib/i18n";
+import { maritalLabel, occupationLabel } from "@/lib/profile-options";
 
 export const Route = createLazyFileRoute("/members_/$id")({
   component: MemberProfilePage,
@@ -48,6 +50,7 @@ function MemberProfilePage() {
   const { id } = useParams({ from: "/members_/$id" });
   const navigate = useNavigate();
   const goBack = useGoBack();
+  const t = useT();
   const { checking, session } = useRequireAuth();
   const [member, setMember] = useState<Member | null>(null);
   const [family, setFamily] = useState<FamilyNode[]>([]);
@@ -81,15 +84,13 @@ function MemberProfilePage() {
       <PhoneFrame>
         <div className="flex flex-col items-center justify-center min-h-screen md:min-h-[860px] px-8 text-center">
           <div className="text-5xl mb-3">🔍</div>
-          <h1 className="font-bold text-foreground">Member not found</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            This profile may have been removed.
-          </p>
+          <h1 className="font-bold text-foreground">{t("member.notFound")}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{t("member.notFoundHint")}</p>
           <button
             onClick={goBack}
             className="mt-6 h-11 px-6 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
           >
-            Back to Home
+            {t("member.backToHome")}
           </button>
         </div>
       </PhoneFrame>
@@ -108,12 +109,12 @@ function MemberProfilePage() {
             <button
               onClick={goBack}
               className="w-11 h-11 rounded-full bg-muted flex items-center justify-center"
-              aria-label="Back"
+              aria-label={t("common.back")}
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <h1 className="flex-1 font-bold text-foreground text-lg leading-tight truncate">
-              Member Profile
+              {t("member.title")}
             </h1>
           </div>
         </div>
@@ -135,7 +136,9 @@ function MemberProfilePage() {
                 <h2 className="font-bold text-foreground text-lg leading-tight truncate">
                   {member.full_name}
                   {isSelf && (
-                    <span className="text-[11px] font-normal text-muted-foreground"> (you)</span>
+                    <span className="text-[11px] font-normal text-muted-foreground">
+                      {t("member.you")}
+                    </span>
                   )}
                 </h2>
                 {place && (
@@ -156,7 +159,7 @@ function MemberProfilePage() {
                 href={`tel:${member.mobile}`}
                 className="mt-4 w-full h-12 rounded-2xl bg-success text-success-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
               >
-                <Phone className="w-4 h-4" /> Call {member.mobile}
+                <Phone className="w-4 h-4" /> {t("member.call", { number: member.mobile })}
               </a>
             ) : familyAdmin && familyAdmin.id !== member.id ? (
               <button
@@ -171,7 +174,7 @@ function MemberProfilePage() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] text-muted-foreground">
-                    No number shown — reach via family admin
+                    {t("member.noNumberViaAdmin")}
                   </div>
                   <div className="text-sm font-semibold text-foreground truncate">
                     {familyAdmin.full_name}
@@ -182,29 +185,34 @@ function MemberProfilePage() {
             ) : (
               <p className="mt-4 flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                 <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
-                No contact number shown for this member.
+                {t("member.noNumberAtAll")}
               </p>
             )}
           </section>
 
           {/* Details */}
           <section>
-            <h2 className="font-bold text-foreground text-sm mb-3 px-1">Details</h2>
+            <h2 className="font-bold text-foreground text-sm mb-3 px-1">{t("member.details")}</h2>
             <div className="rounded-2xl bg-card border border-border shadow-soft divide-y divide-border/60">
               <DetailRow
                 icon={<Briefcase className="w-4 h-4" />}
-                label="Occupation"
+                label={t("member.occupation")}
                 value={member.occupation}
+                render={(v) => occupationLabel(v, t)}
+                emptyText={t("member.notProvided")}
               />
               <DetailRow
                 icon={<Heart className="w-4 h-4" />}
-                label="Marital status"
+                label={t("member.maritalStatus")}
                 value={member.marital_status}
+                render={(v) => maritalLabel(v, t)}
+                emptyText={t("member.notProvided")}
               />
               <DetailRow
                 icon={<Cake className="w-4 h-4" />}
-                label="Age"
-                value={age !== null ? `${age} years` : null}
+                label={t("member.age")}
+                value={age !== null ? t("member.ageYears", { count: age }) : null}
+                emptyText={t("member.notProvided")}
               />
             </div>
           </section>
@@ -212,20 +220,25 @@ function MemberProfilePage() {
           {/* Family tree */}
           <section>
             <h2 className="font-bold text-foreground text-sm mb-3 px-1 flex items-center gap-1.5">
-              <Users className="w-4 h-4" /> Family
+              <Users className="w-4 h-4" /> {t("member.family")}
               {family.length > 0 && (
                 <span className="text-xs font-normal text-muted-foreground">
-                  · {family.length} {family.length === 1 ? "member" : "members"}
+                  ·{" "}
+                  {t(family.length === 1 ? "common.memberCountOne" : "common.memberCount", {
+                    count: family.length,
+                  })}
                 </span>
               )}
             </h2>
             {family.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-1 py-3">No family members listed.</p>
+              <p className="text-sm text-muted-foreground px-1 py-3">
+                {t("member.noFamilyListed")}
+              </p>
             ) : (
               <>
                 <FamilyTree
                   members={family}
-                  selfName={member.full_name ?? "This member"}
+                  selfName={member.full_name ?? t("familyTree.thisMember")}
                   selfAvatarUrl={member.avatar_url}
                   onOpen={(profileId) =>
                     navigate({ to: "/members/$id", params: { id: profileId } })
@@ -233,7 +246,7 @@ function MemberProfilePage() {
                 />
                 {family.some((f) => f.linked_profile_id) && (
                   <p className="text-[11px] text-muted-foreground mt-2 px-1">
-                    Cards with an arrow are on Sangath — tap to open their profile.
+                    {t("member.linkedCardHint")}
                   </p>
                 )}
               </>
@@ -249,11 +262,17 @@ function DetailRow({
   icon,
   label,
   value,
+  render,
+  emptyText,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | null;
+  /** Translates a preset value (occupation/marital status); raw free text passes through unchanged. */
+  render?: (value: string) => string;
+  emptyText: string;
 }) {
+  const trimmed = value?.trim();
   return (
     <div className="flex items-center gap-3 p-3.5">
       <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -262,7 +281,15 @@ function DetailRow({
       <div className="flex-1 min-w-0">
         <div className="text-[11px] text-muted-foreground">{label}</div>
         <div className="text-sm font-semibold text-foreground truncate">
-          {value?.trim() || <span className="text-muted-foreground font-normal">Not provided</span>}
+          {trimmed ? (
+            render ? (
+              render(trimmed)
+            ) : (
+              trimmed
+            )
+          ) : (
+            <span className="text-muted-foreground font-normal">{emptyText}</span>
+          )}
         </div>
       </div>
     </div>

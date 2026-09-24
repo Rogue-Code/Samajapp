@@ -28,6 +28,7 @@ import {
   OCCUPATION_OTHER,
   occupationKeySuffix,
   RELATIONS,
+  relationLabel,
   type MaritalStatus,
 } from "@/lib/profile-options";
 
@@ -284,7 +285,7 @@ function ProfilePage() {
                 >
                   {RELATIONS.map((r) => (
                     <option key={r} value={r}>
-                      {r}
+                      {relationLabel(r, t)}
                     </option>
                   ))}
                 </select>

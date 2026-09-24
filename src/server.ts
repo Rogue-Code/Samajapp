@@ -25,6 +25,11 @@ const ACCOUNT_DELETION_PATH = "/api/account-deletion";
 // Same reason again: the APK can't call a server function, and Workers AI's
 // binding is only reachable from server-side Worker code, never a WebView.
 const TRANSLATE_POST_PATH = "/api/translate-post";
+// Same mechanism as translate-post, extended to the other two places members
+// read admin-authored prose: a facility's name/description, and an event's
+// title (the only event field the app currently displays anywhere).
+const TRANSLATE_FACILITY_PATH = "/api/translate-facility";
+const TRANSLATE_EVENT_PATH = "/api/translate-event";
 const CAPACITOR_ORIGIN = "https://localhost";
 
 function withCors(response: Response): Response {
@@ -88,8 +93,8 @@ interface Ai {
 }
 
 /**
- * Fills in a post's title_gu/content_gu with a machine translation right after
- * it's created, via Cloudflare Workers AI — see news.lazy.tsx's addPost.
+ * Translates one piece of English text to Gujarati via Cloudflare Workers AI.
+ * Shared by the post/facility/event translate routes below.
  *
  * Uses a general chat model (llama-3.3-70b) with a translate-only system
  * prompt rather than the dedicated translation model (@cf/meta/m2m100-1.2b):
@@ -98,6 +103,43 @@ interface Ai {
  * politicians, and once a token stuck in a repeating loop — not just rough
  * phrasing but content that didn't correspond to the input at all. The larger
  * instruction-tuned model translated the same text correctly.
+ */
+async function translateToGujarati(ai: Ai, text: string): Promise<string> {
+  const result = (await ai.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a professional English to Gujarati translator. Translate the " +
+          "user's text to Gujarati. Output ONLY the Gujarati translation, with no " +
+          "preamble, explanation, or quotation marks.",
+      },
+      { role: "user", content: text },
+    ],
+  })) as { choices?: { message?: { content?: string } }[] };
+  const translated = result.choices?.[0]?.message?.content?.trim();
+  if (!translated) throw new Error("Translation failed");
+  return translated;
+}
+
+/**
+ * Nitro's own SSR-service dispatch (node_modules/nitro/dist/_build/common's
+ * lazyService wrapper, invoked from the generated .output/server/index.mjs)
+ * only forwards the Request to this module's exported fetch — env and ctx
+ * are silently dropped, confirmed live via `wrangler tail` showing "Cannot
+ * read properties of undefined (reading 'AI')". Nitro works around this
+ * itself by stashing the real bindings on globalThis before dispatching
+ * (see createHandler's `globalThis.__env__ = env` in that same file), so
+ * every translate handler below reads it from there instead of trusting the
+ * fetch parameter.
+ */
+function workersAi(): Ai | undefined {
+  return (globalThis as unknown as { __env__?: { AI?: Ai } }).__env__?.AI;
+}
+
+/**
+ * Fills in a post's title_gu/content_gu with a machine translation right after
+ * it's created, via Cloudflare Workers AI — see news.lazy.tsx's addPost.
  *
  * Takes only a postId, not the text to translate:
  * fetching the real row server-side (rather than trusting client-supplied
@@ -123,15 +165,7 @@ async function handleTranslatePost(request: Request): Promise<Response> {
         headers: { "content-type": "application/json; charset=utf-8" },
       }),
     );
-  // Nitro's own SSR-service dispatch (node_modules/nitro/dist/_build/common's
-  // lazyService wrapper, invoked from the generated .output/server/index.mjs)
-  // only forwards the Request to this module's exported fetch — env and ctx
-  // are silently dropped, confirmed live via `wrangler tail` showing "Cannot
-  // read properties of undefined (reading 'AI')". Nitro works around this
-  // itself by stashing the real bindings on globalThis before dispatching
-  // (see createHandler's `globalThis.__env__ = env` in that same file), so we
-  // read it from there instead of trusting the fetch parameter.
-  const ai = (globalThis as unknown as { __env__?: { AI?: Ai } }).__env__?.AI;
+  const ai = workersAi();
   if (!ai) return json({ ok: false }, 500);
   try {
     const { postId, accessToken } = (await request.json()) as {
@@ -152,27 +186,9 @@ async function handleTranslatePost(request: Request): Promise<Response> {
       .single();
     if (postError || !post) throw new Error("Post not found");
 
-    const translate = async (text: string) => {
-      const result = (await ai.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a professional English to Gujarati translator. Translate the " +
-              "user's text to Gujarati. Output ONLY the Gujarati translation, with no " +
-              "preamble, explanation, or quotation marks.",
-          },
-          { role: "user", content: text },
-        ],
-      })) as { choices?: { message?: { content?: string } }[] };
-      const translated = result.choices?.[0]?.message?.content?.trim();
-      if (!translated) throw new Error("Translation failed");
-      return translated;
-    };
-
     const [title_gu, content_gu] = await Promise.all([
-      translate(post.title),
-      translate(post.content),
+      translateToGujarati(ai, post.title),
+      translateToGujarati(ai, post.content),
     ]);
 
     const { error: updateError } = await supabaseAdmin
@@ -182,6 +198,123 @@ async function handleTranslatePost(request: Request): Promise<Response> {
     if (updateError) throw updateError;
 
     return json({ ok: true, title_gu, content_gu });
+  } catch (error) {
+    console.error(error);
+    return json({ ok: false }, 400);
+  }
+}
+
+/**
+ * Same shape as handleTranslatePost, for a facility's name/description/
+ * long_description — see admin.lazy.tsx's saveFacility and
+ * facilities-data.ts's facilityText(). description and long_description are
+ * optional on a facility, unlike a post's content, so each is translated
+ * only if the admin actually filled it in; a facility with neither still
+ * gets its name translated.
+ */
+async function handleTranslateFacility(request: Request): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return withCors(new Response(null, { status: 204 }));
+  }
+  if (request.method !== "POST") {
+    return withCors(new Response("Method Not Allowed", { status: 405 }));
+  }
+  const json = (body: unknown, status = 200) =>
+    withCors(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+  const ai = workersAi();
+  if (!ai) return json({ ok: false }, 500);
+  try {
+    const { facilityId, accessToken } = (await request.json()) as {
+      facilityId: string;
+      accessToken: string;
+    };
+    if (!facilityId || !accessToken) throw new Error("Missing facilityId or accessToken");
+
+    const { supabaseAdmin } = await import("./integrations/supabase/client.server");
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (userError || !userData.user) throw new Error("Invalid session");
+
+    const { data: facility, error: facilityError } = await supabaseAdmin
+      .from("facilities")
+      .select("name, description, long_description")
+      .eq("id", facilityId)
+      .single();
+    if (facilityError || !facility) throw new Error("Facility not found");
+
+    const [name_gu, description_gu, long_description_gu] = await Promise.all([
+      translateToGujarati(ai, facility.name),
+      facility.description ? translateToGujarati(ai, facility.description) : null,
+      facility.long_description ? translateToGujarati(ai, facility.long_description) : null,
+    ]);
+
+    const { error: updateError } = await supabaseAdmin
+      .from("facilities")
+      .update({ name_gu, description_gu, long_description_gu })
+      .eq("id", facilityId);
+    if (updateError) throw updateError;
+
+    return json({ ok: true, name_gu, description_gu, long_description_gu });
+  } catch (error) {
+    console.error(error);
+    return json({ ok: false }, 400);
+  }
+}
+
+/**
+ * Same shape again, for an event's title — the only event field the app
+ * currently renders anywhere (see home.lazy.tsx). events.description exists
+ * in the schema but nothing displays it yet, so it is not translated.
+ */
+async function handleTranslateEvent(request: Request): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return withCors(new Response(null, { status: 204 }));
+  }
+  if (request.method !== "POST") {
+    return withCors(new Response("Method Not Allowed", { status: 405 }));
+  }
+  const json = (body: unknown, status = 200) =>
+    withCors(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+  const ai = workersAi();
+  if (!ai) return json({ ok: false }, 500);
+  try {
+    const { eventId, accessToken } = (await request.json()) as {
+      eventId: string;
+      accessToken: string;
+    };
+    if (!eventId || !accessToken) throw new Error("Missing eventId or accessToken");
+
+    const { supabaseAdmin } = await import("./integrations/supabase/client.server");
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (userError || !userData.user) throw new Error("Invalid session");
+
+    const { data: eventRow, error: eventError } = await supabaseAdmin
+      .from("events")
+      .select("title")
+      .eq("id", eventId)
+      .single();
+    if (eventError || !eventRow) throw new Error("Event not found");
+
+    const title_gu = await translateToGujarati(ai, eventRow.title);
+
+    const { error: updateError } = await supabaseAdmin
+      .from("events")
+      .update({ title_gu })
+      .eq("id", eventId);
+    if (updateError) throw updateError;
+
+    return json({ ok: true, title_gu });
   } catch (error) {
     console.error(error);
     return json({ ok: false }, 400);
@@ -262,6 +395,12 @@ export default {
     }
     if (pathname === TRANSLATE_POST_PATH) {
       return handleTranslatePost(request);
+    }
+    if (pathname === TRANSLATE_FACILITY_PATH) {
+      return handleTranslateFacility(request);
+    }
+    if (pathname === TRANSLATE_EVENT_PATH) {
+      return handleTranslateEvent(request);
     }
     try {
       const handler = await getServerEntry();
