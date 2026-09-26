@@ -87,7 +87,7 @@ function SignupPage() {
         setError(friendlyAuthError(verifyError?.message));
         return;
       }
-      const dest = await destinationAfterLogin();
+      const dest = await destinationAfterLogin(data.session.user.id);
       navigate({ to: dest });
       return;
     }
@@ -112,7 +112,7 @@ function SignupPage() {
       setLoading(false);
       return;
     }
-    const dest = await destinationAfterLogin();
+    const dest = await destinationAfterLogin(data.session.user.id);
     navigate({ to: dest });
   };
 

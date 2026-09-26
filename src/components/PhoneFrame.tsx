@@ -1,10 +1,15 @@
 import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { WifiOff } from "lucide-react";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { useT } from "@/lib/i18n";
 
 const SHEET_LAYER_ID = "sangath-sheet-layer";
 const NAV_LAYER_ID = "sangath-nav-layer";
 
 export function PhoneFrame({ children }: { children: ReactNode }) {
+  const online = useOnlineStatus();
+  const t = useT();
   return (
     <div className="app-viewport w-full bg-gradient-to-br from-primary-soft via-background to-accent flex md:items-center md:justify-center md:p-8">
       {/*
@@ -16,6 +21,22 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
         resolve against this box and nothing else.
       */}
       <div className="relative flex flex-col w-full max-w-[440px] md:max-w-[420px] min-h-full md:min-h-0 md:h-[860px] mx-auto">
+        {/*
+          Outside the scroll region so it can't scroll away, and a normal
+          (non-portal) flex child rather than absolute — the scroll region
+          below simply shrinks to fit, no overlap with each route's own
+          sticky header. Every screen in the app reads its data live off
+          Supabase with nothing cached on-device (see AGENTS.md), so with no
+          connection the honest state is "nothing here can be trusted to be
+          current" — this says so instead of leaving a page that silently
+          failed to load looking like a real, empty, or stale answer.
+        */}
+        {!online && (
+          <div className="shrink-0 bg-destructive text-destructive-foreground px-4 py-2 flex items-center gap-2 text-xs font-semibold">
+            <WifiOff className="w-3.5 h-3.5 shrink-0" />
+            {t("common.offline")}
+          </div>
+        )}
         <div
           className="keyboard-scroll-region flex-1 w-full bg-background overflow-y-auto md:rounded-[2.5rem] md:shadow-elevated md:border-8 md:border-foreground/90"
           style={{ scrollbarWidth: "none" }}

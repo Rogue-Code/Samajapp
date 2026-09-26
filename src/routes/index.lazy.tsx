@@ -54,7 +54,7 @@ function LoginPage() {
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       if (data.session) {
-        const dest = await destinationAfterLogin();
+        const dest = await destinationAfterLogin(data.session.user.id);
         if (!cancelled) navigate({ to: dest });
         return;
       }
@@ -117,7 +117,7 @@ function LoginPage() {
         setError(friendlyAuthError(verifyError?.message));
         return;
       }
-      const dest = await destinationAfterLogin();
+      const dest = await destinationAfterLogin(data.session.user.id);
       navigate({ to: dest });
       return;
     }
@@ -142,7 +142,7 @@ function LoginPage() {
       setLoading(false);
       return;
     }
-    const dest = await destinationAfterLogin();
+    const dest = await destinationAfterLogin(data.session.user.id);
     navigate({ to: dest });
   };
 
