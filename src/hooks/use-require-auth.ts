@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { isAuthRetryableFetchError, type Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { clearCachedProfile } from "@/lib/cached-profile";
+import { clearCachedFamilyStatus } from "@/lib/cached-family-status";
 
 /**
  * Redirects to login when there's no active session; otherwise exposes the
@@ -64,6 +65,7 @@ export function useRequireAuth() {
       const rowMissing = !profileCheck.error && profileCheck.data === null;
       if (!rejected && !rowMissing) return;
       clearCachedProfile(userId);
+      clearCachedFamilyStatus(userId);
       await supabase.auth.signOut().catch(() => undefined);
       if (!cancelled) navigate({ to: "/" });
     })();

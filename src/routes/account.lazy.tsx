@@ -29,9 +29,17 @@ import { Avatar } from "@/components/Avatar";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { clearCachedProfile, getCachedProfile, setCachedProfile } from "@/lib/cached-profile";
+import {
+  clearCachedFamilyStatus,
+  getCachedFamilyCounts,
+  getCachedFamilyStatus,
+  setCachedFamilyCounts,
+  setCachedFamilyStatus,
+} from "@/lib/cached-family-status";
 import {
   MARITAL_OPTIONS,
   OCCUPATION_OPTIONS,
@@ -69,6 +77,7 @@ function AccountPage() {
   const goBack = useGoBack();
   const { checking, session } = useRequireAuth();
   const { canPublish, role } = useProfileRole(session);
+  const online = useOnlineStatus();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -99,11 +108,18 @@ function AccountPage() {
         .from("family_members")
         .select("status")
         .eq("owner_id", session.user.id);
-      if (!cancelled && members) {
-        setFamily({
-          total: members.length,
-          verified: members.filter((m) => m.status === "verified").length,
-        });
+      if (!cancelled) {
+        if (members) {
+          const counts = {
+            total: members.length,
+            verified: members.filter((m) => m.status === "verified").length,
+          };
+          setFamily(counts);
+          setCachedFamilyCounts(session.user.id, counts);
+        } else {
+          const cached = getCachedFamilyCounts(session.user.id);
+          if (cached) setFamily(cached);
+        }
       }
       const { data } = await supabase
         .from("profiles")
@@ -132,22 +148,46 @@ function AccountPage() {
         setForm(loaded);
         setSavedForm(loaded);
         setCachedProfile(session.user.id, {
-          full_name: data.full_name ?? null,
-          avatar_url: data.avatar_url ?? null,
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          mobile: data.mobile,
+          village: data.village,
+          city: data.city,
+          state: data.state,
+          occupation: data.occupation,
+          dob: data.dob,
+          marital_status: data.marital_status,
+          gender: data.gender,
         });
       } else {
         // The fetch itself failed (offline) — useRequireAuth already rules
         // out a genuinely missing row before this page renders at all. Seed
-        // just the header's name/avatar from the last known values, same as
+        // the whole form from the last known values, same reasoning as
         // Home's greeting, so this reads as "your own profile, offline" —
-        // not a stranger's blank card. The editable fields below stay empty
-        // on purpose: nothing here can be saved without a connection anyway
-        // (the update below needs one too), so there's no risk of a stale
-        // cached value being mistaken for current and re-saved.
+        // not a stranger's blank card or a signup wizard to fill in again.
+        // Safe to show in the *editable* fields too, not just the header:
+        // `online` (below) disables saving outright while offline, so a
+        // stale cached value can never be silently resaved as current —
+        // only ever displayed until a real fetch replaces it.
         const cached = getCachedProfile(session.user.id);
         if (cached) {
-          setForm((f) => ({ ...f, name: cached.full_name ?? "", avatarUrl: cached.avatar_url }));
-          setSavedForm((f) => ({ ...f, name: cached.full_name ?? "", avatarUrl: cached.avatar_url }));
+          const fromCache: typeof emptyForm = {
+            name: cached.full_name ?? "",
+            mobile: cached.mobile ?? "",
+            village: cached.village ?? "",
+            city: cached.city ?? "",
+            state: cached.state ?? "",
+            occupation: cached.occupation ?? "",
+            dob: cached.dob ?? "",
+            marital: cached.marital_status ?? "Single",
+            gender:
+              cached.gender === "male" || cached.gender === "female" || cached.gender === "other"
+                ? cached.gender
+                : null,
+            avatarUrl: cached.avatar_url ?? null,
+          };
+          setForm(fromCache);
+          setSavedForm(fromCache);
         }
       }
       setLoadingProfile(false);
@@ -177,7 +217,11 @@ function AccountPage() {
   const isDirty = JSON.stringify(form) !== JSON.stringify(savedForm);
 
   const handleSave = async () => {
-    if (!session || saving) return;
+    // Belt and suspenders with the buttons' own `disabled`: a save built off
+    // a stale, offline-cached field the member never touched would silently
+    // revert it the moment the request reaches a server that still has the
+    // real value.
+    if (!session || saving || !online) return;
     setError("");
     setSaving(true);
     const { error: saveError } = await supabase
@@ -505,7 +549,7 @@ function AccountPage() {
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
           <button
             onClick={() => void handleSave()}
-            disabled={saving}
+            disabled={saving || !online}
             className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {saved ? (
@@ -540,7 +584,10 @@ function AccountPage() {
           {/* Sign out */}
           <button
             onClick={() => {
-              if (session) clearCachedProfile(session.user.id);
+              if (session) {
+                clearCachedProfile(session.user.id);
+                clearCachedFamilyStatus(session.user.id);
+              }
               void supabase.auth.signOut();
               navigate({ to: "/" });
             }}
@@ -598,7 +645,7 @@ function AccountPage() {
                       </button>
                       <button
                         onClick={() => void handleSave()}
-                        disabled={saving}
+                        disabled={saving || !online}
                         className="h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.98] transition disabled:opacity-60"
                       >
                         {saving ? t("profile.saving") : t("account.update")}
@@ -646,6 +693,7 @@ interface FamilyStatus {
  */
 function FamilyAdminSection({ userId }: { userId: string }) {
   const t = useT();
+  const online = useOnlineStatus();
   const [status, setStatus] = useState<FamilyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -653,8 +701,21 @@ function FamilyAdminSection({ userId }: { userId: string }) {
   const [copied, setCopied] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase.rpc("get_my_family_status");
-    setStatus(((data ?? [])[0] as FamilyStatus) ?? null);
+    const { data, error: loadError } = await supabase.rpc("get_my_family_status");
+    if (loadError) {
+      // Failed fetch (offline) — fall back to the last known status rather
+      // than leaving this stuck on its loading skeleton forever, same
+      // reasoning as the profile fields above. A genuine empty response
+      // (no error, no row — this member picked neither role at setup) is
+      // left as null, matching the existing "nothing to show" behavior.
+      const cached = getCachedFamilyStatus(userId);
+      if (cached) setStatus(cached);
+      setLoading(false);
+      return;
+    }
+    const loaded = ((data ?? [])[0] as FamilyStatus) ?? null;
+    setStatus(loaded);
+    if (loaded) setCachedFamilyStatus(userId, loaded);
     setLoading(false);
   };
 
@@ -663,7 +724,7 @@ function FamilyAdminSection({ userId }: { userId: string }) {
   }, [userId]);
 
   const cancelRequest = async () => {
-    if (!status?.pending_request_id) return;
+    if (!status?.pending_request_id || !online) return;
     setBusy(true);
     setError("");
     const { error: deleteError } = await supabase
@@ -734,7 +795,7 @@ function FamilyAdminSection({ userId }: { userId: string }) {
           </div>
           <button
             onClick={() => void cancelRequest()}
-            disabled={busy}
+            disabled={busy || !online}
             className="mt-2 w-full h-10 rounded-xl bg-muted text-foreground text-xs font-semibold disabled:opacity-50"
           >
             {busy ? "…" : t("account.cancelRequest")}
