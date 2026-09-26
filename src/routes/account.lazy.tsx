@@ -31,6 +31,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { clearCachedProfile, getCachedProfile, setCachedProfile } from "@/lib/cached-profile";
 import {
   MARITAL_OPTIONS,
   OCCUPATION_OPTIONS,
@@ -130,6 +131,24 @@ function AccountPage() {
         };
         setForm(loaded);
         setSavedForm(loaded);
+        setCachedProfile(session.user.id, {
+          full_name: data.full_name ?? null,
+          avatar_url: data.avatar_url ?? null,
+        });
+      } else {
+        // The fetch itself failed (offline) — useRequireAuth already rules
+        // out a genuinely missing row before this page renders at all. Seed
+        // just the header's name/avatar from the last known values, same as
+        // Home's greeting, so this reads as "your own profile, offline" —
+        // not a stranger's blank card. The editable fields below stay empty
+        // on purpose: nothing here can be saved without a connection anyway
+        // (the update below needs one too), so there's no risk of a stale
+        // cached value being mistaken for current and re-saved.
+        const cached = getCachedProfile(session.user.id);
+        if (cached) {
+          setForm((f) => ({ ...f, name: cached.full_name ?? "", avatarUrl: cached.avatar_url }));
+          setSavedForm((f) => ({ ...f, name: cached.full_name ?? "", avatarUrl: cached.avatar_url }));
+        }
       }
       setLoadingProfile(false);
     })();
@@ -521,6 +540,7 @@ function AccountPage() {
           {/* Sign out */}
           <button
             onClick={() => {
+              if (session) clearCachedProfile(session.user.id);
               void supabase.auth.signOut();
               navigate({ to: "/" });
             }}
