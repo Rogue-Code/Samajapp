@@ -17,6 +17,7 @@
 const en = {
   // Shared
   "common.contactSupport": "Contact Support",
+  "common.offline": "You're offline — some info may be missing or out of date.",
   "common.terms": "Terms",
   "common.privacyPolicy": "Privacy Policy",
   // Split rather than interpolated: these sentences wrap clickable links, and
@@ -486,6 +487,7 @@ export type StringKey = keyof typeof en;
 const gu: Partial<Record<StringKey, string>> = {
   // Shared
   "common.contactSupport": "સપોર્ટનો સંપર્ક કરો",
+  "common.offline": "તમે ઓફલાઇન છો — કેટલીક માહિતી ખૂટતી અથવા જૂની હોઈ શકે છે.",
   "common.terms": "શરતો",
   "common.privacyPolicy": "ગોપનીયતા નીતિ",
   "common.byContinuingPrefix": "આગળ વધીને તમે અમારી",

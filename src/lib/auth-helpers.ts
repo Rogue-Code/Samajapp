@@ -29,16 +29,31 @@ export function isStrongPassword(password: string) {
   return passwordRules(password).every((r) => r.passed);
 }
 
-/** Where a signed-in member should land: Home when their profile is set up, otherwise profile setup. */
-export async function destinationAfterLogin(): Promise<"/home" | "/profile"> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) return "/profile";
-  const { data } = await supabase
+/**
+ * Where a signed-in member should land: Home when their profile is set up,
+ * otherwise profile setup.
+ *
+ * Takes the user id from the caller's own already-verified session/sign-in
+ * result rather than re-deriving it here via `supabase.auth.getUser()` — that
+ * method re-checks the JWT against the server on every call, a network round
+ * trip this decision doesn't need. It used to: offline (e.g. a cold start
+ * in airplane mode, right after `getSession()` confirmed a valid *local*
+ * session), that call would fail, `userData.user` would come back empty, and
+ * this returned "/profile" — sending a fully set-up member into the empty
+ * setup wizard ("Family Code", "Are you the Family Admin?") instead of their
+ * own account. To that member it looks exactly like their profile vanished.
+ */
+export async function destinationAfterLogin(userId: string): Promise<"/home" | "/profile"> {
+  const { data, error } = await supabase
     .from("profiles")
     .select("profile_completed")
     .eq("id", userId)
     .maybeSingle();
+  // Same reasoning as above, one step further down: a failed check (still
+  // offline) must not read as "profile incomplete" either. Default home —
+  // its screens degrade to blank/offline (see the offline banner in
+  // PhoneFrame) rather than this screen lying about needing setup again.
+  if (error) return "/home";
   return data?.profile_completed ? "/home" : "/profile";
 }
 
