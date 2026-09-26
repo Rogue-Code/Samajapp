@@ -3,6 +3,7 @@ import { SheetPortal } from "@/components/PhoneFrame";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { requestAccountDeletion } from "@/lib/account-deletion-helpers";
+import { clearCachedProfile } from "@/lib/cached-profile";
 import { useT } from "@/lib/i18n";
 
 const CONFIRM_WORD = "DELETE";
@@ -70,6 +71,7 @@ export function DeleteAccountSheet({
 
     // The row is gone, so this call has nothing to revoke server-side; it is
     // here to clear the stored session. Failure is expected and harmless.
+    clearCachedProfile(userId);
     await supabase.auth.signOut().catch(() => undefined);
     onDeleted();
   };

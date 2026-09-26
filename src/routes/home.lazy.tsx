@@ -27,6 +27,7 @@ import { useProfileRole } from "@/hooks/use-profile-role";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, type TFunction } from "@/lib/i18n";
 import { formatEventDate, pickLang, relativeTime } from "@/lib/format";
+import { getCachedProfile, setCachedProfile } from "@/lib/cached-profile";
 
 export const Route = createLazyFileRoute("/home")({
   component: HomePage,
@@ -141,8 +142,21 @@ function HomePage() {
         .order("created_at", { ascending: false })
         .limit(3),
     ]);
-    setFullName(profile.data?.full_name ?? null);
-    setAvatarUrl(profile.data?.avatar_url ?? null);
+    if (profile.data) {
+      setFullName(profile.data.full_name ?? null);
+      setAvatarUrl(profile.data.avatar_url ?? null);
+      setCachedProfile(session.user.id, profile.data);
+    } else {
+      // profile.data is only ever empty here because the fetch itself failed
+      // (offline) — a genuinely missing row would already have been caught
+      // by useRequireAuth's own check before this page rendered at all. Fall
+      // back to what this same member's name/avatar looked like last time,
+      // rather than the generic "there" / "?" placeholder, which reads like
+      // a different, anonymous account rather than their own with no signal.
+      const cached = getCachedProfile(session.user.id);
+      setFullName(cached?.full_name ?? null);
+      setAvatarUrl(cached?.avatar_url ?? null);
+    }
     setEvents(eventList.data ?? []);
     setRsvps(new Set((rsvpList.data ?? []).map((r) => r.event_id)));
     setSponsored(sponsorList.data ?? []);
