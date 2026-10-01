@@ -1,705 +1,369 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
+  
+  "graphql_public": {
+          Tables: {
+            [_ in never]: never
+          }
+          Views: {
+            [_ in never]: never
+          }
+          Functions: {
+            "graphql":
+{ Args: { "extensions"?: Json,"operationName"?: string,"query"?: string,"variables"?: Json }; Returns: Json
+                           }
+          }
+          Enums: {
+            [_ in never]: never
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
+        },"public": {
+          Tables: {
+            "custom_places": {
+                  Row: {
+                    "added_by": string | null,"created_at": string,"id": string,"name": string
+                  }
+                  Insert: {
+                    "added_by"?: string | null,"created_at"?: string,"id"?: string,"name": string
+                  }
+                  Update: {
+                    "added_by"?: string | null,"created_at"?: string,"id"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"event_rsvps": {
+                  Row: {
+                    "created_at": string,"event_id": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"event_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"event_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_rsvps_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
     }
-    Views: {
-      [_ in never]: never
+                  ]
+                },"events": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"description": string | null,"emoji": string,"id": string,"location": string | null,"starts_at": string,"title": string,"title_gu": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"description"?: string | null,"emoji"?: string,"id"?: string,"location"?: string | null,"starts_at": string,"title": string,"title_gu"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"description"?: string | null,"emoji"?: string,"id"?: string,"location"?: string | null,"starts_at"?: string,"title"?: string,"title_gu"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "events_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
+                  ]
+                },"facilities": {
+                  Row: {
+                    "address": string,"capacity": string | null,"category": string,"city": string,"created_at": string,"description": string | null,"description_gu": string | null,"email": string | null,"established": number | null,"head": string | null,"id": string,"long_description": string | null,"long_description_gu": string | null,"name": string,"name_gu": string | null,"phone": string | null,"state": string,"timings": string | null,"updated_at": string,"verified": boolean,"website": string | null
+                  }
+                  Insert: {
+                    "address": string,"capacity"?: string | null,"category": string,"city": string,"created_at"?: string,"description"?: string | null,"description_gu"?: string | null,"email"?: string | null,"established"?: number | null,"head"?: string | null,"id": string,"long_description"?: string | null,"long_description_gu"?: string | null,"name": string,"name_gu"?: string | null,"phone"?: string | null,"state": string,"timings"?: string | null,"updated_at"?: string,"verified"?: boolean,"website"?: string | null
+                  }
+                  Update: {
+                    "address"?: string,"capacity"?: string | null,"category"?: string,"city"?: string,"created_at"?: string,"description"?: string | null,"description_gu"?: string | null,"email"?: string | null,"established"?: number | null,"head"?: string | null,"id"?: string,"long_description"?: string | null,"long_description_gu"?: string | null,"name"?: string,"name_gu"?: string | null,"phone"?: string | null,"state"?: string,"timings"?: string | null,"updated_at"?: string,"verified"?: boolean,"website"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"families": {
+                  Row: {
+                    "admin_id": string,"code": string,"created_at": string,"id": string
+                  }
+                  Insert: {
+                    "admin_id": string,"code": string,"created_at"?: string,"id"?: string
+                  }
+                  Update: {
+                    "admin_id"?: string,"code"?: string,"created_at"?: string,"id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"family_join_requests": {
+                  Row: {
+                    "created_at": string,"family_id": string,"id": string,"relation": string,"requester_id": string,"status": string,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"family_id": string,"id"?: string,"relation"?: string,"requester_id": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"family_id"?: string,"id"?: string,"relation"?: string,"requester_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "family_join_requests_family_id_fkey"
+      columns: ["family_id"]
+isOneToOne: false
+      referencedRelation: "families"
+      referencedColumns: ["id"]
     }
-    Enums: {
-      [_ in never]: never
+                  ]
+                },"family_members": {
+                  Row: {
+                    "created_at": string,"dob": string | null,"full_name": string,"id": string,"linked_profile_id": string | null,"owner_id": string,"relation": string,"status": string,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"dob"?: string | null,"full_name": string,"id"?: string,"linked_profile_id"?: string | null,"owner_id": string,"relation": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"dob"?: string | null,"full_name"?: string,"id"?: string,"linked_profile_id"?: string | null,"owner_id"?: string,"relation"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "family_members_linked_profile_id_fkey"
+      columns: ["linked_profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
-    CompositeTypes: {
-      [_ in never]: never
+                  ]
+                },"phone_auth_identities": {
+                  Row: {
+                    "created_at": string,"phone": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"phone": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"phone"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"posts": {
+                  Row: {
+                    "author_id": string | null,"category": string,"content": string,"content_gu": string | null,"created_at": string,"id": string,"pinned": boolean,"title": string,"title_gu": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "author_id"?: string | null,"category"?: string,"content": string,"content_gu"?: string | null,"created_at"?: string,"id"?: string,"pinned"?: boolean,"title": string,"title_gu"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string | null,"category"?: string,"content"?: string,"content_gu"?: string | null,"created_at"?: string,"id"?: string,"pinned"?: boolean,"title"?: string,"title_gu"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "posts_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
-  }
-  public: {
-    Tables: {
-      custom_places: {
-        Row: {
-          added_by: string | null
-          created_at: string
-          id: string
-          name: string
-        }
-        Insert: {
-          added_by?: string | null
-          created_at?: string
-          id?: string
-          name: string
-        }
-        Update: {
-          added_by?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      event_rsvps: {
-        Row: {
-          created_at: string
-          event_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          event_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      events: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          description: string | null
-          emoji: string
-          id: string
-          location: string | null
-          starts_at: string
-          title: string
-          title_gu: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          emoji?: string
-          id?: string
-          location?: string | null
-          starts_at: string
-          title: string
-          title_gu?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          emoji?: string
-          id?: string
-          location?: string | null
-          starts_at?: string
-          title?: string
-          title_gu?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      facilities: {
-        Row: {
-          address: string
-          capacity: string | null
-          category: string
-          city: string
-          created_at: string
-          description: string | null
-          description_gu: string | null
-          email: string | null
-          established: number | null
-          head: string | null
-          id: string
-          long_description: string | null
-          long_description_gu: string | null
-          name: string
-          name_gu: string | null
-          phone: string | null
-          state: string
-          timings: string | null
-          updated_at: string
-          verified: boolean
-          website: string | null
-        }
-        Insert: {
-          address: string
-          capacity?: string | null
-          category: string
-          city: string
-          created_at?: string
-          description?: string | null
-          description_gu?: string | null
-          email?: string | null
-          established?: number | null
-          head?: string | null
-          id: string
-          long_description?: string | null
-          long_description_gu?: string | null
-          name: string
-          name_gu?: string | null
-          phone?: string | null
-          state: string
-          timings?: string | null
-          updated_at?: string
-          verified?: boolean
-          website?: string | null
-        }
-        Update: {
-          address?: string
-          capacity?: string | null
-          category?: string
-          city?: string
-          created_at?: string
-          description?: string | null
-          description_gu?: string | null
-          email?: string | null
-          established?: number | null
-          head?: string | null
-          id?: string
-          long_description?: string | null
-          long_description_gu?: string | null
-          name?: string
-          name_gu?: string | null
-          phone?: string | null
-          state?: string
-          timings?: string | null
-          updated_at?: string
-          verified?: boolean
-          website?: string | null
-        }
-        Relationships: []
-      }
-      families: {
-        Row: {
-          admin_id: string
-          code: string
-          created_at: string
-          id: string
-        }
-        Insert: {
-          admin_id: string
-          code: string
-          created_at?: string
-          id?: string
-        }
-        Update: {
-          admin_id?: string
-          code?: string
-          created_at?: string
-          id?: string
-        }
-        Relationships: []
-      }
-      family_join_requests: {
-        Row: {
-          created_at: string
-          family_id: string
-          id: string
-          relation: string
-          requester_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          family_id: string
-          id?: string
-          relation?: string
-          requester_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          family_id?: string
-          id?: string
-          relation?: string
-          requester_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_join_requests_family_id_fkey"
-            columns: ["family_id"]
-            isOneToOne: false
-            referencedRelation: "families"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      family_members: {
-        Row: {
-          created_at: string
-          dob: string | null
-          full_name: string
-          id: string
-          linked_profile_id: string | null
-          owner_id: string
-          relation: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          dob?: string | null
-          full_name: string
-          id?: string
-          linked_profile_id?: string | null
-          owner_id: string
-          relation: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          dob?: string | null
-          full_name?: string
-          id?: string
-          linked_profile_id?: string | null
-          owner_id?: string
-          relation?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "family_members_linked_profile_id_fkey"
-            columns: ["linked_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      phone_auth_identities: {
-        Row: {
-          created_at: string
-          phone: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          phone: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          phone?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      posts: {
-        Row: {
-          author_id: string | null
-          category: string
-          content: string
-          content_gu: string | null
-          created_at: string
-          id: string
-          pinned: boolean
-          title: string
-          title_gu: string | null
-          updated_at: string
-        }
-        Insert: {
-          author_id?: string | null
-          category?: string
-          content: string
-          content_gu?: string | null
-          created_at?: string
-          id?: string
-          pinned?: boolean
-          title: string
-          title_gu?: string | null
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string | null
-          category?: string
-          content?: string
-          content_gu?: string | null
-          created_at?: string
-          id?: string
-          pinned?: boolean
-          title?: string
-          title_gu?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          city: string | null
-          created_at: string
-          dob: string | null
-          family_id: string | null
-          full_name: string | null
-          gender: string | null
-          id: string
-          is_family_admin: boolean
-          marital_status: string | null
-          mobile: string | null
-          occupation: string | null
-          profile_completed: boolean
-          role: string
-          state: string | null
-          updated_at: string
-          village: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          city?: string | null
-          created_at?: string
-          dob?: string | null
-          family_id?: string | null
-          full_name?: string | null
-          gender?: string | null
-          id: string
-          is_family_admin?: boolean
-          marital_status?: string | null
-          mobile?: string | null
-          occupation?: string | null
-          profile_completed?: boolean
-          role?: string
-          state?: string | null
-          updated_at?: string
-          village?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          city?: string | null
-          created_at?: string
-          dob?: string | null
-          family_id?: string | null
-          full_name?: string | null
-          gender?: string | null
-          id?: string
-          is_family_admin?: boolean
-          marital_status?: string | null
-          mobile?: string | null
-          occupation?: string | null
-          profile_completed?: boolean
-          role?: string
-          state?: string | null
-          updated_at?: string
-          village?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_family_id_fkey"
-            columns: ["family_id"]
-            isOneToOne: false
-            referencedRelation: "families"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      saved_facilities: {
-        Row: {
-          created_at: string
-          facility_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          facility_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          facility_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saved_facilities_facility_id_fkey"
-            columns: ["facility_id"]
-            isOneToOne: false
-            referencedRelation: "facilities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      saved_posts: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saved_posts_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sponsors: {
-        Row: {
-          active: boolean
-          created_at: string
-          description: string | null
-          emoji: string
-          facility_id: string | null
-          id: string
-          image_original_url: string | null
-          image_url: string | null
-          link_url: string | null
-          name: string
-          owner_name: string | null
-          phone: string | null
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          emoji?: string
-          facility_id?: string | null
-          id?: string
-          image_original_url?: string | null
-          image_url?: string | null
-          link_url?: string | null
-          name: string
-          owner_name?: string | null
-          phone?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          emoji?: string
-          facility_id?: string | null
-          id?: string
-          image_original_url?: string | null
-          image_url?: string | null
-          link_url?: string | null
-          name?: string
-          owner_name?: string | null
-          phone?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sponsors_facility_id_fkey"
-            columns: ["facility_id"]
-            isOneToOne: false
-            referencedRelation: "facilities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+                  ]
+                },"profiles": {
+                  Row: {
+                    "avatar_url": string | null,"city": string | null,"created_at": string,"dob": string | null,"family_id": string | null,"full_name": string | null,"gender": string | null,"id": string,"is_family_admin": boolean,"marital_status": string | null,"mobile": string | null,"occupation": string | null,"profile_completed": boolean,"role": string,"state": string | null,"updated_at": string,"village": string | null
+                  }
+                  Insert: {
+                    "avatar_url"?: string | null,"city"?: string | null,"created_at"?: string,"dob"?: string | null,"family_id"?: string | null,"full_name"?: string | null,"gender"?: string | null,"id": string,"is_family_admin"?: boolean,"marital_status"?: string | null,"mobile"?: string | null,"occupation"?: string | null,"profile_completed"?: boolean,"role"?: string,"state"?: string | null,"updated_at"?: string,"village"?: string | null
+                  }
+                  Update: {
+                    "avatar_url"?: string | null,"city"?: string | null,"created_at"?: string,"dob"?: string | null,"family_id"?: string | null,"full_name"?: string | null,"gender"?: string | null,"id"?: string,"is_family_admin"?: boolean,"marital_status"?: string | null,"mobile"?: string | null,"occupation"?: string | null,"profile_completed"?: boolean,"role"?: string,"state"?: string | null,"updated_at"?: string,"village"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profiles_family_id_fkey"
+      columns: ["family_id"]
+isOneToOne: false
+      referencedRelation: "families"
+      referencedColumns: ["id"]
     }
-    Views: {
-      user_behaviour_daily: {
-        Row: {
-          day: string | null
-          new_users: number | null
-          tracked_actions: number | null
+                  ]
+                },"saved_facilities": {
+                  Row: {
+                    "created_at": string,"facility_id": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"facility_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"facility_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "saved_facilities_facility_id_fkey"
+      columns: ["facility_id"]
+isOneToOne: false
+      referencedRelation: "facilities"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"saved_posts": {
+                  Row: {
+                    "created_at": string,"post_id": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"post_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"post_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "saved_posts_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"sponsors": {
+                  Row: {
+                    "active": boolean,"created_at": string,"description": string | null,"emoji": string,"facility_id": string | null,"id": string,"image_original_url": string | null,"image_url": string | null,"link_url": string | null,"name": string,"owner_name": string | null,"phone": string | null,"sort_order": number,"updated_at": string
+                  }
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"emoji"?: string,"facility_id"?: string | null,"id"?: string,"image_original_url"?: string | null,"image_url"?: string | null,"link_url"?: string | null,"name": string,"owner_name"?: string | null,"phone"?: string | null,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"emoji"?: string,"facility_id"?: string | null,"id"?: string,"image_original_url"?: string | null,"image_url"?: string | null,"link_url"?: string | null,"name"?: string,"owner_name"?: string | null,"phone"?: string | null,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "sponsors_facility_id_fkey"
+      columns: ["facility_id"]
+isOneToOne: false
+      referencedRelation: "facilities"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"support_messages": {
+                  Row: {
+                    "contact_info": string | null,"created_at": string,"id": string,"member_id": string | null,"message": string
+                  }
+                  Insert: {
+                    "contact_info"?: string | null,"created_at"?: string,"id"?: string,"member_id"?: string | null,"message": string
+                  }
+                  Update: {
+                    "contact_info"?: string | null,"created_at"?: string,"id"?: string,"member_id"?: string | null,"message"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
+          }
+          Views: {
+            "user_behaviour_daily": {
+                  Row: {
+                    "day": string | null,"new_users": number | null,"tracked_actions": number | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"user_behaviour_dashboard": {
+                  Row: {
+                    "metric": string | null,"value": number | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
+          }
+          Functions: {
+            "add_custom_place":
+{ Args: { "place_name": string }; Returns: undefined
+                           },
+"birth_year_of":
+{ Args: { "dob_text": string }; Returns: number
+                           },
+"current_role_is":
+{ Args: { "required": (string)[] }; Returns: boolean
+                           },
+"delete_my_account":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"email_registered":
+{ Args: { "check_email": string }; Returns: boolean
+                           },
+"ensure_family_admin":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"generate_family_code":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"get_family_admin_of":
+{ Args: { "target_id": string }; Returns: {
+              "avatar_url": string,"birth_year": number,"city": string,"full_name": string,"id": string,"is_family_admin": boolean,"marital_status": string,"mobile": string,"occupation": string,"role": string,"state": string,"village": string
+            }[]
+                           },
+"get_member":
+{ Args: { "target_id": string }; Returns: {
+              "avatar_url": string,"birth_year": number,"city": string,"full_name": string,"id": string,"is_family_admin": boolean,"marital_status": string,"mobile": string,"occupation": string,"role": string,"state": string,"village": string
+            }[]
+                           },
+"get_member_family":
+{ Args: { "target_id": string }; Returns: {
+              "avatar_url": string,"birth_year": number,"full_name": string,"id": string,"linked_profile_id": string,"relation": string,"status": string
+            }[]
+                           },
+"get_my_family_status":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "admin_avatar_url": string,"admin_id": string,"admin_name": string,"family_code": string,"family_id": string,"is_admin": boolean,"pending_admin_name": string,"pending_request_id": string
+            }[]
+                           },
+"leave_family":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"list_family_join_requests":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avatar_url": string,"city": string,"created_at": string,"full_name": string,"id": string,"relation": string,"requester_id": string,"village": string
+            }[]
+                           },
+"phone_registered":
+{ Args: { "check_phone": string }; Returns: boolean
+                           },
+"preview_family_by_code":
+{ Args: { "input_code": string }; Returns: {
+              "admin_avatar_url": string,"admin_id": string,"admin_name": string,"family_id": string
+            }[]
+                           },
+"request_join_family":
+{ Args: { "input_code": string,"member_relation"?: string }; Returns: undefined
+                           },
+"respond_family_join_request":
+{ Args: { "approve": boolean,"request_id": string }; Returns: undefined
+                           },
+"search_members":
+{ Args: { "term": string }; Returns: {
+              "avatar_url": string,"birth_year": number,"city": string,"full_name": string,"id": string,"is_family_admin": boolean,"marital_status": string,"mobile": string,"occupation": string,"role": string,"village": string
+            }[]
+                           },
+"set_member_role":
+{ Args: { "new_role": string,"target_id": string }; Returns: undefined
+                           },
+"submit_support_message":
+{ Args: { "contact"?: string,"message_text": string }; Returns: undefined
+                           }
+          }
+          Enums: {
+            [_ in never]: never
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
         }
-        Relationships: []
-      }
-      user_behaviour_dashboard: {
-        Row: {
-          metric: string | null
-          value: number | null
-        }
-        Relationships: []
-      }
-    }
-    Functions: {
-      add_custom_place: { Args: { place_name: string }; Returns: undefined }
-      birth_year_of: { Args: { dob_text: string }; Returns: number }
-      current_role_is: { Args: { required: string[] }; Returns: boolean }
-      delete_my_account: { Args: never; Returns: undefined }
-      email_registered: { Args: { check_email: string }; Returns: boolean }
-      ensure_family_admin: { Args: never; Returns: string }
-      generate_family_code: { Args: never; Returns: string }
-      get_family_admin_of: {
-        Args: { target_id: string }
-        Returns: {
-          avatar_url: string
-          birth_year: number
-          city: string
-          full_name: string
-          id: string
-          is_family_admin: boolean
-          marital_status: string
-          mobile: string
-          occupation: string
-          role: string
-          state: string
-          village: string
-        }[]
-      }
-      get_member: {
-        Args: { target_id: string }
-        Returns: {
-          avatar_url: string
-          birth_year: number
-          city: string
-          full_name: string
-          id: string
-          is_family_admin: boolean
-          marital_status: string
-          mobile: string
-          occupation: string
-          role: string
-          state: string
-          village: string
-        }[]
-      }
-      get_member_family: {
-        Args: { target_id: string }
-        Returns: {
-          avatar_url: string
-          birth_year: number
-          full_name: string
-          id: string
-          linked_profile_id: string
-          relation: string
-          status: string
-        }[]
-      }
-      get_my_family_status: {
-        Args: never
-        Returns: {
-          admin_avatar_url: string
-          admin_id: string
-          admin_name: string
-          family_code: string
-          family_id: string
-          is_admin: boolean
-          pending_admin_name: string
-          pending_request_id: string
-        }[]
-      }
-      leave_family: { Args: never; Returns: undefined }
-      list_family_join_requests: {
-        Args: never
-        Returns: {
-          avatar_url: string
-          city: string
-          created_at: string
-          full_name: string
-          id: string
-          relation: string
-          requester_id: string
-          village: string
-        }[]
-      }
-      phone_registered: { Args: { check_phone: string }; Returns: boolean }
-      preview_family_by_code: {
-        Args: { input_code: string }
-        Returns: {
-          admin_avatar_url: string
-          admin_id: string
-          admin_name: string
-          family_id: string
-        }[]
-      }
-      request_join_family: {
-        Args: { input_code: string; member_relation?: string }
-        Returns: undefined
-      }
-      respond_family_join_request: {
-        Args: { approve: boolean; request_id: string }
-        Returns: undefined
-      }
-      search_members: {
-        Args: { term: string }
-        Returns: {
-          avatar_url: string
-          birth_year: number
-          city: string
-          full_name: string
-          id: string
-          is_family_admin: boolean
-          marital_status: string
-          mobile: string
-          occupation: string
-          role: string
-          village: string
-        }[]
-      }
-      set_member_role: {
-        Args: { new_role: string; target_id: string }
-        Returns: undefined
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
@@ -707,120 +371,111 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
     : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
     : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
     : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+    : never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
+    : never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
-  public: {
-    Enums: {},
-  },
+  "graphql_public": {
+          Enums: {
+            
+          }
+        },"public": {
+          Enums: {
+            
+          }
+        }
 } as const

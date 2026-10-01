@@ -5,8 +5,8 @@ import type { RecaptchaVerifier } from "firebase/auth";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Logo } from "@/components/Logo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { SupportSheet } from "@/components/SupportSheet";
 import { useT } from "@/lib/i18n";
-import { CONTACT_EMAIL } from "@/lib/legal";
 import { OtpInput } from "@/components/OtpInput";
 import { supabase } from "@/integrations/supabase/client";
 import { destinationAfterLogin, friendlyAuthError } from "@/lib/auth-helpers";
@@ -41,6 +41,7 @@ function LoginPage() {
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [showSupport, setShowSupport] = useState(false);
   const phoneSessionRef = useRef<PhoneAuthSession | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
@@ -304,17 +305,17 @@ function LoginPage() {
 
         <div className="flex items-center justify-center mt-8 text-xs text-muted-foreground">
           {/*
-            A real mailto rather than a button: there is no in-app help centre to
-            send anyone to, and a member who taps this wants to reach a person.
-            The address comes from legal.ts so it cannot drift from the Privacy
-            Policy's stated contact.
+            An in-app sheet, not a mailto: link — Google Play's Child Safety
+            Standards policy requires a feedback mechanism that works without
+            leaving the app (see SupportSheet for the rest of the story).
           */}
-          <a
-            href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Sangath support")}`}
+          <button
+            type="button"
+            onClick={() => setShowSupport(true)}
             className="flex items-center gap-1.5 hover:text-foreground transition"
           >
             <Mail className="w-3.5 h-3.5" /> {t("common.contactSupport")}
-          </a>
+          </button>
         </div>
         <p className="text-[11px] text-center text-muted-foreground mt-4 leading-relaxed">
           {t("common.byContinuingPrefix")}{" "}
@@ -337,6 +338,8 @@ function LoginPage() {
         </p>
         <div id="recaptcha-container" />
       </div>
+
+      {showSupport && <SupportSheet onClose={() => setShowSupport(false)} />}
     </PhoneFrame>
   );
 }
