@@ -51,6 +51,7 @@ import { AvatarPicker } from "@/components/AvatarPicker";
 import { PlacePicker } from "@/components/PlacePicker";
 import { BottomNav } from "@/components/BottomNav";
 import { DeleteAccountSheet } from "@/components/DeleteAccountSheet";
+import { SupportSheet } from "@/components/SupportSheet";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useT } from "@/lib/i18n";
 
@@ -83,6 +84,7 @@ function AccountPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showDelete, setShowDelete] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   const [form, setForm] = useState(emptyForm);
   // The last-saved snapshot, so a change to any field can be detected without
   // the member having to scroll down to the Update Profile button to find out.
@@ -566,6 +568,13 @@ function AccountPage() {
           {/* Legal */}
           <SectionCard title={t("account.legal")}>
             <button
+              onClick={() => setShowSupport(true)}
+              className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
+            >
+              <Mail className="w-4 h-4 text-muted-foreground" /> {t("common.contactSupport")}
+              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+            </button>
+            <button
               onClick={() => navigate({ to: "/privacy" })}
               className="w-full h-12 rounded-2xl bg-background border border-border text-foreground text-sm font-semibold flex items-center gap-3 px-4 active:scale-[0.98] transition"
             >
@@ -665,6 +674,8 @@ function AccountPage() {
             onDeleted={() => navigate({ to: "/" })}
           />
         )}
+
+        {showSupport && <SupportSheet onClose={() => setShowSupport(false)} />}
 
         <BottomNav active="profile" />
       </div>
