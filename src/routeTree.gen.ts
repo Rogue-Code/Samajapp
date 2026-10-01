@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ChildSafetyRouteImport } from './routes/child-safety'
 import { Route as FacilitiesRouteImport } from './routes/facilities'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -42,6 +43,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/admin.lazy').then((d) => d.Route))
+const ChildSafetyRoute = ChildSafetyRouteImport.update({
+  id: '/child-safety',
+  path: '/child-safety',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/child-safety.lazy').then((d) => d.Route))
 const FacilitiesRoute = FacilitiesRouteImport.update({
   id: '/facilities',
   path: '/facilities',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/facilities': typeof FacilitiesRoute
   '/family': typeof FamilyRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/child-safety'
     | '/facilities'
     | '/family'
     | '/forgot-password'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/child-safety'
     | '/facilities'
     | '/family'
     | '/forgot-password'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/child-safety'
     | '/facilities'
     | '/family'
     | '/forgot-password'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
+  ChildSafetyRoute: typeof ChildSafetyRoute
   FacilitiesRoute: typeof FacilitiesRoute
   FamilyRoute: typeof FamilyRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/child-safety': {
+      id: '/child-safety'
+      path: '/child-safety'
+      fullPath: '/child-safety'
+      preLoaderRoute: typeof ChildSafetyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/facilities': {
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
+  ChildSafetyRoute: ChildSafetyRoute,
   FacilitiesRoute: FacilitiesRoute,
   FamilyRoute: FamilyRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

@@ -37,6 +37,7 @@ export interface LegalDoc {
 export interface LegalBundle {
   terms: LegalDoc;
   privacy: LegalDoc;
+  childSafety: LegalDoc;
 }
 
 export type LegalDocKind = keyof LegalBundle;
@@ -73,7 +74,7 @@ if (import.meta.env?.DEV) {
   const shapeOf = (doc: LegalDoc) =>
     doc.sections.map((s) => s.blocks.map((b) => b.kind).join(",")).join(" | ");
 
-  for (const kind of ["terms", "privacy"] as LegalDocKind[]) {
+  for (const kind of ["terms", "privacy", "childSafety"] as LegalDocKind[]) {
     const en = shapeOf(EN_LEGAL[kind]);
     const gu = shapeOf(GU_LEGAL[kind]);
     if (en !== gu) {

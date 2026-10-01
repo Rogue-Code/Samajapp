@@ -415,4 +415,71 @@ export const EN_LEGAL: LegalBundle = {
       },
     ],
   },
+  childSafety: {
+    title: "Child Safety Standards",
+    intro:
+      "Sangath's standards against child sexual abuse and exploitation (CSAE), and how to report a concern.",
+    sections: [
+      {
+        heading: "1. Our standard",
+        blocks: [
+          {
+            kind: "p",
+            text: "{operator} has zero tolerance for child sexual abuse and exploitation of any kind, in any content or conduct connected to Sangath. This applies to every profile, photo, post and message the app carries, without exception.",
+          },
+        ],
+      },
+      {
+        heading: "2. How Sangath is built to prevent it",
+        blocks: [
+          {
+            kind: "p",
+            text: "Sangath is a closed family directory, not a social network, and several things about how it works exist specifically to keep children safe:",
+          },
+          {
+            kind: "bullets",
+            items: [
+              "Accounts require a working mobile number and are for members **18 or older**. There is no signup path for a child.",
+              "Children appear only as entries in a family list, added by their own parent or guardian through the Family Information section. A child never has a login, a password, or a way to be contacted directly through the app.",
+              "There is **no open chat or messaging** between members anywhere in Sangath. Members cannot send each other photos, files or private messages through the app.",
+              "A profile photo belongs to the member who uploaded it, is visible only to other signed-in members of the community, and can be removed by a family admin or by {operator} at any time.",
+              "Community news and posts are visible to signed-in members only, never to the public internet, and can be taken down by {operator} on request or on our own review.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "3. Reporting a concern",
+        blocks: [
+          {
+            kind: "p",
+            text: "If you see content or behaviour connected to Sangath that concerns you — anything that endangers a child, or any CSAE material — tell us immediately at {email}. Include what you saw and, if you can, who posted it.",
+          },
+          {
+            kind: "highlight",
+            title: "What happens when you report",
+            text: "We review every report ourselves rather than relying only on automated checks. Content that violates this standard is removed and the account responsible is suspended or closed while we look into it. Where the law requires it, we report CSAE material or conduct to the relevant authorities, including the National Center for Missing & Exploited Children (NCMEC) and Indian law enforcement, and we preserve records as legally required to support that reporting.",
+          },
+        ],
+      },
+      {
+        heading: "4. Who to contact",
+        blocks: [
+          {
+            kind: "p",
+            text: "{officer} is the designated point of contact for child safety questions and reports concerning Sangath, reachable at {email}. This contact is able to discuss our CSAE prevention practices and compliance with regulators, platforms and law enforcement.",
+          },
+        ],
+      },
+      {
+        heading: "5. Keeping this standard current",
+        blocks: [
+          {
+            kind: "p",
+            text: "We review this page whenever Sangath's features change in a way that affects child safety, and at least once a year regardless. If you believe this page is out of date, tell us at {email}.",
+          },
+        ],
+      },
+    ],
+  },
 };
